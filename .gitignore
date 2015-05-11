@@ -1,1 +1,3 @@
 target/
+.vagrant/
+VERSION
