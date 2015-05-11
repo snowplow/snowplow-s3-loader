@@ -74,8 +74,9 @@ object BuildSettings {
       case x =>
         val oldStrategy = (mergeStrategy in assembly).value
         oldStrategy(x)
-    }
+    },
 
+    assemblyOption in assembly ~= { _.copy(cacheOutput = false) }
   )
 
   lazy val buildSettings = basicSettings ++ scalifySettings ++ sbtAssemblySettings
