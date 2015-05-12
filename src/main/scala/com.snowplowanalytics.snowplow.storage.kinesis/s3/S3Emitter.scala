@@ -189,7 +189,11 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink) extends I
     records.asScala.foreach { record =>
       log.warn(s"Record failed: $record")
       log.info("Sending failed record to Kinesis")
-      val output = compact(render(("line" -> record._1) ~ ("errors" -> record._2.swap.getOrElse(Nil))))
+      val output = compact(render(
+        ("line" -> record._1) ~ 
+        ("errors" -> record._2.swap.getOrElse(Nil)) ~
+        ("failure_tstamp" -> System.currentTimeMillis())
+      ))
       badSink.store(output, Some("key"), false)
     }
   }
