@@ -51,6 +51,7 @@ import com.amazonaws.services.kinesis.connectors.interfaces.IEmitter
 
 // Scala
 import scala.collection.JavaConversions._
+import scala.util.control.NonFatal
 import scala.annotation.tailrec
 
 // Scalaz
@@ -138,28 +139,30 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink) extends I
      *
      * @return list of inputs which failed to be sent to S3
      */
-    @tailrec
     def attemptEmit(): List[EmitterInput] = {
-      try {
-        client.putObject(bucket, filename, obj, objMeta)
-        client.putObject(bucket, indexFilename, indexObj, indexObjMeta)
-        log.info(s"Successfully emitted ${successes.size} records to S3 in s3://${bucket}/${filename} with index $indexFilename")
+      while (true) {
+        try {
+          client.putObject(bucket, filename, obj, objMeta)
+          client.putObject(bucket, indexFilename, indexObj, indexObjMeta)
+          log.info(s"Successfully emitted ${successes.size} records to S3 in s3://${bucket}/${filename} with index $indexFilename")
 
-        // Return the failed records
-        failures
-      } catch {
-        // Retry on failure
-        case ase: AmazonServiceException => {
-          log.error("S3 could not process the request", ase)
-          sleep(BackoffPeriod)
-          attemptEmit()
-        }
-        case e: Throwable => {
-          log.error("S3Emitter threw an unexpected exception", e)
-          sleep(BackoffPeriod)
-          attemptEmit()
+          // Return the failed records
+          return failures
+
+        } catch {
+          // Retry on failure
+          case ase: AmazonServiceException => {
+            log.error("S3 could not process the request", ase)
+            sleep(BackoffPeriod)
+          }
+          case NonFatal(e) => {
+            log.error("S3Emitter threw an unexpected exception", e)
+            sleep(BackoffPeriod)
+          }
         }
       }
+
+      Nil // should never be reached
     }
 
     if (successes.size > 0) {
