@@ -1,4 +1,4 @@
-Version 0.2.1 (2015-xx-xx)
+Version 0.2.1 (2015-05-28)
 --------------------------
 Added dedicated Vagrant setup (#16)
 Stopped catching OutOfMemoryError (#23)
