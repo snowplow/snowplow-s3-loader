@@ -28,6 +28,13 @@ import com.amazonaws.auth.AWSCredentialsProvider
 // AWS Kinesis Connector libs
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration
 
+// Tracker
+import com.snowplowanalytics.snowplow.scalatracker.Tracker
+
+// Scalaz
+import scalaz._
+import Scalaz._
+
 // This project
 import sinks._
 
@@ -68,6 +75,12 @@ object SinkApp extends App {
 
   val conf = config.value.getOrElse(throw new RuntimeException("--config argument must be provided"))
 
+  val tracker = if (conf.hasPath("enrich.monitoring.snowplow")) {
+    SnowplowTracking.initializeTracker(conf.getConfig("enrich.monitoring.snowplow")).some
+  } else { 
+    None
+  }
+
   // TODO: make the conf file more like the Elasticsearch equivalent
   val kinesisSinkRegion = conf.getConfig("sink").getConfig("kinesis").getString("region")
   val kinesisSinkEndpoint = s"https://kinesis.${kinesisSinkRegion}.amazonaws.com"
@@ -81,9 +94,15 @@ object SinkApp extends App {
 
   val credentials = CredentialsLookup.getCredentialsProvider(credentialConfig.getString("access-key"), credentialConfig.getString("secret-key"))
 
-  val badSink = new KinesisSink(credentials, kinesisSinkEndpoint, kinesisSinkName)
+  val badSink = new KinesisSink(credentials, kinesisSinkEndpoint, kinesisSinkName, tracker)
 
-  val executor = new S3SinkExecutor(convertConfig(conf, credentials), badSink)
+  val executor = new S3SinkExecutor(convertConfig(conf, credentials), badSink, tracker)
+
+  tracker match {
+    case Some(t) => SnowplowTracking.initializeSnowplowTracking(t)
+    case None => None
+  }
+
   executor.run()
 
   /**

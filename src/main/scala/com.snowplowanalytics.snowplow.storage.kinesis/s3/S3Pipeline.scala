@@ -23,15 +23,18 @@ import com.amazonaws.services.kinesis.connectors.interfaces.{
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration
 import com.amazonaws.services.kinesis.connectors.impl.{BasicMemoryBuffer,AllPassFilter}
 
+// Tracker
+import com.snowplowanalytics.snowplow.scalatracker.Tracker
+
 // This project
 import sinks._
 
 /**
  * S3Pipeline class sets up the Emitter/Buffer/Transformer/Filter
  */
-class S3Pipeline(badSink: ISink) extends IKinesisConnectorPipeline[ ValidatedRecord, EmitterInput ] {
+class S3Pipeline(badSink: ISink, tracker: Option[Tracker]) extends IKinesisConnectorPipeline[ ValidatedRecord, EmitterInput ] {
 
-  override def getEmitter(configuration: KinesisConnectorConfiguration) = new S3Emitter(configuration, badSink)
+  override def getEmitter(configuration: KinesisConnectorConfiguration) = new S3Emitter(configuration, badSink, tracker)
 
   override def getBuffer(configuration: KinesisConnectorConfiguration) = new BasicMemoryBuffer[ValidatedRecord](configuration)
 

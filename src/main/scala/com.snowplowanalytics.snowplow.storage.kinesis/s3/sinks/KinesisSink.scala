@@ -51,6 +51,9 @@ import scala.util.{Success, Failure}
 // Logging
 import org.slf4j.LoggerFactory
 
+// Tracker
+import com.snowplowanalytics.snowplow.scalatracker.Tracker
+
 /**
  * Kinesis Sink
  *
@@ -59,7 +62,7 @@ import org.slf4j.LoggerFactory
  * @param name Kinesis stream name
  * @param config Configuration for the Kinesis stream
  */
-class KinesisSink(provider: AWSCredentialsProvider, endpoint: String, name: String)
+class KinesisSink(provider: AWSCredentialsProvider, endpoint: String, name: String, tracker: Option[Tracker])
   extends ISink {
 
   private lazy val log = LoggerFactory.getLogger(getClass())

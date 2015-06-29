@@ -63,4 +63,14 @@ sink {
   logging {
     level: "{{sinkLzoLogLevel}}"
   }
+
+  # Optional section for tracking endpoints
+  monitoring {
+    snowplow {
+      collector-uri: "{{collectorUri}}"
+      collector-port: 80
+      app-id: "{{enrichAppName}}"
+      method: "GET"
+    }
+  }
 }

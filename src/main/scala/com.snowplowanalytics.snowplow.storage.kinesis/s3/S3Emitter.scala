@@ -67,6 +67,9 @@ import org.json4s.JsonDSL._
 import org.joda.time.{DateTime, DateTimeZone}
 import org.joda.time.format.DateTimeFormat
 
+// Tracker
+import com.snowplowanalytics.snowplow.scalatracker.Tracker
+
 // This project
 import sinks._
 
@@ -75,7 +78,7 @@ import sinks._
  *
  * Once the buffer is full, the emit function is called.
  */
-class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink) extends IEmitter[ EmitterInput ] {
+class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, tracker: Option[Tracker]) extends IEmitter[ EmitterInput ] {
 
   /**
    * The amount of time to wait in between unsuccessful index requests (in milliseconds).

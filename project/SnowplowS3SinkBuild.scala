@@ -42,7 +42,8 @@ object SnowplowKinesisEnrichBuild extends Build {
         Libraries.json4sJackson,
         Libraries.collectorPayload,
         Libraries.yodaTime,
-        Libraries.yodaConvert
+        Libraries.yodaConvert,
+        Libraries.snowplowTracker
       )
     )
 }
