@@ -6,11 +6,11 @@ Added retroactive CHANGELOG (#24)
 
 Version 0.2.0 (2015-05-08)
 --------------------------
-Kinesis LZO S3 Sink: removed automatic creation of stream (#1529)
-Kinesis LZO S3 Sink: changed "connector" to "sink" in config (#1473)
-Kinesis LZO S3 Sink: made DynamoDb region configurable (#1582)
-Kinesis LZO S3 Sink: added macros to config.hocon.sample (#1472)
-Kinesis LZO S3 Sink: changed the configuration to use the S3 region instead of the full endpoint URI (#1327)
+Removed automatic creation of stream (#1529)
+Changed "connector" to "sink" in config (#1473)
+Made DynamoDb region configurable (#1582)
+Added macros to config.hocon.sample (#1472)
+Changed the configuration to use the S3 region instead of the full endpoint URI (#1327)
 
 Version 0.1.0 (2014-12-31)
 ---------------------------
