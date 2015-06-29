@@ -24,7 +24,7 @@ object SnowplowKinesisEnrichBuild extends Build {
   }
 
   // Define our project, with basic project information and library dependencies
-  lazy val project = Project("snowplow-lzo-s3-sink", file("."))
+  lazy val project = Project("snowplow-kinesis-s3", file("."))
     .settings(buildSettings: _*)
     .settings(
       libraryDependencies ++= Seq(

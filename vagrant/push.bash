@@ -2,7 +2,7 @@
 set -e
 
 # Constants
-fatjar_prefix=snowplow-lzo-s3-sink
+fatjar_prefix=snowplow-kinesis-s3
 bintray_package=kinesis-s3
 bintray_artifact_prefix=kinesis_s3_
 bintray_user=snowplowbot

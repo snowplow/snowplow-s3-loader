@@ -27,7 +27,7 @@ Assuming you already have [SBT 0.13.0] [sbt] installed:
 The Kinesis S3 LZO Sink has the following command-line interface:
 
 ```
-snowplow-lzo-s3-sink: Version 0.2.1. Copyright (c) 2014, Snowplow Analytics
+snowplow-kinesis-s3: Version 0.2.1. Copyright (c) 2014, Snowplow Analytics
 Ltd.
 
 Usage: snowplow-lzo-s3-sink [OPTIONS]
