@@ -91,11 +91,6 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink) extends I
   val client = new AmazonS3Client(config.AWS_CREDENTIALS_PROVIDER)
   client.setEndpoint(config.S3_ENDPOINT)
 
-  val lzoCodec = new LzopCodec()
-  val conf = new Configuration()
-  conf.set("io.compression.codecs", classOf[LzopCodec].getName)
-  lzoCodec.setConf(conf)
-
   val dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
   /**
