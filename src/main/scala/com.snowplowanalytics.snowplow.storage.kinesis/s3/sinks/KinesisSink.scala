@@ -73,8 +73,7 @@ class KinesisSink(provider: AWSCredentialsProvider, endpoint: String, name: Stri
   private implicit val kinesis = Client.fromClient(client)
 
   // The output stream for enriched events.
-  // Lazy so that it doesn't get created unless we need to write to it.
-  private lazy val enrichedStream = createAndLoadStream()
+  private val stream = createAndLoadStream()
 
   /**
    * Checks if a stream exists.
@@ -133,7 +132,7 @@ class KinesisSink(provider: AWSCredentialsProvider, endpoint: String, name: Stri
    */
   def store(output: String, key: Option[String], good: Boolean) {
     val putData = for {
-      p <- enrichedStream.put(
+      p <- stream.put(
         ByteBuffer.wrap(output.getBytes),
         key.getOrElse(Random.nextInt.toString)
       )
