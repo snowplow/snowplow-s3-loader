@@ -26,7 +26,7 @@ object Dependencies {
     // Java
     val slf4j                = "1.7.6"
     val kinesisClient        = "1.0.0"
-    val kinesisConnector     = "1.1.1"
+    val kinesisConnector     = "1.1.2"
     val hadoop               = "1.2.1"
     val elephantbird         = "4.5"
     // Thrift (test only)
@@ -47,21 +47,21 @@ object Dependencies {
 
   object Libraries {
     // Java
-    val slf4j                = "org.slf4j"                  %  "slf4j-simple"             % V.slf4j
-    val kinesisClient        = "com.amazonaws"              %  "amazon-kinesis-client"    % V.kinesisClient
-    val kinesisConnector     = "com.amazonaws"              %  "amazon-kinesis-connector" % V.kinesisConnector
-    val hadoop               = "org.apache.hadoop"          %  "hadoop-core"              % V.hadoop
-    val elephantbird         = "com.twitter.elephantbird"   %  "elephant-bird-core"       % V.elephantbird
+    val slf4j                = "org.slf4j"                  %  "slf4j-simple"              % V.slf4j
+    val kinesisClient        = "com.amazonaws"              %  "amazon-kinesis-client"     % V.kinesisClient
+    val kinesisConnector     = "com.amazonaws"              %  "amazon-kinesis-connectors" % V.kinesisConnector
+    val hadoop               = "org.apache.hadoop"          %  "hadoop-core"               % V.hadoop
+    val elephantbird         = "com.twitter.elephantbird"   %  "elephant-bird-core"        % V.elephantbird
     // Thrift (test only)
-    val collectorPayload     = "com.snowplowanalytics"      %  "collector-payload-1"      % V.collectorPayload % "test"
+    val collectorPayload     = "com.snowplowanalytics"      %  "collector-payload-1"       % V.collectorPayload % "test"
     // Scala
-    val argot                = "org.clapper"                %% "argot"                    % V.argot
-    val config               = "com.typesafe"               %  "config"                   % V.config
-    val scalazon             = "io.github.cloudify"         %% "scalazon"                 % V.scalazon
-    val json4sJackson        = "org.json4s"                 %% "json4s-jackson"           % V.json4s
-    val scalaz7              = "org.scalaz"                 %% "scalaz-core"              % V.scalaz7
+    val argot                = "org.clapper"                %% "argot"                     % V.argot
+    val config               = "com.typesafe"               %  "config"                    % V.config
+    val scalazon             = "io.github.cloudify"         %% "scalazon"                  % V.scalazon
+    val json4sJackson        = "org.json4s"                 %% "json4s-jackson"            % V.json4s
+    val scalaz7              = "org.scalaz"                 %% "scalaz-core"               % V.scalaz7
     // Scala (test only)
-    val specs2               = "org.specs2"                 %% "specs2"                   % V.specs2         % "test"
-    val scalazSpecs2         = "org.typelevel"              %% "scalaz-specs2"            % V.scalazSpecs2   % "test"
+    val specs2               = "org.specs2"                 %% "specs2"                    % V.specs2         % "test"
+    val scalazSpecs2         = "org.typelevel"              %% "scalaz-specs2"             % V.scalazSpecs2   % "test"
   }
 }
