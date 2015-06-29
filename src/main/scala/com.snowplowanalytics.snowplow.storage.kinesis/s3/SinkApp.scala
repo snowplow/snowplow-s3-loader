@@ -74,6 +74,9 @@ object SinkApp extends App {
   val kinesisSink = conf.getConfig("sink").getConfig("kinesis").getConfig("out")
   val kinesisSinkName = kinesisSink.getString("stream-name")
 
+  val logLevel = conf.getConfig("sink").getConfig("logging").getString("level")
+  System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, logLevel)
+
   val credentialConfig = conf.getConfig("sink").getConfig("aws")
 
   val credentials = CredentialsLookup.getCredentialsProvider(credentialConfig.getString("access-key"), credentialConfig.getString("secret-key"))

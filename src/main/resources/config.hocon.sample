@@ -58,4 +58,9 @@ sink {
     time-limit: {{sinkLzoBufferTimeThreshold}}
   }
 
+  # Set the Logging Level for the S3 Sink
+  # Options: ERROR, WARN, INFO, DEBUG, TRACE
+  logging {
+    level: "{{sinkLzoLogLevel}}"
+  }
 }
