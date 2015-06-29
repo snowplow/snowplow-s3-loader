@@ -80,10 +80,10 @@ class LzoSerializerSpec extends Specification with ValidationMatchers {
       cleanup()
 
       val inputEvents = List(
-        ("raw1", new CollectorPayload("A", "B", 1000, "a", "b").success),
-        ("raw2", new CollectorPayload("X", "Y", 2000, "x", "y").success))
+        new CollectorPayload("A", "B", 1000, "a", "b").success,
+        new CollectorPayload("X", "Y", 2000, "x", "y").success)
 
-      val binaryInputs = inputEvents.map(e => (e._1, e._2.map(x => serializer.serialize(x))))
+      val binaryInputs = inputEvents.map(e => e.map(x => serializer.serialize(x)))
 
       val lzoOutput = LzoSerializer.serialize(binaryInputs)._1
 
@@ -101,7 +101,7 @@ class LzoSerializerSpec extends Specification with ValidationMatchers {
           val target = new CollectorPayload
           deserializer.deserialize(target, rawResult)
 
-          target.success must_== e._2
+          target.success must_== e
         }
       }
     }

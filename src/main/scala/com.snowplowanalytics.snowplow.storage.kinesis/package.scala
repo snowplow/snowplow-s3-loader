@@ -26,14 +26,24 @@ import Scalaz._
 package object s3 {
 
   /**
-   * Tuple containing:
-   *  - the original Kinesis record, base 64 encoded
-   *  - a validated SnowplowRawEvent created from it
+   * Type for a RawRecord
    */
-  type ValidatedRecord = (String, Validation[List[String], Array[Byte]])
+  type RawRecord = Array[Byte]
+
+  /**
+   * Validation for a SnowplowRawEvent
+   */
+  type ValidatedRecord = Validation[FailedRecord, RawRecord]
 
   /**
    * Currently the same as ValidatedRecord, but could change in the future
    */
-  type EmitterInput = (String, Validation[List[String], Array[Byte]])
+  type EmitterInput = Validation[FailedRecord, RawRecord]
+
+  /**
+   * Case class to contain a Failed Record:
+   * - The list of errors
+   * - The original line, Base64 Encoded
+   */
+  case class FailedRecord(errors: List[String], line: String)
 }

@@ -137,7 +137,7 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink) extends I
     objMeta.setContentLength(outputStream.size)
     indexObjMeta.setContentLength(indexOutputStream.size)
 
-    val (successes, failures) = results.partition(_._2.isSuccess)
+    val (successes, failures) = results.partition(_.isSuccess)
 
     log.info(s"Successfully serialized ${successes.size} records out of ${successes.size + failures.size}")
 
@@ -193,12 +193,13 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink) extends I
    * @param records List of failed records to send to Kinesis
    */
   override def fail(records: java.util.List[ EmitterInput ]) {
-    records.asScala.foreach { record =>
-      log.warn(s"Record failed: $record")
+    // TODO: Should there be a check for Successes?
+    for (Failure(record) <- records.toList) {
+      log.warn(s"Record failed: $record.line")
       log.info("Sending failed record to Kinesis")
       val output = compact(render(
-        ("line" -> record._1) ~ 
-        ("errors" -> record._2.swap.getOrElse(Nil)) ~
+        ("line" -> record.line) ~ 
+        ("errors" -> record.errors) ~
         ("failure_tstamp" -> getTimestamp(System.currentTimeMillis()))
       ))
       badSink.store(output, Some("key"), false)

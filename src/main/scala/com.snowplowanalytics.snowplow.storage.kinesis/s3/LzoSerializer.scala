@@ -36,6 +36,9 @@ import com.twitter.elephantbird.mapreduce.io.RawBlockWriter
 import scalaz._
 import Scalaz._
 
+// Apache commons
+import org.apache.commons.codec.binary.Base64
+
 // Logging
 import org.apache.commons.logging.LogFactory
 
@@ -83,18 +86,21 @@ object LzoSerializer {
     val rawBlockWriter = new RawBlockWriter(lzoOutputStream)
 
     // Populate the output stream with records
-    val results = records.map({ record => try {
-        (record._1, record._2.map(r => {
-          rawBlockWriter.write(r)
-          r
-        }))
+    // TODO: Should there be a check for failures?
+    val results = for { 
+      Success(record) <- records 
+    } yield {
+      try {
+        rawBlockWriter.write(record)
+        record.success
       } catch {
         case e: IOException => {
           log.warn(e)
-          (record._1, List("Error writing raw event to output stream: [%s]".format(e.toString)).fail)
+          val base64Record = new String(Base64.encodeBase64(record))
+          FailedRecord(List("Error writing raw event to output stream: [%s]".format(e.toString)), base64Record).fail
         }
       }
-    })
+    }
 
     rawBlockWriter.close
 

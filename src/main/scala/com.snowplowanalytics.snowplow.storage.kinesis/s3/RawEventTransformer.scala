@@ -21,9 +21,6 @@ import com.amazonaws.services.kinesis.connectors.interfaces.ITransformer
 // Thrift libs
 import org.apache.thrift.{TSerializer,TDeserializer}
 
-// Apache commons
-import org.apache.commons.codec.binary.Base64
-
 // Scalaz
 import scalaz._
 import Scalaz._
@@ -35,10 +32,7 @@ class RawEventTransformer extends ITransformer[ ValidatedRecord, EmitterInput ] 
   lazy val serializer = new TSerializer()
   lazy val deserializer = new TDeserializer()
 
-  override def toClass(record: Record): ValidatedRecord = {
-    val recordByteArray = record.getData.array
-    (new String(Base64.encodeBase64(recordByteArray)), recordByteArray.success)
-  }
+  override def toClass(record: Record): ValidatedRecord = record.getData.array.success
 
-  override def fromClass(record: EmitterInput) = record
+  override def fromClass(record: ValidatedRecord) = record
 }
