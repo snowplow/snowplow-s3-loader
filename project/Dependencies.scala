@@ -29,6 +29,8 @@ object Dependencies {
     val kinesisConnector     = "1.1.2"
     val hadoop               = "1.2.1"
     val elephantbird         = "4.5"
+    val yodaTime             = "2.2"
+    val yodaConvert          = "1.2"
     // Thrift (test only)
     val collectorPayload     = "0.0.0"
     // Scala
@@ -52,6 +54,8 @@ object Dependencies {
     val kinesisConnector     = "com.amazonaws"              %  "amazon-kinesis-connectors" % V.kinesisConnector
     val hadoop               = "org.apache.hadoop"          %  "hadoop-core"               % V.hadoop
     val elephantbird         = "com.twitter.elephantbird"   %  "elephant-bird-core"        % V.elephantbird
+    val yodaTime             = "joda-time"                  %  "joda-time"                 % V.yodaTime
+    val yodaConvert          = "org.joda"                   %  "joda-convert"              % V.yodaConvert
     // Thrift (test only)
     val collectorPayload     = "com.snowplowanalytics"      %  "collector-payload-1"       % V.collectorPayload % "test"
     // Scala

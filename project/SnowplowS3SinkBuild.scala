@@ -40,7 +40,9 @@ object SnowplowKinesisEnrichBuild extends Build {
         Libraries.elephantbird,
         Libraries.scalazon,
         Libraries.json4sJackson,
-        Libraries.collectorPayload
+        Libraries.collectorPayload,
+        Libraries.yodaTime,
+        Libraries.yodaConvert
       )
     )
 }

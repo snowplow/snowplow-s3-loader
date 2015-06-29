@@ -63,6 +63,10 @@ import org.json4s._
 import org.json4s.jackson.JsonMethods._
 import org.json4s.JsonDSL._
 
+// Joda-Time
+import org.joda.time.{DateTime, DateTimeZone}
+import org.joda.time.format.DateTimeFormat
+
 // This project
 import sinks._
 
@@ -78,6 +82,9 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink) extends I
    * 10 seconds = 10 * 1000 = 10000
    */
   private val BackoffPeriod = 10000
+
+  // An ISO valid timestamp formatter
+  private val TstampFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(DateTimeZone.UTC)
 
   val bucket = config.S3_BUCKET
   val log = LogFactory.getLog(classOf[S3Emitter])
@@ -192,7 +199,7 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink) extends I
       val output = compact(render(
         ("line" -> record._1) ~ 
         ("errors" -> record._2.swap.getOrElse(Nil)) ~
-        ("failure_tstamp" -> System.currentTimeMillis())
+        ("failure_tstamp" -> getTimestamp(System.currentTimeMillis()))
       ))
       badSink.store(output, Some("key"), false)
     }
@@ -211,4 +218,14 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink) extends I
     }
   }
 
+  /**
+   * Returns an ISO valid timestamp
+   *
+   * @param tstamp The Timestamp to convert
+   * @return the formatted Timestamp
+   */
+  private def getTimestamp(tstamp: Long): String = {
+    val dt = new DateTime(tstamp)
+    TstampFormat.print(dt)
+  }
 }
