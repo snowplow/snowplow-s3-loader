@@ -50,7 +50,7 @@ object SinkApp extends App {
   val parser = new ArgotParser(
     programName = "generated",
     compactUsage = true,
-    preUsage = Some("%s: Version %s. Copyright (c) 2013, %s.".format(
+    preUsage = Some("%s: Version %s. Copyright (c) 2015, %s.".format(
       generated.Settings.name,
       generated.Settings.version,
       generated.Settings.organization)
