@@ -158,10 +158,18 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, tracker: 
           // Retry on failure
           case ase: AmazonServiceException => {
             log.error("S3 could not process the request", ase)
+            tracker match {
+              case Some(t) => SnowplowTracking.sendFailureEvent(t, BackoffPeriod, ase.toString, "lzo-s3")
+              case None => None
+            }
             sleep(BackoffPeriod)
           }
           case NonFatal(e) => {
             log.error("S3Emitter threw an unexpected exception", e)
+            tracker match {
+              case Some(t) => SnowplowTracking.sendFailureEvent(t, BackoffPeriod, e.toString, "lzo-s3")
+              case None => None
+            }
             sleep(BackoffPeriod)
           }
         }

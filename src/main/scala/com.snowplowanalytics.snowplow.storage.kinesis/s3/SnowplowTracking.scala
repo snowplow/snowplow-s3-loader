@@ -81,6 +81,28 @@ object SnowplowTracking {
   }
 
   /**
+   * If a tracker has been configured, send a sink_write_failed event
+   *
+   * @param tracker a Tracker instance
+   * @param lastRetryPeriod The backoff period after a failure
+   * @param message What went wrong
+   * @param sinkType The type of sink in which the failure occured
+   */
+  def sendFailureEvent(
+    tracker: Tracker,
+    lastRetryPeriod: Long,
+    message: String,
+    sinkType: String) {
+
+    tracker.trackUnstructEvent(SelfDescribingJson(
+      "iglu:com.snowplowanalytics.snowplow/sink_write_failed/jsonschema/1-0-0",
+      ("lastRetryPeriod" -> lastRetryPeriod) ~
+      ("sink" -> sinkType) ~
+      ("message" -> message)
+    ))
+  }
+
+  /**
    * Send an application_initialized unstructured event
    *
    * @param tracker a Tracker instance
