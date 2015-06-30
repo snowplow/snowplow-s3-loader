@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2015 Snowplow Analytics Ltd.
+ * Copyright (c) 2014-2015 Snowplow Analytics Ltd.
  * All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
@@ -31,6 +31,13 @@ package object s3 {
   type RawRecord = Array[Byte]
 
   /**
+   * Case class to contain a Failed Record:
+   * - The list of errors
+   * - The original line, Base64 Encoded
+   */
+  case class FailedRecord(errors: List[String], line: String)
+
+  /**
    * Validation for a SnowplowRawEvent
    */
   type ValidatedRecord = Validation[FailedRecord, RawRecord]
@@ -39,11 +46,4 @@ package object s3 {
    * Currently the same as ValidatedRecord, but could change in the future
    */
   type EmitterInput = Validation[FailedRecord, RawRecord]
-
-  /**
-   * Case class to contain a Failed Record:
-   * - The list of errors
-   * - The original line, Base64 Encoded
-   */
-  case class FailedRecord(errors: List[String], line: String)
 }

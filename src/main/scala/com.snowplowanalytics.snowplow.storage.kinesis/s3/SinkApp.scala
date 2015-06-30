@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2014-2015 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -50,7 +50,7 @@ object SinkApp extends App {
   val parser = new ArgotParser(
     programName = "generated",
     compactUsage = true,
-    preUsage = Some("%s: Version %s. Copyright (c) 2015, %s.".format(
+    preUsage = Some("%s: Version %s. Copyright (c) 2014-2015, %s.".format(
       generated.Settings.name,
       generated.Settings.version,
       generated.Settings.organization)
@@ -75,8 +75,8 @@ object SinkApp extends App {
 
   val conf = config.value.getOrElse(throw new RuntimeException("--config argument must be provided"))
 
-  val tracker = if (conf.hasPath("enrich.monitoring.snowplow")) {
-    SnowplowTracking.initializeTracker(conf.getConfig("enrich.monitoring.snowplow")).some
+  val tracker = if (conf.hasPath("sink.monitoring.snowplow")) {
+    SnowplowTracking.initializeTracker(conf.getConfig("sink.monitoring.snowplow")).some
   } else { 
     None
   }

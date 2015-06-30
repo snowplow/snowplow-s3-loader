@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2014-2015 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -96,7 +96,7 @@ object LzoSerializer {
       } catch {
         case e: IOException => {
           log.warn(e)
-          val base64Record = new String(Base64.encodeBase64(record))
+          val base64Record = new String(Base64.encodeBase64(record), "UTF-8")
           FailedRecord(List("Error writing raw event to output stream: [%s]".format(e.toString)), base64Record).fail
         }
       }
