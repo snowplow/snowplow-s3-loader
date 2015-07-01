@@ -37,6 +37,7 @@ import com.snowplowanalytics.snowplow.scalatracker.emitters.AsyncEmitter
 object SnowplowTracking {
 
   private val HeartbeatInterval = 300000L
+  private val StorageType = "AMAZON_S3"
 
   /**
    * Configure a Tracker based on the configuration HOCON
@@ -86,18 +87,16 @@ object SnowplowTracking {
    * @param tracker a Tracker instance
    * @param lastRetryPeriod The backoff period after a failure
    * @param message What went wrong
-   * @param sinkType The type of sink in which the failure occured
    */
   def sendFailureEvent(
     tracker: Tracker,
     lastRetryPeriod: Long,
-    message: String,
-    sinkType: String) {
+    message: String) {
 
     tracker.trackUnstructEvent(SelfDescribingJson(
-      "iglu:com.snowplowanalytics.snowplow/sink_write_failed/jsonschema/1-0-0",
+      "iglu:com.snowplowanalytics.monitoring.kinesis/storage_write_failed/jsonschema/1-0-0",
       ("lastRetryPeriod" -> lastRetryPeriod) ~
-      ("sink" -> sinkType) ~
+      ("storage" -> StorageType) ~
       ("message" -> message)
     ))
   }
@@ -109,7 +108,7 @@ object SnowplowTracking {
    */
   private def trackApplicationInitialization(tracker: Tracker) {
     tracker.trackUnstructEvent(SelfDescribingJson(
-      "iglu:com.snowplowanalytics.snowplow/application_initialized/jsonschema/1-0-0",
+      "iglu:com.snowplowanalytics.monitoring.kinesis/app_initialized/jsonschema/1-0-0",
       JObject(Nil)
     ))
   }
@@ -121,7 +120,7 @@ object SnowplowTracking {
    */
   def trackApplicationShutdown(tracker: Tracker) {
     tracker.trackUnstructEvent(SelfDescribingJson(
-      "iglu:com.snowplowanalytics.snowplow/application_shutdown/jsonschema/1-0-0",
+      "iglu:com.snowplowanalytics.monitoring.kinesis/app_shutdown/jsonschema/1-0-0",
       JObject(Nil)
     ))
   }
@@ -134,7 +133,7 @@ object SnowplowTracking {
    */
   private def trackApplicationHeartbeat(tracker: Tracker, heartbeatInterval: Long) {
     tracker.trackUnstructEvent(SelfDescribingJson(
-      "iglu:com.snowplowanalytics.snowplow/heartbeat/jsonschema/1-0-0",
+      "iglu:com.snowplowanalytics.monitoring.kinesis/app_heartbeat/jsonschema/1-0-0",
       "interval" -> heartbeatInterval
     ))
   }
