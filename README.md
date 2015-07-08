@@ -2,11 +2,21 @@
 
 ## Overview
 
-Consumes records from an [Amazon Kinesis][kinesis] stream, compresses them using [splittable LZO][hadoop-lzo], and writes them to S3.
+The Kinesis S3 Sink consumes records from an [Amazon Kinesis][kinesis] stream, and writes them to S3.
+
+There are 2 file format supported:
+ * LZO
+ * GZip
+
+### LZO
 
 The records are treated as raw byte arrays. [Elephant Bird's][elephant-bird] `BinaryBlockWriter` class is used to serialize them as a [Protocol Buffers][protobufs] array (so it is clear where one record ends and the next begins) before compressing them.
 
-The compression process generates both compressed .lzo files and small .lzo.index files. Each index file contain the byte offsets of the LZO blocks in the corresponding compressed file, meaning that the blocks can be processed in parallel.
+The compression process generates both compressed .lzo files and small .lzo.index files ([splittable LZO][hadoop-lzo]). Each index file contain the byte offsets of the LZO blocks in the corresponding compressed file, meaning that the blocks can be processed in parallel.
+
+### GZip
+
+The records are treated as tab separated rows. New lines are used to separate records written to a file. This format should only be used with Kinesis Enriched stream.
 
 ## Prerequisites
 
