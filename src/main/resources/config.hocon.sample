@@ -45,6 +45,10 @@ sink {
     # http://s3-eu-west-1.amazonaws.com
     region: "{{sinkKinesisS3Region}}"
     bucket: "{{sinkKinesisS3Bucket}}"
+
+    # Format is one of lzo or gzip
+    # Note, that you can use gzip only for enriched data stream.
+    format: "{{sinkKinesisFormat}}"
   }
 
   # Events are accumulated in a buffer before being sent to S3.

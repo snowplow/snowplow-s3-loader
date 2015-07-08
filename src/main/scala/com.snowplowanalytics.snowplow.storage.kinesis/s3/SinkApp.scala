@@ -37,6 +37,7 @@ import Scalaz._
 
 // This project
 import sinks._
+import serializers._
 
 /**
  * The entrypoint class for the Kinesis-S3 Sink applciation.
@@ -96,7 +97,13 @@ object SinkApp extends App {
 
   val badSink = new KinesisSink(credentials, kinesisSinkEndpoint, kinesisSinkName, tracker)
 
-  val executor = new S3SinkExecutor(convertConfig(conf, credentials), badSink, tracker)
+  val serializer = conf.getConfig("sink").getConfig("s3").getString("format") match {
+    case "lzo" => LzoSerializer
+    case "gzip" => GZipSerializer
+    case _ => throw new Exception("Invalid serializer. Check sink.s3.format key in configuration file")
+  }
+
+  val executor = new S3SinkExecutor(convertConfig(conf, credentials), badSink, serializer, tracker)
 
   tracker match {
     case Some(t) => SnowplowTracking.initializeSnowplowTracking(t)
