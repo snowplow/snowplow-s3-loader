@@ -1,8 +1,8 @@
-# Kinesis LZO S3 Sink
+[ ![Release] [release-image] ] [releases] [ ![License] [license-image] ] [license]
 
-## Introduction
+## Overview
 
-The Kinesis LZO S3 Sink consumes records from an [Amazon Kinesis][kinesis] stream, compresses them using [splittable LZO][hadoop-lzo], and writes them to S3.
+Consumes records from an [Amazon Kinesis][kinesis] stream, compresses them using [splittable LZO][hadoop-lzo], and writes them to S3.
 
 The records are treated as raw byte arrays. [Elephant Bird's][elephant-bird] `BinaryBlockWriter` class is used to serialize them as a [Protocol Buffers][protobufs] array (so it is clear where one record ends and the next begins) before compressing them.
 
@@ -65,7 +65,7 @@ Next, start the sink, making sure to specify your new config file:
 
 ## Copyright and license
 
-Copyright 2014-2015 Snowplow Analytics Ltd.
+Kinesis S3 is copyright 2014-2015 Snowplow Analytics Ltd.
 
 Licensed under the [Apache License, Version 2.0] [license] (the "License");
 you may not use this software except in compliance with the License.
@@ -75,6 +75,12 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+[release-image]: http://img.shields.io/badge/release-0.3.0-blue.svg?style=flat
+[releases]: https://github.com/snowplow/kinesis-s3/releases
+
+[license-image]: http://img.shields.io/badge/license-Apache--2-blue.svg?style=flat
+[license]: http://www.apache.org/licenses/LICENSE-2.0
 
 [kinesis]: http://aws.amazon.com/kinesis/
 [snowplow]: http://snowplowanalytics.com
@@ -90,4 +96,3 @@ limitations under the License.
 [techdocs-image]: https://d3i6fms1cm1j0i.cloudfront.net/github/images/techdocs.png
 [setup-image]: https://d3i6fms1cm1j0i.cloudfront.net/github/images/setup.png
 [roadmap-image]: https://d3i6fms1cm1j0i.cloudfront.net/github/images/roadmap.png
-[license]: http://www.apache.org/licenses/LICENSE-2.0
