@@ -81,8 +81,6 @@ import serializers._
  */
 class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, serializer: ISerializer, tracker: Option[Tracker]) extends IEmitter[ EmitterInput ] {
 
-  case class S3MetadataStream(filename: String, metadata: ObjectMetadata, stream: ByteArrayInputStream)
-  
   /**
    * The amount of time to wait in between unsuccessful index requests (in milliseconds).
    * 10 seconds = 10 * 1000 = 10000

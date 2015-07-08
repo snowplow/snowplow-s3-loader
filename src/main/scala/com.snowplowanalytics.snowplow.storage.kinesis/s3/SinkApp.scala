@@ -110,6 +110,8 @@ object SinkApp extends App {
     case None => None
   }
 
+  executor.run()
+
   /**
    * This function converts the config file into the format
    * expected by the Kinesis connector interfaces.
