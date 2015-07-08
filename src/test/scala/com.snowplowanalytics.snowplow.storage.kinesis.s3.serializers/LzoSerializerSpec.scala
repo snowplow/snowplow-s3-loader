@@ -11,7 +11,7 @@
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 package com.snowplowanalytics.snowplow
-package storage.kinesis.s3
+package storage.kinesis.s3.serializers
 
 // Java
 import java.util.Properties
@@ -53,9 +53,6 @@ import scala.collection.JavaConverters._
 // Snowplow
 import com.snowplowanalytics.snowplow.CollectorPayload.thrift.model1.CollectorPayload
 
-// This project
-import sinks._
-
 // Specs2
 import org.specs2.mutable.Specification
 import org.specs2.scalaz.ValidationMatchers
@@ -85,7 +82,9 @@ class LzoSerializerSpec extends Specification with ValidationMatchers {
 
       val binaryInputs = inputEvents.map(e => e.map(x => serializer.serialize(x)))
 
-      val lzoOutput = LzoSerializer.serialize(binaryInputs)._1
+      val serializationResult = LzoSerializer.serialize(binaryInputs, decompressedFilename)
+
+      val lzoOutput = serializationResult.namedStreams.head.stream
 
       lzoOutput.writeTo(new FileOutputStream(compressedFilename))
 

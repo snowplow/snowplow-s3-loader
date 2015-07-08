@@ -72,14 +72,17 @@ import com.snowplowanalytics.snowplow.scalatracker.Tracker
 
 // This project
 import sinks._
+import serializers._
 
 /**
  * Emitter for flushing Kinesis event data to S3.
  *
  * Once the buffer is full, the emit function is called.
  */
-class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, tracker: Option[Tracker]) extends IEmitter[ EmitterInput ] {
+class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, serializer: ISerializer, tracker: Option[Tracker]) extends IEmitter[ EmitterInput ] {
 
+  case class S3MetadataStream(filename: String, metadata: ObjectMetadata, stream: ByteArrayInputStream)
+  
   /**
    * The amount of time to wait in between unsuccessful index requests (in milliseconds).
    * 10 seconds = 10 * 1000 = 10000
@@ -100,9 +103,9 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, tracker: 
    * Determines the filename in S3, which is the corresponding
    * Kinesis sequence range of records in the file.
    */
-  protected def getFileName(firstSeq: String, lastSeq: String, lzoCodec: LzopCodec): String = {
+  protected def getBaseFileName(firstSeq: String, lastSeq: String): String = {
     dateFormat.format(Calendar.getInstance().getTime()) +
-      "-" + firstSeq + "-" + lastSeq + lzoCodec.getDefaultExtension()
+      "-" + firstSeq + "-" + lastSeq
   }
 
   /**
@@ -121,21 +124,11 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, tracker: 
 
     val records = buffer.getRecords().asScala.toList
 
-    val (outputStream, indexOutputStream, lzoCodec, results) = LzoSerializer.serialize(records)
+    val baseFilename = getBaseFileName(buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber)
 
-    val filename = getFileName(buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber, lzoCodec)
-    val indexFilename = filename + ".index"
+    val serializationResults = serializer.serialize(records, baseFilename)
 
-    val obj = new ByteArrayInputStream(outputStream.toByteArray)
-    val indexObj = new ByteArrayInputStream(indexOutputStream.toByteArray)
-
-    val objMeta = new ObjectMetadata()
-    val indexObjMeta = new ObjectMetadata()
-
-    objMeta.setContentLength(outputStream.size)
-    indexObjMeta.setContentLength(indexOutputStream.size)
-
-    val (successes, failures) = results.partition(_.isSuccess)
+    val (successes, failures) = serializationResults.results.partition(_.isSuccess)
 
     log.info(s"Successfully serialized ${successes.size} records out of ${successes.size + failures.size}")
 
@@ -144,16 +137,21 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, tracker: 
      *
      * @return list of inputs which failed to be sent to S3
      */
-    def attemptEmit(): List[EmitterInput] = {
+    def attemptEmit(namedStream: NamedStream) {
       while (true) {
         try {
-          client.putObject(bucket, filename, obj, objMeta)
-          client.putObject(bucket, indexFilename, indexObj, indexObjMeta)
-          log.info(s"Successfully emitted ${successes.size} records to S3 in s3://${bucket}/${filename} with index $indexFilename")
+          val outputStream = namedStream.stream
+          val filename = namedStream.filename
+          val inputStream = new ByteArrayInputStream(outputStream.toByteArray)
+
+          val objMeta = new ObjectMetadata()
+          objMeta.setContentLength(outputStream.size)
+
+          client.putObject(bucket, filename, inputStream, objMeta)
+
+          log.info(s"Successfully emitted ${successes.size} records to S3 in s3://${bucket}/${filename}")
 
           // Return the failed records
-          return failures
-
         } catch {
           // Retry on failure
           case ase: AmazonServiceException => {
@@ -174,12 +172,11 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, tracker: 
           }
         }
       }
-
-      Nil // should never be reached
     }
 
     if (successes.size > 0) {
-      attemptEmit()
+      serializationResults.namedStreams.foreach { attemptEmit(_) }
+      failures
     } else {
       failures
     }
