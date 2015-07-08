@@ -103,7 +103,7 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, serialize
    * Determines the filename in S3, which is the corresponding
    * Kinesis sequence range of records in the file.
    */
-  protected def getBaseFileName(firstSeq: String, lastSeq: String): String = {
+  protected def getBaseFilename(firstSeq: String, lastSeq: String): String = {
     dateFormat.format(Calendar.getInstance().getTime()) +
       "-" + firstSeq + "-" + lastSeq
   }
@@ -124,7 +124,7 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, serialize
 
     val records = buffer.getRecords().asScala.toList
 
-    val baseFilename = getBaseFileName(buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber)
+    val baseFilename = getBaseFilename(buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber)
 
     val serializationResults = serializer.serialize(records, baseFilename)
 
@@ -137,7 +137,7 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, serialize
      *
      * @return list of inputs which failed to be sent to S3
      */
-    def attemptEmit(namedStream: NamedStream) {
+    def attemptEmit(namedStream: NamedStream): Boolean = {
       while (true) {
         try {
           val outputStream = namedStream.stream
@@ -152,6 +152,7 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, serialize
           log.info(s"Successfully emitted ${successes.size} records to S3 in s3://${bucket}/${filename}")
 
           // Return the failed records
+          return true
         } catch {
           // Retry on failure
           case ase: AmazonServiceException => {
@@ -172,6 +173,8 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, serialize
           }
         }
       }
+
+      false
     }
 
     if (successes.size > 0) {

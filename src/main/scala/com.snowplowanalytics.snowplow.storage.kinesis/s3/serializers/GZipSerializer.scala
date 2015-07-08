@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2015 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -16,24 +16,6 @@ import scala.collection.JavaConverters._
 
 import com.snowplowanalytics.snowplow.storage.kinesis.s3._
 
-// Java libs
-import java.io.{
-  OutputStream,
-  DataOutputStream,
-  ByteArrayInputStream,
-  ByteArrayOutputStream,
-  IOException
-}
-import java.util.Calendar
-import java.text.SimpleDateFormat
-
-// Java lzo
-import org.apache.hadoop.conf.Configuration
-import com.hadoop.compression.lzo.LzopCodec
-
-// Elephant bird
-import com.twitter.elephantbird.mapreduce.io.RawBlockWriter
-
 // Scalaz
 import scalaz._
 import Scalaz._
@@ -41,42 +23,28 @@ import Scalaz._
 // Apache commons
 import org.apache.commons.codec.binary.Base64
 
+// Java libs
+import java.io.{
+  ByteArrayOutputStream,
+  IOException
+}
+
 // Logging
 import org.apache.commons.logging.LogFactory
 
-// AWS libs
-import com.amazonaws.AmazonServiceException
-import com.amazonaws.services.s3.AmazonS3Client
-import com.amazonaws.services.s3.model.ObjectMetadata
-
-// AWS Kinesis connector libs
-import com.amazonaws.services.kinesis.connectors.{
-  UnmodifiableBuffer,
-  KinesisConnectorConfiguration
-}
-import com.amazonaws.services.kinesis.connectors.interfaces.IEmitter
+import java.util.zip.GZIPOutputStream
 
 /**
- * Object to handle LZO compression of raw events
+ * Object to handle ZIP compression of raw events
  */
-object LzoSerializer extends ISerializer {
-
-  val log = LogFactory.getLog(getClass)
-
-  val lzoCodec = new LzopCodec()
-  val conf = new Configuration()
-  conf.set("io.compression.codecs", classOf[LzopCodec].getName)
-  lzoCodec.setConf(conf)
-
+object GZipSerializer extends ISerializer {
   def serialize(records: List[ EmitterInput ], baseFilename: String): SerializationResult = {
+    val log = LogFactory.getLog(getClass)
 
-    val indexOutputStream = new ByteArrayOutputStream()
     val outputStream = new ByteArrayOutputStream()
+    val gzipOutputStream = new GZIPOutputStream(outputStream, 64 * 1024)
 
-    // This writes to the underlying outputstream and indexoutput stream
-    val lzoOutputStream = lzoCodec.createIndexedOutputStream(outputStream, new DataOutputStream(indexOutputStream))
-
-    val rawBlockWriter = new RawBlockWriter(lzoOutputStream)
+    var prefix = Array[Byte]()
 
     // Populate the output stream with records
     // TODO: Should there be a check for failures?
@@ -84,7 +52,9 @@ object LzoSerializer extends ISerializer {
       Success(record) <- records 
     } yield {
       try {
-        rawBlockWriter.write(record)
+        gzipOutputStream.write(prefix)
+        gzipOutputStream.write(record)
+        prefix = "\n".getBytes
         record.success
       } catch {
         case e: IOException => {
@@ -95,12 +65,11 @@ object LzoSerializer extends ISerializer {
       }
     }
 
-    rawBlockWriter.close
+    gzipOutputStream.close
 
-    val namedStreams = List(
-      NamedStream(s"$baseFilename.lzo", outputStream),
-      NamedStream(s"$baseFilename.lzo.index", indexOutputStream))
+    val namedStreams = List(NamedStream(s"$baseFilename.tsv.gz", outputStream))
 
     SerializationResult(namedStreams, results)
   }
 }
+

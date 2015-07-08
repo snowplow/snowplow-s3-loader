@@ -24,14 +24,15 @@ import com.snowplowanalytics.snowplow.scalatracker.Tracker
 
 // This project
 import sinks._
+import serializers._
 
 /**
  * Boilerplate class for Kinessis Conenector
  */
-class S3SinkExecutor(config: KinesisConnectorConfiguration, badSink: ISink, tracker: Option[Tracker]) extends KinesisConnectorExecutorBase[ ValidatedRecord, EmitterInput ] {
+class S3SinkExecutor(config: KinesisConnectorConfiguration, badSink: ISink, serializer: ISerializer, tracker: Option[Tracker]) extends KinesisConnectorExecutorBase[ ValidatedRecord, EmitterInput ] {
   super.initialize(config)
 
   override def getKinesisConnectorRecordProcessorFactory = {
-    new KinesisConnectorRecordProcessorFactory[ ValidatedRecord, EmitterInput ](new S3Pipeline(badSink, tracker), config)
+    new KinesisConnectorRecordProcessorFactory[ ValidatedRecord, EmitterInput ](new S3Pipeline(badSink, serializer, tracker), config)
   }
 }

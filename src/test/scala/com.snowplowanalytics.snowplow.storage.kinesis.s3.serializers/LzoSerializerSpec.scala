@@ -68,7 +68,7 @@ class LzoSerializerSpec extends Specification with ValidationMatchers {
       val serializer = new TSerializer
       val deserializer = new TDeserializer
 
-      val decompressedFilename = "/tmp/kinesis-s3-sink-test"
+      val decompressedFilename = "/tmp/kinesis-s3-sink-test-lzo"
 
       val compressedFilename = decompressedFilename + ".lzo"
 
