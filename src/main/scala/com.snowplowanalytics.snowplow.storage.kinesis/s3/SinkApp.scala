@@ -28,6 +28,9 @@ import com.amazonaws.auth.AWSCredentialsProvider
 // AWS Kinesis Connector libs
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration
 
+// Loggings
+import org.apache.commons.logging.LogFactory
+
 // Tracker
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
 
@@ -43,6 +46,8 @@ import serializers._
  * The entrypoint class for the Kinesis-S3 Sink applciation.
  */
 object SinkApp extends App {
+
+  val log = LogFactory.getLog(getClass)
 
   // Argument specifications
   import ArgotConverters._
@@ -165,6 +170,8 @@ object SinkApp extends App {
 
     // The emit method retries sending to S3 indefinitely, so it only needs to be called once
     props.setProperty(KinesisConnectorConfiguration.PROP_RETRY_LIMIT, "1")
+
+    log.info(s"Initializing sink with KinesisConnectorConfiguration: $props")
 
     new KinesisConnectorConfiguration(props, credentials)
   }
