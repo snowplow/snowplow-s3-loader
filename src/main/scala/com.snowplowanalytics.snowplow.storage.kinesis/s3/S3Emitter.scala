@@ -79,7 +79,7 @@ import serializers._
  *
  * Once the buffer is full, the emit function is called.
  */
-class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, serializer: ISerializer, tracker: Option[Tracker]) extends IEmitter[ EmitterInput ] {
+class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, serializer: ISerializer, maxConnectionTime: Long, tracker: Option[Tracker]) extends IEmitter[ EmitterInput ] {
 
   /**
    * The amount of time to wait in between unsuccessful index requests (in milliseconds).
@@ -130,13 +130,22 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, serialize
 
     log.info(s"Successfully serialized ${successes.size} records out of ${successes.size + failures.size}")
 
+    val connectionAttemptStartTime = System.currentTimeMillis()
+
     /**
      * Keep attempting to send the data to S3 until it succeeds
      *
      * @return list of inputs which failed to be sent to S3
      */
     def attemptEmit(namedStream: NamedStream): Boolean = {
+
+      var attemptCount: Long = 1
+
       while (true) {
+        if (attemptCount > 1 && System.currentTimeMillis() - connectionAttemptStartTime > maxConnectionTime) {
+          forceShutdown()
+        }
+
         try {
           val outputStream = namedStream.stream
           val filename = namedStream.filename
@@ -156,22 +165,23 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, serialize
           case ase: AmazonServiceException => {
             log.error("S3 could not process the request", ase)
             tracker match {
-              case Some(t) => SnowplowTracking.sendFailureEvent(t, BackoffPeriod, ase.toString)
+              case Some(t) => SnowplowTracking.sendFailureEvent(t, BackoffPeriod, connectionAttemptStartTime, attemptCount, ase.toString)
               case None => None
             }
+            attemptCount = attemptCount + 1
             sleep(BackoffPeriod)
           }
           case NonFatal(e) => {
             log.error("S3Emitter threw an unexpected exception", e)
             tracker match {
-              case Some(t) => SnowplowTracking.sendFailureEvent(t, BackoffPeriod, e.toString)
+              case Some(t) => SnowplowTracking.sendFailureEvent(t, BackoffPeriod, connectionAttemptStartTime, attemptCount, e.toString)
               case None => None
             }
+            attemptCount = attemptCount + 1
             sleep(BackoffPeriod)
           }
         }
       }
-
       false
     }
 
@@ -181,6 +191,21 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, serialize
     } else {
       failures
     }
+  }
+
+  /**
+   * Terminate the application in a way the KCL cannot stop
+   *
+   * Prevents shutdown hooks from running
+   */
+  private def forceShutdown() {
+    log.error(s"Shutting down application as unable to connect to S3 for over $maxConnectionTime ms")
+    tracker foreach {
+      t =>
+        SnowplowTracking.trackApplicationShutdown(t)
+        sleep(5000)
+    }
+    Runtime.getRuntime.halt(1)
   }
 
   /**

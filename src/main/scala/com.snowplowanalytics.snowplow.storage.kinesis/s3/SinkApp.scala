@@ -82,6 +82,8 @@ object SinkApp extends App {
     None
   }
 
+  val maxConnectionTime = conf.getConfig("sink").getConfig("s3").getLong("max-timeout")
+
   // TODO: make the conf file more like the Elasticsearch equivalent
   val kinesisSinkRegion = conf.getConfig("sink").getConfig("kinesis").getString("region")
   val kinesisSinkEndpoint = s"https://kinesis.${kinesisSinkRegion}.amazonaws.com"
@@ -103,7 +105,7 @@ object SinkApp extends App {
     case _ => throw new Exception("Invalid serializer. Check sink.s3.format key in configuration file")
   }
 
-  val executor = new S3SinkExecutor(convertConfig(conf, credentials), badSink, serializer, tracker)
+  val executor = new S3SinkExecutor(convertConfig(conf, credentials), badSink, serializer, maxConnectionTime, tracker)
 
   tracker match {
     case Some(t) => SnowplowTracking.initializeSnowplowTracking(t)
