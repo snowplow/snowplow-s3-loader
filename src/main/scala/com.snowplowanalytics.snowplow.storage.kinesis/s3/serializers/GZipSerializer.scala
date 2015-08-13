@@ -62,6 +62,12 @@ object GZipSerializer extends ISerializer {
           val base64Record = new String(Base64.encodeBase64(record), "UTF-8")
           FailedRecord(List("Error writing raw event to output stream: [%s]".format(e.toString)), base64Record).fail
         }
+
+        // Need to log OutOfMemoryErrors
+        case t: Throwable => {
+          log.error("Error writing raw stream to output stream", t)
+          throw t
+        }
       }
     }
 
