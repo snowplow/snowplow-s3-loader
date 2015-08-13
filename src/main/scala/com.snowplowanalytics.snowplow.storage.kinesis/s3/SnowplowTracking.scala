@@ -82,7 +82,7 @@ object SnowplowTracking {
   }
 
   /**
-   * If a tracker has been configured, send a sink_write_failed event
+   * If a tracker has been configured, send a storage_write_failed event
    *
    * @param tracker a Tracker instance
    * @param lastRetryPeriod The backoff period after a failure
