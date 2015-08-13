@@ -1,4 +1,8 @@
-[ ![Release] [release-image] ] [releases] [ ![License] [license-image] ] [license]
+# Kinesis S3
+
+[ ![Build Status] [travis-image] ] [travis]
+[ ![Release] [release-image] ] [releases] 
+[ ![License] [license-image] ] [license]
 
 ## Overview
 
@@ -85,6 +89,9 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+[travis-image]: https://travis-ci.org/snowplow/kinesis-s3.png?branch=master
+[travis]: http://travis-ci.org/snowplow/kinesis-s3
 
 [release-image]: http://img.shields.io/badge/release-0.3.0-blue.svg?style=flat
 [releases]: https://github.com/snowplow/kinesis-s3/releases
