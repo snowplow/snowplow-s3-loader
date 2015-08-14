@@ -1,3 +1,14 @@
+Version 0.4.0 (2015-08-14)
+--------------------------
+Changed sink_write_failed to storage_write_failed (#45)
+Fixed S3 outage causing infinite retry loop (#44)
+Improved README (#42)
+Added support for gzip file format, thanks @kazjote! (#43)
+Added Travis button into README (#41)
+Added .travis.yml file to repo (#40)
+Added more logging (#31)
+Ensured OutOfMemoryError is logged (#29)
+
 Version 0.3.0 (2015-07-08)
 --------------------------
 Added NFS and CORE settings to Vagrantfile to improve performance (#36)
