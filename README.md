@@ -99,7 +99,7 @@ limitations under the License.
 [travis-image]: https://travis-ci.org/snowplow/kinesis-s3.png?branch=master
 [travis]: http://travis-ci.org/snowplow/kinesis-s3
 
-[release-image]: http://img.shields.io/badge/release-0.3.0-blue.svg?style=flat
+[release-image]: http://img.shields.io/badge/release-0.4.0-blue.svg?style=flat
 [releases]: https://github.com/snowplow/kinesis-s3/releases
 
 [license-image]: http://img.shields.io/badge/license-Apache--2-blue.svg?style=flat
