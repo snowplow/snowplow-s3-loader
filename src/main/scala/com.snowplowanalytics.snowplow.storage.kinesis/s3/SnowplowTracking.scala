@@ -82,21 +82,27 @@ object SnowplowTracking {
   }
 
   /**
-   * If a tracker has been configured, send a sink_write_failed event
+   * If a tracker has been configured, send a storage_write_failed event
    *
    * @param tracker a Tracker instance
    * @param lastRetryPeriod The backoff period after a failure
+   * @param failureCount the number of consecutive failed writes
+   * @param initialFailureTime Time of the first consecutive failed write
    * @param message What went wrong
    */
   def sendFailureEvent(
     tracker: Tracker,
     lastRetryPeriod: Long,
+    failureCount: Long,
+    initialFailureTime: Long,
     message: String) {
 
     tracker.trackUnstructEvent(SelfDescribingJson(
       "iglu:com.snowplowanalytics.monitoring.kinesis/storage_write_failed/jsonschema/1-0-0",
       ("lastRetryPeriod" -> lastRetryPeriod) ~
       ("storage" -> StorageType) ~
+      ("failureCount" -> failureCount) ~
+      ("initialFailureTime" -> initialFailureTime) ~
       ("message" -> message)
     ))
   }

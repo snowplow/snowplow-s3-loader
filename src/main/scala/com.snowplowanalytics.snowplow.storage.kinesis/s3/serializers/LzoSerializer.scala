@@ -10,9 +10,11 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.snowplowanalytics.snowplow.storage.kinesis.s3
+package com.snowplowanalytics.snowplow.storage.kinesis.s3.serializers
 
 import scala.collection.JavaConverters._
+
+import com.snowplowanalytics.snowplow.storage.kinesis.s3._
 
 // Java libs
 import java.io.{
@@ -57,7 +59,7 @@ import com.amazonaws.services.kinesis.connectors.interfaces.IEmitter
 /**
  * Object to handle LZO compression of raw events
  */
-object LzoSerializer {
+object LzoSerializer extends ISerializer {
 
   val log = LogFactory.getLog(getClass)
 
@@ -66,16 +68,7 @@ object LzoSerializer {
   conf.set("io.compression.codecs", classOf[LzopCodec].getName)
   lzoCodec.setConf(conf)
 
-  /**
-   * Compress a list of Snowplow events
-   *
-   * @param records List of deserialized records
-   * @return Tuple4 containing: the output stream for the .lzo file
-   *                            the output stream for the .lzo.index file
-   *                            the compression codec
-   *                            the list of events
-   */
-  def serialize(records: List[ EmitterInput ]): (ByteArrayOutputStream, ByteArrayOutputStream, LzopCodec, List[EmitterInput]) = {
+  def serialize(records: List[ EmitterInput ], baseFilename: String): SerializationResult = {
 
     val indexOutputStream = new ByteArrayOutputStream()
     val outputStream = new ByteArrayOutputStream()
@@ -99,11 +92,21 @@ object LzoSerializer {
           val base64Record = new String(Base64.encodeBase64(record), "UTF-8")
           FailedRecord(List("Error writing raw event to output stream: [%s]".format(e.toString)), base64Record).fail
         }
+        
+        // Need to log OutOfMemoryErrors
+        case t: Throwable => {
+          log.error("Error writing raw stream to output stream", t)
+          throw t
+        }
       }
     }
 
     rawBlockWriter.close
 
-    (outputStream, indexOutputStream, lzoCodec, results)
+    val namedStreams = List(
+      NamedStream(s"$baseFilename.lzo", outputStream),
+      NamedStream(s"$baseFilename.lzo.index", indexOutputStream))
+
+    SerializationResult(namedStreams, results)
   }
 }

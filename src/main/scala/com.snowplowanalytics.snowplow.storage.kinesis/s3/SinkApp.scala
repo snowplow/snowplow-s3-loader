@@ -28,6 +28,9 @@ import com.amazonaws.auth.AWSCredentialsProvider
 // AWS Kinesis Connector libs
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration
 
+// Loggings
+import org.apache.commons.logging.LogFactory
+
 // Tracker
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
 
@@ -37,11 +40,14 @@ import Scalaz._
 
 // This project
 import sinks._
+import serializers._
 
 /**
  * The entrypoint class for the Kinesis-S3 Sink applciation.
  */
 object SinkApp extends App {
+
+  val log = LogFactory.getLog(getClass)
 
   // Argument specifications
   import ArgotConverters._
@@ -81,6 +87,8 @@ object SinkApp extends App {
     None
   }
 
+  val maxConnectionTime = conf.getConfig("sink").getConfig("s3").getLong("max-timeout")
+
   // TODO: make the conf file more like the Elasticsearch equivalent
   val kinesisSinkRegion = conf.getConfig("sink").getConfig("kinesis").getString("region")
   val kinesisSinkEndpoint = s"https://kinesis.${kinesisSinkRegion}.amazonaws.com"
@@ -96,7 +104,13 @@ object SinkApp extends App {
 
   val badSink = new KinesisSink(credentials, kinesisSinkEndpoint, kinesisSinkName, tracker)
 
-  val executor = new S3SinkExecutor(convertConfig(conf, credentials), badSink, tracker)
+  val serializer = conf.getConfig("sink").getConfig("s3").getString("format") match {
+    case "lzo" => LzoSerializer
+    case "gzip" => GZipSerializer
+    case _ => throw new Exception("Invalid serializer. Check sink.s3.format key in configuration file")
+  }
+
+  val executor = new S3SinkExecutor(convertConfig(conf, credentials), badSink, serializer, maxConnectionTime, tracker)
 
   tracker match {
     case Some(t) => SnowplowTracking.initializeSnowplowTracking(t)
@@ -137,6 +151,8 @@ object SinkApp extends App {
     val recordLimit = buffer.getString("record-limit")
     val timeLimit = buffer.getString("time-limit")
 
+    val maxRecords = kinesisIn.getString("max-records")
+
     props.setProperty(KinesisConnectorConfiguration.PROP_KINESIS_INPUT_STREAM, streamName)
     props.setProperty(KinesisConnectorConfiguration.PROP_KINESIS_ENDPOINT, kEndpoint)
     props.setProperty(KinesisConnectorConfiguration.PROP_APP_NAME, appName)
@@ -156,6 +172,10 @@ object SinkApp extends App {
 
     // The emit method retries sending to S3 indefinitely, so it only needs to be called once
     props.setProperty(KinesisConnectorConfiguration.PROP_RETRY_LIMIT, "1")
+
+    props.setProperty(KinesisConnectorConfiguration.PROP_MAX_RECORDS, maxRecords)
+
+    log.info(s"Initializing sink with KinesisConnectorConfiguration: $props")
 
     new KinesisConnectorConfiguration(props, credentials)
   }

@@ -25,6 +25,9 @@ sink {
       # Note: This only affects the first run of this application
       # on a stream.
       initial-position: "TRIM_HORIZON"
+
+      # Maximum number of records to read per GetRecords call     
+      max-records: {{sinkKinesisMaxRecords}}
     }
 
     out {
@@ -45,6 +48,13 @@ sink {
     # http://s3-eu-west-1.amazonaws.com
     region: "{{sinkKinesisS3Region}}"
     bucket: "{{sinkKinesisS3Bucket}}"
+
+    # Format is one of lzo or gzip
+    # Note, that you can use gzip only for enriched data stream.
+    format: "{{sinkKinesisFormat}}"
+
+    # Maximum Timeout that the application is allowed to fail for
+    max-timeout: {{sinkKinesisMaxTimeout}}
   }
 
   # Events are accumulated in a buffer before being sent to S3.

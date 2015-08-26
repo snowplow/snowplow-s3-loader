@@ -21,6 +21,9 @@ import com.amazonaws.services.kinesis.connectors.interfaces.ITransformer
 // Thrift libs
 import org.apache.thrift.{TSerializer,TDeserializer}
 
+// Loggings
+import org.apache.commons.logging.LogFactory
+
 // Scalaz
 import scalaz._
 import Scalaz._
@@ -29,10 +32,16 @@ import Scalaz._
  * Thrift serializer/deserializer class
  */
 class RawEventTransformer extends ITransformer[ ValidatedRecord, EmitterInput ] {
+
+  val log = LogFactory.getLog(getClass)
+
   lazy val serializer = new TSerializer()
   lazy val deserializer = new TDeserializer()
 
-  override def toClass(record: Record): ValidatedRecord = record.getData.array.success
+  override def toClass(record: Record): ValidatedRecord = {
+    log.info("Converting one record to EmitterInput before adding it to the buffer")
+    record.getData.array.success
+  }
 
   override def fromClass(record: ValidatedRecord) = record
 }

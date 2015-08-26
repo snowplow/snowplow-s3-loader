@@ -72,13 +72,14 @@ import com.snowplowanalytics.snowplow.scalatracker.Tracker
 
 // This project
 import sinks._
+import serializers._
 
 /**
  * Emitter for flushing Kinesis event data to S3.
  *
  * Once the buffer is full, the emit function is called.
  */
-class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, tracker: Option[Tracker]) extends IEmitter[ EmitterInput ] {
+class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, serializer: ISerializer, maxConnectionTime: Long, tracker: Option[Tracker]) extends IEmitter[ EmitterInput ] {
 
   /**
    * The amount of time to wait in between unsuccessful index requests (in milliseconds).
@@ -100,9 +101,9 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, tracker: 
    * Determines the filename in S3, which is the corresponding
    * Kinesis sequence range of records in the file.
    */
-  protected def getFileName(firstSeq: String, lastSeq: String, lzoCodec: LzopCodec): String = {
+  protected def getBaseFilename(firstSeq: String, lastSeq: String): String = {
     dateFormat.format(Calendar.getInstance().getTime()) +
-      "-" + firstSeq + "-" + lastSeq + lzoCodec.getDefaultExtension()
+      "-" + firstSeq + "-" + lastSeq
   }
 
   /**
@@ -121,68 +122,90 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, tracker: 
 
     val records = buffer.getRecords().asScala.toList
 
-    val (outputStream, indexOutputStream, lzoCodec, results) = LzoSerializer.serialize(records)
+    val baseFilename = getBaseFilename(buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber)
 
-    val filename = getFileName(buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber, lzoCodec)
-    val indexFilename = filename + ".index"
+    val serializationResults = serializer.serialize(records, baseFilename)
 
-    val obj = new ByteArrayInputStream(outputStream.toByteArray)
-    val indexObj = new ByteArrayInputStream(indexOutputStream.toByteArray)
-
-    val objMeta = new ObjectMetadata()
-    val indexObjMeta = new ObjectMetadata()
-
-    objMeta.setContentLength(outputStream.size)
-    indexObjMeta.setContentLength(indexOutputStream.size)
-
-    val (successes, failures) = results.partition(_.isSuccess)
+    val (successes, failures) = serializationResults.results.partition(_.isSuccess)
 
     log.info(s"Successfully serialized ${successes.size} records out of ${successes.size + failures.size}")
+
+    val connectionAttemptStartTime = System.currentTimeMillis()
 
     /**
      * Keep attempting to send the data to S3 until it succeeds
      *
      * @return list of inputs which failed to be sent to S3
      */
-    def attemptEmit(): List[EmitterInput] = {
+    def attemptEmit(namedStream: NamedStream): Boolean = {
+
+      var attemptCount: Long = 1
+
       while (true) {
+        if (attemptCount > 1 && System.currentTimeMillis() - connectionAttemptStartTime > maxConnectionTime) {
+          forceShutdown()
+        }
+
         try {
-          client.putObject(bucket, filename, obj, objMeta)
-          client.putObject(bucket, indexFilename, indexObj, indexObjMeta)
-          log.info(s"Successfully emitted ${successes.size} records to S3 in s3://${bucket}/${filename} with index $indexFilename")
+          val outputStream = namedStream.stream
+          val filename = namedStream.filename
+          val inputStream = new ByteArrayInputStream(outputStream.toByteArray)
+
+          val objMeta = new ObjectMetadata()
+          objMeta.setContentLength(outputStream.size)
+
+          client.putObject(bucket, filename, inputStream, objMeta)
+
+          log.info(s"Successfully emitted ${successes.size} records to S3 in s3://${bucket}/${filename}")
 
           // Return the failed records
-          return failures
-
+          return true
         } catch {
           // Retry on failure
           case ase: AmazonServiceException => {
             log.error("S3 could not process the request", ase)
             tracker match {
-              case Some(t) => SnowplowTracking.sendFailureEvent(t, BackoffPeriod, ase.toString)
+              case Some(t) => SnowplowTracking.sendFailureEvent(t, BackoffPeriod, connectionAttemptStartTime, attemptCount, ase.toString)
               case None => None
             }
+            attemptCount = attemptCount + 1
             sleep(BackoffPeriod)
           }
           case NonFatal(e) => {
             log.error("S3Emitter threw an unexpected exception", e)
             tracker match {
-              case Some(t) => SnowplowTracking.sendFailureEvent(t, BackoffPeriod, e.toString)
+              case Some(t) => SnowplowTracking.sendFailureEvent(t, BackoffPeriod, connectionAttemptStartTime, attemptCount, e.toString)
               case None => None
             }
+            attemptCount = attemptCount + 1
             sleep(BackoffPeriod)
           }
         }
       }
-
-      Nil // should never be reached
+      false
     }
 
     if (successes.size > 0) {
-      attemptEmit()
+      serializationResults.namedStreams.foreach { attemptEmit(_) }
+      failures
     } else {
       failures
     }
+  }
+
+  /**
+   * Terminate the application in a way the KCL cannot stop
+   *
+   * Prevents shutdown hooks from running
+   */
+  private def forceShutdown() {
+    log.error(s"Shutting down application as unable to connect to S3 for over $maxConnectionTime ms")
+    tracker foreach {
+      t =>
+        SnowplowTracking.trackApplicationShutdown(t)
+        sleep(5000)
+    }
+    Runtime.getRuntime.halt(1)
   }
 
   /**
