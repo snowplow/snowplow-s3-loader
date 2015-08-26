@@ -1,4 +1,4 @@
-Version 0.4.0 (2015-08-14)
+Version 0.4.0 (2015-08-26)
 --------------------------
 Changed sink_write_failed to storage_write_failed (#45)
 Fixed S3 outage causing infinite retry loop (#44)
