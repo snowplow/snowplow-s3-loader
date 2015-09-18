@@ -44,17 +44,14 @@ object GZipSerializer extends ISerializer {
     val outputStream = new ByteArrayOutputStream()
     val gzipOutputStream = new GZIPOutputStream(outputStream, 64 * 1024)
 
-    var prefix = Array[Byte]()
-
     // Populate the output stream with records
     // TODO: Should there be a check for failures?
     val results = for { 
       Success(record) <- records 
     } yield {
       try {
-        gzipOutputStream.write(prefix)
         gzipOutputStream.write(record)
-        prefix = "\n".getBytes
+        gzipOutputStream.write("\n".getBytes)
         record.success
       } catch {
         case e: IOException => {
