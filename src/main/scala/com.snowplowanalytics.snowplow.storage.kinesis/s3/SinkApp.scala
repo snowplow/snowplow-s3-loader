@@ -119,6 +119,10 @@ object SinkApp extends App {
 
   executor.run()
 
+  // If the stream cannot be found, the KCL's "cw-metrics-publisher" thread will prevent the
+  // application from exiting naturally so we explicitly call System.exit.
+  System.exit(1)
+
   /**
    * This function converts the config file into the format
    * expected by the Kinesis connector interfaces.
