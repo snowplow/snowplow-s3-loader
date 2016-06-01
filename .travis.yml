@@ -3,7 +3,6 @@ scala:
   - 2.10.1
 jdk:
   - oraclejdk7
-  - openjdk7
 
 before_script:
   - echo yes | sudo apt-get install lzop liblzo2-dev
