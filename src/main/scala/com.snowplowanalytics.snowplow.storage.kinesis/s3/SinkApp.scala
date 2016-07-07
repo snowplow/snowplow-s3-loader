@@ -71,7 +71,7 @@ object SinkApp extends App {
 
       val file = new File(c)
       if (file.exists) {
-        ConfigFactory.parseFile(file)
+        ConfigFactory.parseFile(file).resolve()
       } else {
         parser.usage("Configuration file \"%s\" does not exist".format(c))
         ConfigFactory.empty()
