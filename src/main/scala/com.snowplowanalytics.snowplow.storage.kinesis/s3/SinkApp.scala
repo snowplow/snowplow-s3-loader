@@ -58,7 +58,7 @@ object SinkApp extends App {
   }
 
   val conf = parser.parse(args, FileConfig()) match {
-    case Some(c) => ConfigFactory.parseFile(c.config)
+    case Some(c) => ConfigFactory.parseFile(c.config).resolve()
     case None    => ConfigFactory.empty()
   }
 
