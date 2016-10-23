@@ -69,7 +69,7 @@ object SinkApp extends App {
 
   val tracker = if (conf.hasPath("sink.monitoring.snowplow")) {
     SnowplowTracking.initializeTracker(conf.getConfig("sink.monitoring.snowplow")).some
-  } else { 
+  } else {
     None
   }
 
@@ -77,7 +77,7 @@ object SinkApp extends App {
 
   // TODO: make the conf file more like the Elasticsearch equivalent
   val kinesisSinkRegion = conf.getConfig("sink").getConfig("kinesis").getString("region")
-  val kinesisSinkEndpoint = s"https://kinesis.${kinesisSinkRegion}.amazonaws.com"
+  val kinesisSinkEndpoint = getKinesisEndpoint(kinesisSinkRegion)
   val kinesisSink = conf.getConfig("sink").getConfig("kinesis").getConfig("out")
   val kinesisSinkName = kinesisSink.getString("stream-name")
 
@@ -123,7 +123,7 @@ object SinkApp extends App {
     val kinesis = connector.getConfig("kinesis")
     val kinesisIn = kinesis.getConfig("in")
     val kinesisRegion = kinesis.getString("region")
-    val kEndpoint = s"https://kinesis.${kinesisSinkRegion}.amazonaws.com"
+    val kEndpoint = getKinesisEndpoint(kinesisRegion)
     val streamName = kinesisIn.getString("stream-name")
     val initialPosition = kinesisIn.getString("initial-position")
     val appName = kinesis.getString("app-name")
@@ -132,6 +132,7 @@ object SinkApp extends App {
     val s3Region = s3.getString("region")
     val s3Endpoint = s3Region match {
       case "us-east-1" => "https://s3.amazonaws.com"
+      case "cn-north-1" => "https://s3.cn-north-1.amazonaws.com.cn"
       case _ => s"https://s3-$s3Region.amazonaws.com"
     }
     val bucket = s3.getString("bucket")
@@ -170,4 +171,9 @@ object SinkApp extends App {
     new KinesisConnectorConfiguration(props, credentials)
   }
 
+  private def getKinesisEndpoint(region: String): String =
+    region match {
+      case "cn-north-1" => "kinesis.cn-north-1.amazonaws.com.cn"
+      case _ => s"https://kinesis.$region.amazonaws.com"
+    }
 }
