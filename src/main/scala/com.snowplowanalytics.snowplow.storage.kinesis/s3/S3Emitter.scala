@@ -91,19 +91,20 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, serialize
   private val TstampFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(DateTimeZone.UTC)
 
   val bucket = config.S3_BUCKET
+  val streamName = config.KINESIS_INPUT_STREAM
   val log = LogFactory.getLog(classOf[S3Emitter])
   val client = new AmazonS3Client(config.AWS_CREDENTIALS_PROVIDER)
   client.setEndpoint(config.S3_ENDPOINT)
 
-  val dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+  // Files will be uploaded to hourly folders in S3, of format s3://sample-bucket/2015/10/20/01
+  val dateFormat = new SimpleDateFormat("yyyy/MM/dd/HH/");
 
   /**
    * Determines the filename in S3, which is the corresponding
    * Kinesis sequence range of records in the file.
    */
   protected def getBaseFilename(firstSeq: String, lastSeq: String): String = {
-    dateFormat.format(Calendar.getInstance().getTime()) +
-      "-" + firstSeq + "-" + lastSeq
+    streamName + "/" + dateFormat.format(Calendar.getInstance().getTime()) + firstSeq + "-" + lastSeq
   }
 
   /**
@@ -227,7 +228,7 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, serialize
       log.warn(s"Record failed: $record.line")
       log.info("Sending failed record to Kinesis")
       val output = compact(render(
-        ("line" -> record.line) ~ 
+        ("line" -> record.line) ~
         ("errors" -> record.errors) ~
         ("failure_tstamp" -> getTimestamp(System.currentTimeMillis()))
       ))

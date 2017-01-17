@@ -77,13 +77,22 @@ object SinkApp extends App {
         ConfigFactory.empty()
       }
   }
+
+  // Optional in-stream name
+  val streamName = parser.option[String](List("stream-name"),
+                                 "stream name",
+                                 "Kinesis In-Stream Name")
+
   parser.parse(args)
 
   val conf = config.value.getOrElse(throw new RuntimeException("--config argument must be provided"))
+  // Default to the stream specified in the config
+  val inStream = streamName.value.getOrElse(
+    conf.getConfig("sink").getConfig("kinesis").getConfig("in").getString("stream-name"))
 
   val tracker = if (conf.hasPath("sink.monitoring.snowplow")) {
     SnowplowTracking.initializeTracker(conf.getConfig("sink.monitoring.snowplow")).some
-  } else { 
+  } else {
     None
   }
 
@@ -93,7 +102,9 @@ object SinkApp extends App {
   val kinesisSinkRegion = conf.getConfig("sink").getConfig("kinesis").getString("region")
   val kinesisSinkEndpoint = s"https://kinesis.${kinesisSinkRegion}.amazonaws.com"
   val kinesisSink = conf.getConfig("sink").getConfig("kinesis").getConfig("out")
-  val kinesisSinkName = kinesisSink.getString("stream-name")
+
+  // Append _failed to the inStream. Failed messages will be written to this stream.
+  val kinesisSinkName = s"${inStream}_failed"
 
   val logLevel = conf.getConfig("sink").getConfig("logging").getString("level")
   System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, logLevel)
@@ -110,7 +121,7 @@ object SinkApp extends App {
     case _ => throw new Exception("Invalid serializer. Check sink.s3.format key in configuration file")
   }
 
-  val executor = new S3SinkExecutor(convertConfig(conf, credentials), badSink, serializer, maxConnectionTime, tracker)
+  val executor = new S3SinkExecutor(convertConfig(conf, credentials, inStream), badSink, serializer, maxConnectionTime, tracker)
 
   tracker match {
     case Some(t) => SnowplowTracking.initializeSnowplowTracking(t)
@@ -127,10 +138,12 @@ object SinkApp extends App {
    * This function converts the config file into the format
    * expected by the Kinesis connector interfaces.
    *
-   * @param connector The configuration HOCON
+   * @param conf The configuration HOCON
+   * @param credentials AWS Credentials
+   * @param inStream
    * @return A KinesisConnectorConfiguration
    */
-  def convertConfig(conf: Config, credentials: AWSCredentialsProvider): KinesisConnectorConfiguration = {
+  def convertConfig(conf: Config, credentials: AWSCredentialsProvider, inStream: String): KinesisConnectorConfiguration = {
     val props = new Properties()
     val connector = conf.resolve.getConfig("sink")
 
@@ -138,9 +151,12 @@ object SinkApp extends App {
     val kinesisIn = kinesis.getConfig("in")
     val kinesisRegion = kinesis.getString("region")
     val kEndpoint = s"https://kinesis.${kinesisSinkRegion}.amazonaws.com"
-    val streamName = kinesisIn.getString("stream-name")
+    val streamName = inStream
+
     val initialPosition = kinesisIn.getString("initial-position")
-    val appName = kinesis.getString("app-name")
+
+    // KCL creates a Dynamo table with the appName to create the checkpoints
+    val appName =  s"kinesis_s3_$streamName"
 
     val s3 = connector.getConfig("s3")
     val s3Region = s3.getString("region")
