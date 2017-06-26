@@ -39,7 +39,6 @@ object Dependencies {
     val snowplowTracker      = "0.1.0"
     // Scala (test only)
     val specs2               = "2.2"
-    val scalazSpecs2         = "0.1.2"
   }
 
   object Libraries {
@@ -61,6 +60,5 @@ object Dependencies {
     val snowplowTracker  = "com.snowplowanalytics"    %% "snowplow-scala-tracker"    % V.snowplowTracker
     // Scala (test only)
     val specs2           = "org.specs2"               %% "specs2"                    % V.specs2           % "test"
-    val scalazSpecs2     = "org.typelevel"            %% "scalaz-specs2"             % V.scalazSpecs2     % "test"
   }
 }

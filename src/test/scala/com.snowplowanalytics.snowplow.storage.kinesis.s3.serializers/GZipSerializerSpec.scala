@@ -41,9 +41,8 @@ import scala.collection.JavaConverters._
 
 // Specs2
 import org.specs2.mutable.Specification
-import org.specs2.scalaz.ValidationMatchers
 
-class GZipSerializerSpec extends Specification with ValidationMatchers {
+class GZipSerializerSpec extends Specification {
 
   "The GZipSerializer" should {
     "correctly serialize and compress a list of CollectorPayloads" in {
