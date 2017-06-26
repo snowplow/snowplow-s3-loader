@@ -16,9 +16,6 @@ package com.snowplowanalytics.snowplow.storage.kinesis.s3
 import java.io.File
 import java.util.Properties
 
-// Argot
-import org.clapper.argot._
-
 // Config
 import com.typesafe.config.{Config, ConfigFactory}
 
@@ -49,37 +46,26 @@ object SinkApp extends App {
 
   val log = LogFactory.getLog(getClass)
 
-  // Argument specifications
-  import ArgotConverters._
-
-  // General bumf for our app
-  val parser = new ArgotParser(
-    programName = "generated",
-    compactUsage = true,
-    preUsage = Some("%s: Version %s. Copyright (c) 2014-2015, %s.".format(
-      generated.Settings.name,
-      generated.Settings.version,
-      generated.Settings.organization)
-    )
-  )
-
-  // Optional config argument
-  val config = parser.option[Config](List("config"),
-                                     "filename",
-                                     "Configuration file.") {
-    (c, opt) =>
-
-      val file = new File(c)
-      if (file.exists) {
-        ConfigFactory.parseFile(file)
-      } else {
-        parser.usage("Configuration file \"%s\" does not exist".format(c))
-        ConfigFactory.empty()
-      }
+  case class FileConfig(config: File = new File("."))
+  val parser = new scopt.OptionParser[FileConfig](generated.Settings.name) {
+    head(generated.Settings.name, generated.Settings.version)
+    opt[File]("config").required().valueName("<filename>")
+      .action((f: File, c: FileConfig) => c.copy(f))
+      .validate(f =>
+        if (f.exists) success
+        else failure(s"Configuration file $f does not exist")
+      )
   }
-  parser.parse(args)
 
-  val conf = config.value.getOrElse(throw new RuntimeException("--config argument must be provided"))
+  val conf = parser.parse(args, FileConfig()) match {
+    case Some(c) => ConfigFactory.parseFile(c.config)
+    case None    => ConfigFactory.empty()
+  }
+
+  if (conf.isEmpty()) {
+    System.err.println("Empty configuration file")
+    System.exit(1)
+  }
 
   val tracker = if (conf.hasPath("sink.monitoring.snowplow")) {
     SnowplowTracking.initializeTracker(conf.getConfig("sink.monitoring.snowplow")).some

@@ -28,7 +28,7 @@ object SnowplowKinesisEnrichBuild extends Build {
     .settings(buildSettings: _*)
     .settings(
       libraryDependencies ++= Seq(
-        Libraries.argot,
+        Libraries.scopt,
         Libraries.config,
         Libraries.scalaz7,
         Libraries.specs2,
