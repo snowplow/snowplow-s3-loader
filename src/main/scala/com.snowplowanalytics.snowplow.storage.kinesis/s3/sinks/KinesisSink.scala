@@ -26,21 +26,11 @@ import java.nio.ByteBuffer
 import scala.util.Random
 
 // Amazon
-import com.amazonaws.services.kinesis.model.ResourceNotFoundException
+import com.amazonaws.services.kinesis.model._
 import com.amazonaws.auth.AWSCredentialsProvider
 import com.amazonaws.services.kinesis.AmazonKinesisClient
 import com.amazonaws.services.kinesis.AmazonKinesis
 import com.amazonaws.regions._
-
-// Scalazon (for Kinesis interaction)
-import io.github.cloudify.scala.aws.kinesis.Client
-import io.github.cloudify.scala.aws.kinesis.Client.ImplicitExecution._
-import io.github.cloudify.scala.aws.kinesis.Definitions.{
-  Stream,
-  PutResult,
-  Record
-}
-import io.github.cloudify.scala.aws.kinesis.KinesisDsl._
 
 // Concurrent libraries
 import scala.concurrent.{Future,Await,TimeoutException}
@@ -72,30 +62,20 @@ class KinesisSink(provider: AWSCredentialsProvider, endpoint: String, name: Stri
   val client = new AmazonKinesisClient(provider)
   client.setEndpoint(endpoint)
 
-  // Create a Kinesis client for stream interactions.
-  private implicit val kinesis = Client.fromClient(client)
-
-  // The output stream for enriched events.
-  private val stream = createAndLoadStream()
+  if (!streamExists(name)) {
+    throw new RuntimeException(s"Cannot write because stream $name doesn't exist or is not active")
+  }
 
   /**
    * Checks if a stream exists.
    *
    * @param name Name of the stream to look for
-   * @param timeout How long to wait for a description of the stream
    * @return Whether the stream both exists and is active
    */
-  // TODO move out into a kinesis helpers library
-  def streamExists(name: String, timeout: Int = 60): Boolean = {
-
-    val exists: Boolean = try {
-      val streamDescribeFuture = for {
-        s <- Kinesis.stream(name).describe
-      } yield s
-
-      val description = Await.result(streamDescribeFuture, Duration(timeout, SECONDS))
-      description.isActive
-
+  private def streamExists(name: String): Boolean = {
+    val exists = try {
+      val describeStreamResult = client.describeStream(name)
+      describeStreamResult.getStreamDescription.getStreamStatus == "ACTIVE"
     } catch {
       case rnfe: ResourceNotFoundException => false
     }
@@ -109,20 +89,15 @@ class KinesisSink(provider: AWSCredentialsProvider, endpoint: String, name: Stri
     exists
   }
 
-  /**
-   * Creates a new stream if one doesn't exist
-   *
-   * @param How long to wait for the stream to be created
-   * @return The new stream
-   */
-  // TODO move out into a kinesis helpers library
-  def createAndLoadStream(timeout: Int = 60): Stream = {
-
-    if (streamExists(name)) {
-      Kinesis.stream(name)
-    } else {
-      throw new RuntimeException(s"Cannot write because stream $name doesn't exist or is not active")
+  private def put(name: String, data: ByteBuffer, key: String): Future[PutRecordResult] = Future {
+    val putRecordRequest = {
+      val p = new PutRecordRequest()
+      p.setStreamName(name)
+      p.setData(data)
+      p.setPartitionKey(key)
+      p
     }
+    client.putRecord(putRecordRequest)
   }
 
   /**
@@ -133,24 +108,16 @@ class KinesisSink(provider: AWSCredentialsProvider, endpoint: String, name: Stri
    *            record is assigned. Defaults to a random string.
    * @param good Unused parameter which exists to extend ISink
    */
-  def store(output: String, key: Option[String], good: Boolean) {
-    val putData = for {
-      p <- stream.put(
-        ByteBuffer.wrap(output.getBytes),
-        key.getOrElse(Random.nextInt.toString)
-      )
-    } yield p
-
-    putData onComplete {
+  def store(output: String, key: Option[String], good: Boolean): Unit =
+    put(name, ByteBuffer.wrap(output.getBytes), key.getOrElse(Random.nextInt.toString)) onComplete {
       case Success(result) => {
         info(s"Writing successful")
-        info(s"  + ShardId: ${result.shardId}")
-        info(s"  + SequenceNumber: ${result.sequenceNumber}")
+        info(s"  + ShardId: ${result.getShardId}")
+        info(s"  + SequenceNumber: ${result.getSequenceNumber}")
       }
       case Failure(f) => {
         error(s"Writing failed.")
         error(s"  + " + f.getMessage)
       }
     }
-  }
 }

@@ -17,9 +17,7 @@ object Dependencies {
   val resolutionRepos = Seq(
     "Snowplow Analytics Maven releases repo" at "http://maven.snplow.com/releases/",
     "Snowplow Analytics Maven snapshot repo" at "http://maven.snplow.com/snapshots/",
-    "Twitter maven repo"                     at "http://maven.twttr.com/",
-    // For Scalazon
-    "BintrayJCenter"                         at "http://jcenter.bintray.com"
+    "Twitter maven repo"                     at "http://maven.twttr.com/"
   )
 
   object V {
@@ -31,43 +29,38 @@ object Dependencies {
     val elephantbird         = "4.5"
     val yodaTime             = "2.2"
     val yodaConvert          = "1.2"
+    val config               = "1.0.2"
     // Thrift (test only)
     val collectorPayload     = "0.0.0"
     // Scala
     val scopt                = "3.6.0"
-    val config               = "1.0.2"
-    val scalaUtil            = "0.1.0"
-    val scalazon             = "0.5"
     val json4s               = "3.2.11"
     val scalaz7              = "7.2.13"
     val snowplowTracker      = "0.1.0"
     // Scala (test only)
     val specs2               = "2.2"
     val scalazSpecs2         = "0.1.2"
-    // Scala (compile only)
-    val commonsLang3         = "3.1"
   }
 
   object Libraries {
     // Java
-    val slf4j                = "org.slf4j"                  %  "slf4j-simple"              % V.slf4j
-    val kinesisClient        = "com.amazonaws"              %  "amazon-kinesis-client"     % V.kinesisClient
-    val kinesisConnector     = "com.amazonaws"              %  "amazon-kinesis-connectors" % V.kinesisConnector
-    val hadoop               = "org.apache.hadoop"          %  "hadoop-core"               % V.hadoop
-    val elephantbird         = "com.twitter.elephantbird"   %  "elephant-bird-core"        % V.elephantbird
-    val yodaTime             = "joda-time"                  %  "joda-time"                 % V.yodaTime
-    val yodaConvert          = "org.joda"                   %  "joda-convert"              % V.yodaConvert
+    val slf4j            = "org.slf4j"                %  "slf4j-simple"              % V.slf4j
+    val kinesisClient    = "com.amazonaws"            %  "amazon-kinesis-client"     % V.kinesisClient
+    val kinesisConnector = "com.amazonaws"            %  "amazon-kinesis-connectors" % V.kinesisConnector
+    val hadoop           = "org.apache.hadoop"        %  "hadoop-core"               % V.hadoop
+    val elephantbird     = "com.twitter.elephantbird" %  "elephant-bird-core"        % V.elephantbird
+    val yodaTime         = "joda-time"                %  "joda-time"                 % V.yodaTime
+    val yodaConvert      = "org.joda"                 %  "joda-convert"              % V.yodaConvert
+    val config           = "com.typesafe"             %  "config"                    % V.config
     // Thrift (test only)
-    val collectorPayload     = "com.snowplowanalytics"      %  "collector-payload-1"       % V.collectorPayload % "test"
+    val collectorPayload = "com.snowplowanalytics"    %  "collector-payload-1"       % V.collectorPayload % "test"
     // Scala
-    val scopt                = "com.github.scopt"           %% "scopt"                     % V.scopt
-    val config               = "com.typesafe"               %  "config"                    % V.config
-    val scalazon             = "io.github.cloudify"         %% "scalazon"                  % V.scalazon
-    val json4sJackson        = "org.json4s"                 %% "json4s-jackson"            % V.json4s
-    val scalaz7              = "org.scalaz"                 %% "scalaz-core"               % V.scalaz7
-    val snowplowTracker      = "com.snowplowanalytics"      %% "snowplow-scala-tracker"   % V.snowplowTracker
+    val scopt            = "com.github.scopt"         %% "scopt"                     % V.scopt
+    val json4sJackson    = "org.json4s"               %% "json4s-jackson"            % V.json4s
+    val scalaz7          = "org.scalaz"               %% "scalaz-core"               % V.scalaz7
+    val snowplowTracker  = "com.snowplowanalytics"    %% "snowplow-scala-tracker"    % V.snowplowTracker
     // Scala (test only)
-    val specs2               = "org.specs2"                 %% "specs2"                    % V.specs2         % "test"
-    val scalazSpecs2         = "org.typelevel"              %% "scalaz-specs2"             % V.scalazSpecs2   % "test"
+    val specs2           = "org.specs2"               %% "specs2"                    % V.specs2           % "test"
+    val scalazSpecs2     = "org.typelevel"            %% "scalaz-specs2"             % V.scalazSpecs2     % "test"
   }
 }
