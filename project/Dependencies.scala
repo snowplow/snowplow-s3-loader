@@ -39,7 +39,7 @@ object Dependencies {
     val scalaUtil            = "0.1.0"
     val scalazon             = "0.5"
     val json4s               = "3.2.11"
-    val scalaz7              = "7.0.0"
+    val scalaz7              = "7.2.13"
     val snowplowTracker      = "0.1.0"
     // Scala (test only)
     val specs2               = "2.2"

@@ -90,7 +90,7 @@ object LzoSerializer extends ISerializer {
         case e: IOException => {
           log.warn(e)
           val base64Record = new String(Base64.encodeBase64(record), "UTF-8")
-          FailedRecord(List("Error writing raw event to output stream: [%s]".format(e.toString)), base64Record).fail
+          FailedRecord(List("Error writing raw event to output stream: [%s]".format(e.toString)), base64Record).failure
         }
         
         // Need to log OutOfMemoryErrors
