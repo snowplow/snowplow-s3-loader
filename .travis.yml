@@ -1,8 +1,8 @@
 language: scala
 scala:
-  - 2.10.1
+  - 2.11.11
 jdk:
   - oraclejdk7
 
 before_script:
-  - echo yes | sudo apt-get install lzop liblzo2-dev
+  - sudo apt-get install -y lzop liblzo2-dev
