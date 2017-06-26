@@ -26,7 +26,7 @@ object BuildSettings {
     scalacOptions         :=  Seq("-deprecation", "-encoding", "utf8",
                                   "-feature", "-target:jvm-1.7"),
     scalacOptions in Test :=  Seq("-Yrangepos"),
-    resolvers             ++= Dependencies.resolutionRepos
+    resolvers             ++= Dependencies.resolvers
   )
 
   // Makes our SBT app settings available from within the app
