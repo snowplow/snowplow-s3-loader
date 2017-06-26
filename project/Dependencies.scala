@@ -13,10 +13,8 @@
 import sbt._
 
 object Dependencies {
-
-  val resolutionRepos = Seq(
+  val resolvers = Seq(
     "Snowplow Analytics Maven releases repo" at "http://maven.snplow.com/releases/",
-    "Snowplow Analytics Maven snapshot repo" at "http://maven.snplow.com/snapshots/",
     "Twitter maven repo"                     at "http://maven.twttr.com/"
   )
 
@@ -36,7 +34,7 @@ object Dependencies {
     val scopt                = "3.6.0"
     val json4s               = "3.2.11"
     val scalaz7              = "7.2.13"
-    val snowplowTracker      = "0.1.0"
+    val snowplowTracker      = "0.3.0"
     // Scala (test only)
     val specs2               = "3.9.1"
   }
