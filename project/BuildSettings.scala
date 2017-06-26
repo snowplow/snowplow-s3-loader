@@ -59,7 +59,6 @@ object BuildSettings {
         "jsp-api-2.1-6.1.14.jar",
         "servlet-api-2.5-6.1.14.jar",
         "commons-beanutils-1.7.0.jar",
-        "hadoop-lzo-0.4.19.jar",
         "stax-api-1.0.1.jar",
         "commons-collections-3.2.1.jar"
       )

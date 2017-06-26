@@ -37,6 +37,7 @@ object SnowplowKinesisEnrichBuild extends Build {
         Libraries.slf4j,
         Libraries.hadoop,
         Libraries.elephantbird,
+        Libraries.hadoopLZO,
         Libraries.json4sJackson,
         Libraries.collectorPayload,
         Libraries.yodaTime,
