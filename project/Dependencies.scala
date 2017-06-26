@@ -34,7 +34,7 @@ object Dependencies {
     // Thrift (test only)
     val collectorPayload     = "0.0.0"
     // Scala
-    val argot                = "1.0.1"
+    val scopt                = "3.6.0"
     val config               = "1.0.2"
     val scalaUtil            = "0.1.0"
     val scalazon             = "0.5"
@@ -60,7 +60,7 @@ object Dependencies {
     // Thrift (test only)
     val collectorPayload     = "com.snowplowanalytics"      %  "collector-payload-1"       % V.collectorPayload % "test"
     // Scala
-    val argot                = "org.clapper"                %% "argot"                     % V.argot
+    val scopt                = "com.github.scopt"           %% "scopt"                     % V.scopt
     val config               = "com.typesafe"               %  "config"                    % V.config
     val scalazon             = "io.github.cloudify"         %% "scalazon"                  % V.scalazon
     val json4sJackson        = "org.json4s"                 %% "json4s-jackson"            % V.json4s
