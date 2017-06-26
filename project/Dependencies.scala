@@ -27,7 +27,6 @@ object Dependencies {
     val elephantbird     = "4.5"
     val hadoopLZO        = "0.4.20"
     val yodaTime         = "2.2"
-    val yodaConvert      = "1.2"
     val config           = "1.0.2"
     // Thrift (test only)
     val collectorPayload = "0.0.0"
@@ -49,7 +48,6 @@ object Dependencies {
     val elephantbird     = "com.twitter.elephantbird"  %  "elephant-bird-core"        % V.elephantbird
     val hadoopLZO        = "com.hadoop.gplcompression" %  "hadoop-lzo"                % V.hadoopLZO
     val yodaTime         = "joda-time"                 %  "joda-time"                 % V.yodaTime
-    val yodaConvert      = "org.joda"                  %  "joda-convert"              % V.yodaConvert
     val config           = "com.typesafe"              %  "config"                    % V.config
     // Thrift (test only)
     val collectorPayload = "com.snowplowanalytics"     %  "collector-payload-1"       % V.collectorPayload % "test"
