@@ -22,5 +22,5 @@ package com.snowplowanalytics.snowplow.storage.kinesis.s3.sinks
  * Shared interface for all sinks
  */
 trait ISink {
-  def store(output: String, key: Option[String], good: Boolean)
+  def store(output: String, key: Option[String], good: Boolean): Unit
 }

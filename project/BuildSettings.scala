@@ -18,29 +18,44 @@ import Keys._
 object BuildSettings {
 
   // Basic settings for our app
-  lazy val basicSettings = Seq[Setting[_]](
+  lazy val basicSettings = Seq(
     organization          :=  "com.snowplowanalytics",
-    version               :=  "0.4.1",
-    description           :=  "Kinesis LZO sink for S3",
     scalaVersion          :=  "2.11.11",
-    scalacOptions         :=  Seq("-deprecation", "-encoding", "utf8",
-                                  "-feature", "-target:jvm-1.7"),
-    scalacOptions in Test :=  Seq("-Yrangepos"),
+    scalacOptions         :=  compilerOptions,
     resolvers             ++= Dependencies.resolvers
   )
 
+  lazy val compilerOptions = Seq(
+    "-deprecation",
+    "-encoding", "UTF-8",
+    "-feature",
+    "-language:existentials",
+    "-language:higherKinds",
+    "-language:implicitConversions",
+    "-unchecked",
+    "-Yno-adapted-args",
+    "-Ywarn-dead-code",
+    "-Ywarn-numeric-widen",
+    "-Xfuture",
+    "-Xlint"
+  )
+
   // Makes our SBT app settings available from within the app
-  lazy val scalifySettings = Seq(sourceGenerators in Compile <+= (sourceManaged in Compile, version, name, organization) map { (d, v, n, o) =>
-    val file = d / "settings.scala"
-    IO.write(file, """package com.snowplowanalytics.snowplow.storage.kinesis.s3.generated
-      |object Settings {
-      |  val organization = "%s"
-      |  val version = "%s"
-      |  val name = "%s"
-      |}
-      |""".stripMargin.format(o, v, n))
-    Seq(file)
-  })
+  lazy val scalifySettings = Seq(
+    sourceGenerators in Compile += Def.task {
+      val file = (sourceManaged in Compile).value / "settings.scala"
+      IO.write(file, """package com.snowplowanalytics.snowplow.storage.kinesis.s3.generated
+        |object Settings {
+        |  val organization = "%s"
+        |  val version = "%s"
+        |  val name = "%s"
+        |}
+        |""".stripMargin.format(organization.value, version.value, name.value))
+      Seq(file)
+    }.taskValue
+  )
+
+  lazy val buildSettings = basicSettings ++ scalifySettings
 
   // sbt-assembly settings for building a fat jar
   import sbtassembly.Plugin._
@@ -63,6 +78,4 @@ object BuildSettings {
 
     assemblyOption in assembly ~= { _.copy(cacheOutput = false) }
   )
-
-  lazy val buildSettings = basicSettings ++ scalifySettings ++ sbtAssemblySettings
 }

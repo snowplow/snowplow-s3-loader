@@ -17,26 +17,12 @@
  * governing permissions and limitations there under.
  */
 
-package com.snowplowanalytics.snowplow.storage.kinesis
+package com.snowplowanalytics.snowplow.storage.kinesis.s3
 
-// Scalaz
-import scalaz._
-import Scalaz._
+/**
+  * Case class to contain a Failed Record:
+  * - The list of errors
+  * - The original line, Base64 Encoded
+  */
+case class FailedRecord(errors: List[String], line: String)
 
-package object s3 {
-
-  /**
-   * Type for a RawRecord
-   */
-  type RawRecord = Array[Byte]
-
-  /**
-   * Validation for a SnowplowRawEvent
-   */
-  type ValidatedRecord = Validation[FailedRecord, RawRecord]
-
-  /**
-   * Currently the same as ValidatedRecord, but could change in the future
-   */
-  type EmitterInput = Validation[FailedRecord, RawRecord]
-}
