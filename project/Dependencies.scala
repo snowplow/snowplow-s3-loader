@@ -23,7 +23,7 @@ object Dependencies {
     val slf4j            = "1.7.6"
     val kinesisClient    = "1.4.0"
     val kinesisConnector = "1.1.2"
-    val hadoop           = "1.2.1"
+    val hadoop           = "2.7.3"
     val elephantbird     = "4.15"
     val hadoopLZO        = "0.4.20"
     val yodaTime         = "2.9.9"
@@ -44,7 +44,14 @@ object Dependencies {
     val slf4j            = "org.slf4j"                 %  "slf4j-simple"              % V.slf4j
     val kinesisClient    = "com.amazonaws"             %  "amazon-kinesis-client"     % V.kinesisClient
     val kinesisConnector = "com.amazonaws"             %  "amazon-kinesis-connectors" % V.kinesisConnector
-    val hadoop           = "org.apache.hadoop"         %  "hadoop-core"               % V.hadoop
+    val hadoop           = ("org.apache.hadoop"        %  "hadoop-common"             % V.hadoop)
+      .exclude("org.slf4j", "slf4j-log4j12")
+      .exclude("commons-beanutils", "commons-beanutils")
+      .exclude("commons-beanutils", "commons-beanutils-core")
+      .exclude("commons-collections", "commons-collections")
+      .exclude("commons-logging", "commons-logging")
+      .exclude("org.apache.htrace", "htrace-core")
+      .exclude("junit", "junit")
     val elephantbird     = "com.twitter.elephantbird"  %  "elephant-bird-core"        % V.elephantbird
     val hadoopLZO        = "com.hadoop.gplcompression" %  "hadoop-lzo"                % V.hadoopLZO
     val yodaTime         = "joda-time"                 %  "joda-time"                 % V.yodaTime

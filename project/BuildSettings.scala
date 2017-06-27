@@ -51,20 +51,6 @@ object BuildSettings {
     // Name it as an executable
     jarName in assembly := { s"${name.value}-${version.value}" },
 
-    excludedJars in assembly <<= (fullClasspath in assembly) map { cp =>
-      val excludes = Set(
-        "junit-4.8.2.jar",
-        "jsp-2.1-6.1.14.jar",
-        "jasper-compiler-5.5.12.jar",
-        "jsp-api-2.1-6.1.14.jar",
-        "servlet-api-2.5-6.1.14.jar",
-        "commons-beanutils-1.7.0.jar",
-        "stax-api-1.0.1.jar",
-        "commons-collections-3.2.1.jar"
-      )
-      cp filter { jar => excludes(jar.data.getName) }
-    },
-
     mergeStrategy in assembly := {
       case PathList("javax", "servlet", xs @ _*)         => MergeStrategy.first
       case PathList("org", "objectweb", "asm", xs @ _*)  => MergeStrategy.first
