@@ -88,7 +88,7 @@ object SinkApp extends App {
 
   val credentials = CredentialsLookup.getCredentialsProvider(credentialConfig.getString("access-key"), credentialConfig.getString("secret-key"))
 
-  val badSink = new KinesisSink(credentials, kinesisSinkEndpoint, kinesisSinkName, tracker)
+  val badSink = new KinesisSink(credentials, kinesisSinkEndpoint, kinesisSinkRegion, kinesisSinkName, tracker)
 
   val serializer = conf.getConfig("sink").getConfig("s3").getString("format") match {
     case "lzo" => LzoSerializer

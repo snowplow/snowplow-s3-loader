@@ -30,16 +30,15 @@ import org.apache.hadoop.conf.Configuration
 import com.hadoop.compression.lzo.LzopCodec
 
 // Elephant bird
-import com.twitter.elephantbird.mapreduce.io.{
-  ThriftBlockWriter
-}
+import com.twitter.elephantbird.mapreduce.io.ThriftBlockWriter
 
 // Logging
-import org.apache.commons.logging.{Log,LogFactory}
+import org.apache.commons.logging.{Log, LogFactory}
 
 // AWS libs
 import com.amazonaws.AmazonServiceException
-import com.amazonaws.services.s3.AmazonS3Client
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
+import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.amazonaws.services.s3.model.ObjectMetadata
 
 // AWS Kinesis connector libs
@@ -91,9 +90,12 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, serialize
   private val TstampFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(DateTimeZone.UTC)
 
   val bucket = config.S3_BUCKET
-  val log = LogFactory.getLog(classOf[S3Emitter])
-  val client = new AmazonS3Client(config.AWS_CREDENTIALS_PROVIDER)
-  client.setEndpoint(config.S3_ENDPOINT)
+  val log = LogFactory.getLog(getClass)
+  val client = AmazonS3ClientBuilder
+    .standard()
+    .withCredentials(config.AWS_CREDENTIALS_PROVIDER)
+    .withEndpointConfiguration(new EndpointConfiguration(config.S3_ENDPOINT, config.REGION_NAME))
+    .build()
 
   val dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
