@@ -2,7 +2,7 @@ language: scala
 scala:
   - 2.11.11
 jdk:
-  - oraclejdk7
+  - oraclejdk8
 
 before_script:
   - sudo apt-get install -y lzop liblzo2-dev
