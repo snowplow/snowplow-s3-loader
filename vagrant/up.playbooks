@@ -1,4 +1,4 @@
-oss-playbooks/java7.yml
+oss-playbooks/java8.yml
 oss-playbooks/thrift.yml
 oss-playbooks/scala-2.11.6.yml
 oss-playbooks/sbt-13.8.yml
