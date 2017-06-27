@@ -26,5 +26,5 @@ case class SerializationResult(namedStreams: List[NamedStream], results: List[Em
  * Shared interface for all serializers
  */
 trait ISerializer {
-  def serialize(records: List[ EmitterInput ], baseFilename: String): SerializationResult
+  def serialize(records: List[EmitterInput], baseFilename: String): SerializationResult
 }
