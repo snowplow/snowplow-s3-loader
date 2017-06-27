@@ -27,16 +27,14 @@ import java.nio.charset.StandardCharsets.UTF_8
 import scala.util.Random
 
 // Amazon
-import com.amazonaws.services.kinesis.model._
 import com.amazonaws.auth.AWSCredentialsProvider
-import com.amazonaws.services.kinesis.AmazonKinesisClient
-import com.amazonaws.services.kinesis.AmazonKinesis
-import com.amazonaws.regions._
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
+import com.amazonaws.services.kinesis.AmazonKinesisClientBuilder
+import com.amazonaws.services.kinesis.model._
 
 // Concurrent libraries
-import scala.concurrent.{Future,Await,TimeoutException}
+import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
 import scala.util.{Success, Failure}
 
 // Logging
@@ -50,18 +48,27 @@ import com.snowplowanalytics.snowplow.scalatracker.Tracker
  *
  * @param provider AWSCredentialsProvider
  * @param endpoint Kinesis stream endpoint
+ * @param region Kinesis stream region
  * @param name Kinesis stream name
  * @param config Configuration for the Kinesis stream
  */
-class KinesisSink(provider: AWSCredentialsProvider, endpoint: String, name: String, tracker: Option[Tracker])
-  extends ISink {
+class KinesisSink(
+  provider: AWSCredentialsProvider,
+  endpoint: String,
+  region: String,
+  name: String,
+  tracker: Option[Tracker]
+) extends ISink {
 
   private lazy val log = LoggerFactory.getLogger(getClass())
   import log.{error, debug, info, trace}
 
   // Explicitly create a client so we can configure the end point
-  val client = new AmazonKinesisClient(provider)
-  client.setEndpoint(endpoint)
+  val client = AmazonKinesisClientBuilder
+    .standard()
+    .withCredentials(provider)
+    .withEndpointConfiguration(new EndpointConfiguration(endpoint, region))
+    .build()
 
   require(streamExists(name))
 
