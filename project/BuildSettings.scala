@@ -64,24 +64,25 @@ object BuildSettings {
   lazy val buildSettings = basicSettings ++ scalifySettings
 
   // sbt-assembly settings for building a fat jar
-  import sbtassembly.Plugin._
-  import AssemblyKeys._
-  lazy val sbtAssemblySettings = assemblySettings ++ Seq(
+  import sbtassembly.AssemblyPlugin.autoImport._
+  import sbtassembly.AssemblyPlugin.defaultShellScript
+  lazy val sbtAssemblySettings = Seq(
     // Executable jarfile
-    assemblyOption in assembly ~= { _.copy(prependShellScript = Some(defaultShellScript)) },
+    assemblyOption in assembly :=
+      (assemblyOption in assembly).value.copy(prependShellScript = Some(
+        Seq("#!/usr/bin/env sh", """exec java -jar "$0" "$@"""" + "\n")
+      )),
     // Name it as an executable
-    jarName in assembly := { s"${name.value}-${version.value}" },
+    assemblyJarName in assembly := { s"${name.value}-${version.value}" },
 
-    mergeStrategy in assembly := {
+    assemblyMergeStrategy in assembly := {
       case PathList("javax", "servlet", xs @ _*)         => MergeStrategy.first
       case PathList("org", "objectweb", "asm", xs @ _*)  => MergeStrategy.first
       case PathList(ps @ _*) if ps.last endsWith ".html" => MergeStrategy.first
       case "application.conf"                            => MergeStrategy.concat
       case x =>
-        val oldStrategy = (mergeStrategy in assembly).value
+        val oldStrategy = (assemblyMergeStrategy in assembly).value
         oldStrategy(x)
-    },
-
-    assemblyOption in assembly ~= { _.copy(cacheOutput = false) }
+    }
   )
 }
