@@ -26,7 +26,7 @@ object Dependencies {
     val hadoop           = "1.2.1"
     val elephantbird     = "4.5"
     val hadoopLZO        = "0.4.20"
-    val yodaTime         = "2.2"
+    val yodaTime         = "2.9.9"
     val config           = "1.3.1"
     // Thrift (test only)
     val collectorPayload = "0.0.0"
