@@ -44,8 +44,6 @@ import serializers._
  */
 object SinkApp extends App {
 
-  val log = LogFactory.getLog(getClass)
-
   case class FileConfig(config: File = new File("."))
   val parser = new scopt.OptionParser[FileConfig](generated.Settings.name) {
     head(generated.Settings.name, generated.Settings.version)
@@ -86,6 +84,7 @@ object SinkApp extends App {
 
   val logLevel = conf.getConfig("sink").getConfig("logging").getString("level")
   System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, logLevel)
+  val log = LogFactory.getLog(getClass)
 
   val credentialConfig = conf.getConfig("sink").getConfig("aws")
 
