@@ -25,8 +25,8 @@ import com.amazonaws.auth.AWSCredentialsProvider
 // AWS Kinesis Connector libs
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration
 
-// Loggings
-import org.apache.commons.logging.LogFactory
+// SLF4j
+import org.slf4j.LoggerFactory
 
 // Tracker
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
@@ -43,8 +43,6 @@ import serializers._
  * The entrypoint class for the Kinesis-S3 Sink applciation.
  */
 object SinkApp extends App {
-
-  val log = LogFactory.getLog(getClass)
 
   case class FileConfig(config: File = new File("."))
   val parser = new scopt.OptionParser[FileConfig](generated.Settings.name) {
@@ -83,6 +81,7 @@ object SinkApp extends App {
 
   val logLevel = conf.getConfig("sink").getConfig("logging").getString("level")
   System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, logLevel)
+  val log = LoggerFactory.getLogger(getClass)
 
   val credentialConfig = conf.getConfig("sink").getConfig("aws")
 

@@ -29,9 +29,6 @@ import java.io.{
   IOException
 }
 
-// Logging
-import org.apache.commons.logging.LogFactory
-
 import java.util.zip.GZIPOutputStream
 
 /**
@@ -39,8 +36,6 @@ import java.util.zip.GZIPOutputStream
  */
 object GZipSerializer extends ISerializer {
   def serialize(records: List[ EmitterInput ], baseFilename: String): SerializationResult = {
-    val log = LogFactory.getLog(getClass)
-
     val outputStream = new ByteArrayOutputStream()
     val gzipOutputStream = new GZIPOutputStream(outputStream, 64 * 1024)
 

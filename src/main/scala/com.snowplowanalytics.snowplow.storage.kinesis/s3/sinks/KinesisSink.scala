@@ -60,8 +60,7 @@ class KinesisSink(
   tracker: Option[Tracker]
 ) extends ISink {
 
-  private lazy val log = LoggerFactory.getLogger(getClass())
-  import log.{error, debug, info, trace}
+  private val log = LoggerFactory.getLogger(getClass)
 
   // Explicitly create a client so we can configure the end point
   val client = AmazonKinesisClientBuilder
@@ -87,9 +86,9 @@ class KinesisSink(
     }
 
     if (exists) {
-      info(s"Stream $name exists and is active")
+      log.info(s"Stream $name exists and is active")
     } else {
-      info(s"Stream $name doesn't exist or is not active")
+      log.info(s"Stream $name doesn't exist or is not active")
     }
 
     exists

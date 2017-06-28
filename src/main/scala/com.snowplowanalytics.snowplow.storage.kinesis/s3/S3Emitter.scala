@@ -32,8 +32,8 @@ import com.hadoop.compression.lzo.LzopCodec
 // Elephant bird
 import com.twitter.elephantbird.mapreduce.io.ThriftBlockWriter
 
-// Logging
-import org.apache.commons.logging.{Log, LogFactory}
+// SLF4j
+import org.slf4j.LoggerFactory
 
 // AWS libs
 import com.amazonaws.AmazonServiceException
@@ -90,7 +90,7 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, serialize
   private val TstampFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(DateTimeZone.UTC)
 
   val bucket = config.S3_BUCKET
-  val log = LogFactory.getLog(getClass)
+  val log = LoggerFactory.getLogger(getClass)
   val client = AmazonS3ClientBuilder
     .standard()
     .withCredentials(config.AWS_CREDENTIALS_PROVIDER)
@@ -123,11 +123,8 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, serialize
     log.info(s"Flushing buffer with ${buffer.getRecords.size} records.")
 
     val records = buffer.getRecords().asScala.toList
-
     val baseFilename = getBaseFilename(buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber)
-
     val serializationResults = serializer.serialize(records, baseFilename)
-
     val (successes, failures) = serializationResults.results.partition(_.isSuccess)
 
     log.info(s"Successfully serialized ${successes.size} records out of ${successes.size + failures.size}")
