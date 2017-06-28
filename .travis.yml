@@ -6,3 +6,16 @@ jdk:
 
 before_script:
   - sudo apt-get install -y lzop liblzo2-dev
+
+before_deploy: pip install --user release-manager==0.2.0
+deploy:
+  - provider: script
+    script: release-manager --config .release.yml --make-artifact --upload-artifact --check-version
+    skip_cleanup: true
+    on:
+      tags: true
+
+env:
+  global:
+    - BINTRAY_SNOWPLOW_GENERIC_USER
+    - BINTRAY_SNOWPLOW_GENERIC_API_KEY
