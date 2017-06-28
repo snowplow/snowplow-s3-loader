@@ -41,9 +41,6 @@ import Scalaz._
 // Apache commons
 import org.apache.commons.codec.binary.Base64
 
-// Logging
-import org.apache.commons.logging.LogFactory
-
 // AWS libs
 import com.amazonaws.AmazonServiceException
 import com.amazonaws.services.s3.AmazonS3Client
@@ -60,8 +57,6 @@ import com.amazonaws.services.kinesis.connectors.interfaces.IEmitter
  * Object to handle LZO compression of raw events
  */
 object LzoSerializer extends ISerializer {
-
-  val log = LogFactory.getLog(getClass)
 
   val lzoCodec = new LzopCodec()
   val conf = new Configuration()

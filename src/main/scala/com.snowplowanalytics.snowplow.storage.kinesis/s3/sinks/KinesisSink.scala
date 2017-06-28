@@ -59,8 +59,7 @@ class KinesisSink(
   tracker: Option[Tracker]
 ) extends ISink {
 
-  private lazy val log = LoggerFactory.getLogger(getClass())
-  import log.{error, debug, info, trace}
+  private val log = LoggerFactory.getLogger(getClass)
 
   // Explicitly create a client so we can configure the end point
   val client = AmazonKinesisClientBuilder
@@ -88,9 +87,9 @@ class KinesisSink(
     }
 
     if (exists) {
-      info(s"Stream $name exists and is active")
+      log.info(s"Stream $name exists and is active")
     } else {
-      info(s"Stream $name doesn't exist or is not active")
+      log.info(s"Stream $name doesn't exist or is not active")
     }
 
     exists
@@ -118,13 +117,13 @@ class KinesisSink(
   def store(output: String, key: Option[String], good: Boolean): Unit =
     put(name, ByteBuffer.wrap(output.getBytes), key.getOrElse(Random.nextInt.toString)) onComplete {
       case Success(result) => {
-        info(s"Writing successful")
-        info(s"  + ShardId: ${result.getShardId}")
-        info(s"  + SequenceNumber: ${result.getSequenceNumber}")
+        log.info(s"Writing successful")
+        log.info(s"  + ShardId: ${result.getShardId}")
+        log.info(s"  + SequenceNumber: ${result.getSequenceNumber}")
       }
       case Failure(f) => {
-        error(s"Writing failed.")
-        error(s"  + " + f.getMessage)
+        log.error(s"Writing failed.")
+        log.error(s"  + " + f.getMessage)
       }
     }
 }
