@@ -20,14 +20,8 @@ import com.snowplowanalytics.snowplow.storage.kinesis.s3._
 import scalaz._
 import Scalaz._
 
-// Apache commons
-import org.apache.commons.codec.binary.Base64
-
 // Java libs
-import java.io.{
-  ByteArrayOutputStream,
-  IOException
-}
+import java.io.ByteArrayOutputStream
 
 // Logging
 import org.apache.commons.logging.LogFactory
@@ -45,26 +39,14 @@ object GZipSerializer extends ISerializer {
     val gzipOutputStream = new GZIPOutputStream(outputStream, 64 * 1024)
 
     // Populate the output stream with records
-    // TODO: Should there be a check for failures?
-    val results = for { 
-      Success(record) <- records 
-    } yield {
-      try {
-        gzipOutputStream.write(record)
-        gzipOutputStream.write("\n".getBytes)
-        record.success
-      } catch {
-        case e: IOException => {
-          log.warn(e)
-          val base64Record = new String(Base64.encodeBase64(record), "UTF-8")
-          FailedRecord(List("Error writing raw event to output stream: [%s]".format(e.toString)), base64Record).failure
-        }
-
-        // Need to log OutOfMemoryErrors
-        case t: Throwable => {
-          log.error("Error writing raw stream to output stream", t)
-          throw t
-        }
+    val results = records.map { v =>
+      v match {
+        case Success(r) => serializeRecord(r, gzipOutputStream,
+          (g: GZIPOutputStream) => {
+            g.write(r)
+            g.write("\n".getBytes)
+          })
+        case f => f
       }
     }
 
