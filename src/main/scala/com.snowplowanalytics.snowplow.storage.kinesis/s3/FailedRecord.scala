@@ -19,9 +19,9 @@
 
 package com.snowplowanalytics.snowplow.storage.kinesis.s3
 
-  /**
-   * Case class to contain a Failed Record:
-   * - The list of errors
-   * - The original line, Base64 Encoded
-   */
-  case class FailedRecord(errors: List[String], line: String)
+/**
+  * Case class to contain a Failed Record:
+  * - The list of errors
+  * - The original line, Base64 Encoded
+  */
+case class FailedRecord(errors: List[String], line: String)
