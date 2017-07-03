@@ -15,7 +15,7 @@
 lazy val root = project.in(file("."))
   .settings(
     name        := "snowplow-kinesis-s3",
-    version     := "0.4.1",
+    version     := "0.5.0",
     description := "Kinesis sink for S3"
   )
   .settings(BuildSettings.buildSettings)
