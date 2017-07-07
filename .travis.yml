@@ -1,8 +1,21 @@
 language: scala
 scala:
-  - 2.10.1
+  - 2.11.11
 jdk:
-  - oraclejdk7
+  - oraclejdk8
 
 before_script:
-  - echo yes | sudo apt-get install lzop liblzo2-dev
+  - sudo apt-get install -y lzop liblzo2-dev
+
+before_deploy: pip install --user release-manager==0.2.0
+deploy:
+  - provider: script
+    script: release-manager --config .release.yml --make-artifact --upload-artifact --check-version
+    skip_cleanup: true
+    on:
+      tags: true
+
+env:
+  global:
+  - secure: hJTWoOYgFMNaTZZ8gpIVl+SZQS5INschfkUUReuGXAzifaXTvT8J5a/aGryJqEOh/zMEOhKRZn136aHzMMnMDxoOkO4uSXnHnhi61DZHsbaZ51g0YvIjnJyS49ad+IKoIFJlcTKAMjvd+HK3TOHkkcWA/cc7EJWYbYwPEu3xfpkick6Y2+oQd3LYANS4wmTcVYMYKF08teQW3w0XqErHrxb7prIz7lEF8uC9BHHmUYfGEvdVLmphpsP/jJBPB+TB5IRwarEyEBaITEcVL/qeDRM3FxhErY6JI9omT6QRevO9dHx2mfpQFITCjeRf9IjJBiSr7fGVGUusxJSRqg1gMbGyImwUX4a13PaV0ACL1OUHCC3hQa3Rmoh0ObQBJ37rBvkyNKuEjJmt2bX7BMC5Ck7duJFNJhGqWiFpHyZV4MM8oYn+29OcJ7Ju03Qr6MXt04+iD3CjctHI9cbCe4mYuYJcyFYi847PaLicNqDg3Cj2Q2m8KzE9guBSY2PCUvxxFLR0LGFhXXtQYg2LxrAn8pnBE5QNVr6LQ9aoeQLYUscBCjMFyVNpciRLt/IPvzZRGL3vKiKwgJqxaV7CE1LXoTbIUTwCB8jnsqlSOPJbJQCciHA31GlFKz/m7kRRkI8G0Geie7leWjM6G7Pfr3aKXKpTw7HkN9F87AYJ47/YcFU=
+  - secure: LdhTiGwDK5BivJ+/j4CLCMNGSkWN4WiTQRGGrFf2L7wSI2fdOtZTQUcKVCZolvyd6V296BLbPYxgoXs1hdDCQb/jyoQCiWDC54XuJun4gGiKko04ZY7/UCUDQ2oo6995+UcKlvQKhqL9mvGT6stuBIUefB/r+/dQhwR+L9ehFlAiOXDFEzRh3BYgIZDnbJbMvjRptzqz/d88iC7un9e+wf+F8qyObjwJ+7RrL6rddvXg1HUyv0Kt8Yv16uSlFJPuY3fyTqDmiGbm2bYqM7cUVGRokTUOwqwtBhW/uJ071r6SlTxpTNzTJARRV2KvIT+cMvNJflvFZLOL7A55fKfpTDxWCsXcbKu3D842lppqlGH4O+GM5G3+fArSnjHmFhVRwhNMsHlGG/brXHerhCPGb2+hkIaIg/sopWP+OoEWZvlRUihv9nOLTCCZy4F45dz/B38XRM9vXZscw1nX5uu/f4LvRtOIsinOHpOCFWtxloh8qWGarcvj0Q6Ix4f/rb4L/ZIN5PthZJVEswchSK9Ee4b6Pt0EIsM2gEPjdQ5RXvYb0IWRVxbgJH7ljtk+WxHDfr67gvLAzrD2X2bKQCp+mJ3xGdiH+Ddu1r8Pb/Z6g4icFAxBWQYaSuw2etvNNGcH+Y77R7Q+Q5Hbp8omXXBj243uje/zZpNwlEeoaVbOms4=

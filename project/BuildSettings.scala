@@ -18,66 +18,70 @@ import Keys._
 object BuildSettings {
 
   // Basic settings for our app
-  lazy val basicSettings = Seq[Setting[_]](
+  lazy val basicSettings = Seq(
     organization          :=  "com.snowplowanalytics",
-    version               :=  "0.4.1",
-    description           :=  "Kinesis LZO sink for S3",
-    scalaVersion          :=  "2.10.1",
-    scalacOptions         :=  Seq("-deprecation", "-encoding", "utf8",
-                                  "-feature", "-target:jvm-1.7"),
-    scalacOptions in Test :=  Seq("-Yrangepos"),
-    resolvers             ++= Dependencies.resolutionRepos
+    scalaVersion          :=  "2.11.11",
+    scalacOptions         :=  compilerOptions,
+    javacOptions          :=  javaCompilerOptions,
+    resolvers             ++= Dependencies.resolvers
+  )
+
+  lazy val compilerOptions = Seq(
+    "-deprecation",
+    "-encoding", "UTF-8",
+    "-feature",
+    "-language:existentials",
+    "-language:higherKinds",
+    "-language:implicitConversions",
+    "-unchecked",
+    "-Yno-adapted-args",
+    "-Ywarn-dead-code",
+    "-Ywarn-numeric-widen",
+    "-Xfuture",
+    "-Xlint"
+  )
+
+  lazy val javaCompilerOptions = Seq(
+    "-source", "1.8",
+    "-target", "1.8"
   )
 
   // Makes our SBT app settings available from within the app
-  lazy val scalifySettings = Seq(sourceGenerators in Compile <+= (sourceManaged in Compile, version, name, organization) map { (d, v, n, o) =>
-    val file = d / "settings.scala"
-    IO.write(file, """package com.snowplowanalytics.snowplow.storage.kinesis.s3.generated
-      |object Settings {
-      |  val organization = "%s"
-      |  val version = "%s"
-      |  val name = "%s"
-      |}
-      |""".stripMargin.format(o, v, n))
-    Seq(file)
-  })
+  lazy val scalifySettings = Seq(
+    sourceGenerators in Compile += Def.task {
+      val file = (sourceManaged in Compile).value / "settings.scala"
+      IO.write(file, """package com.snowplowanalytics.snowplow.storage.kinesis.s3.generated
+        |object Settings {
+        |  val organization = "%s"
+        |  val version = "%s"
+        |  val name = "%s"
+        |}
+        |""".stripMargin.format(organization.value, version.value, name.value))
+      Seq(file)
+    }.taskValue
+  )
+
+  lazy val buildSettings = basicSettings ++ scalifySettings
 
   // sbt-assembly settings for building a fat jar
-  import sbtassembly.Plugin._
-  import AssemblyKeys._
-  lazy val sbtAssemblySettings = assemblySettings ++ Seq(
+  import sbtassembly.AssemblyPlugin.autoImport._
+  lazy val sbtAssemblySettings = Seq(
     // Executable jarfile
-    assemblyOption in assembly ~= { _.copy(prependShellScript = Some(defaultShellScript)) },
+    assemblyOption in assembly :=
+      (assemblyOption in assembly).value.copy(prependShellScript = Some(
+        Seq("#!/usr/bin/env sh", """exec java -jar "$0" "$@"""" + "\n")
+      )),
     // Name it as an executable
-    jarName in assembly := { s"${name.value}-${version.value}" },
+    assemblyJarName in assembly := { s"${name.value}-${version.value}" },
 
-    excludedJars in assembly <<= (fullClasspath in assembly) map { cp =>
-      val excludes = Set(
-        "junit-4.8.2.jar",
-        "jsp-2.1-6.1.14.jar",
-        "jasper-compiler-5.5.12.jar",
-        "jsp-api-2.1-6.1.14.jar",
-        "servlet-api-2.5-6.1.14.jar",
-        "commons-beanutils-1.7.0.jar",
-        "hadoop-lzo-0.4.19.jar",
-        "stax-api-1.0.1.jar",
-        "commons-collections-3.2.1.jar"
-      )
-      cp filter { jar => excludes(jar.data.getName) }
-    },
-
-    mergeStrategy in assembly := {
+    assemblyMergeStrategy in assembly := {
       case PathList("javax", "servlet", xs @ _*)         => MergeStrategy.first
       case PathList("org", "objectweb", "asm", xs @ _*)  => MergeStrategy.first
       case PathList(ps @ _*) if ps.last endsWith ".html" => MergeStrategy.first
       case "application.conf"                            => MergeStrategy.concat
       case x =>
-        val oldStrategy = (mergeStrategy in assembly).value
+        val oldStrategy = (assemblyMergeStrategy in assembly).value
         oldStrategy(x)
-    },
-
-    assemblyOption in assembly ~= { _.copy(cacheOutput = false) }
+    }
   )
-
-  lazy val buildSettings = basicSettings ++ scalifySettings ++ sbtAssemblySettings
 }

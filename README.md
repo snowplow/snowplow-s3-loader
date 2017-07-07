@@ -1,8 +1,8 @@
 # Kinesis S3
 
-[ ![Build Status] [travis-image] ] [travis]
-[ ![Release] [release-image] ] [releases] 
-[ ![License] [license-image] ] [license]
+[![Build Status][travis-image]][travis]
+[![Release][release-image]][releases] 
+[![License][license-image]][license]
 
 ## Overview
 
@@ -24,7 +24,7 @@ The records are treated as byte arrays containing UTF-8 encoded strings (whether
 
 ## Quickstart
 
-Assuming git, **[Vagrant] [vagrant-install]** and **[VirtualBox] [virtualbox-install]** installed:
+Assuming git, **[Vagrant][vagrant-install]** and **[VirtualBox][virtualbox-install]** installed:
 
 ```bash
  host$ git clone https://github.com/snowplow/kinesis-s3.git
@@ -49,14 +49,11 @@ NOTE: These are already installed in the Vagrant quickstart environment.
 The Kinesis S3 LZO Sink has the following command-line interface:
 
 ```
-snowplow-kinesis-s3: Version 0.4.1. Copyright (c) 2014-2015, Snowplow Analytics
-Ltd.
+snowplow-kinesis-s3: Version 0.5.0
 
-Usage: snowplow-lzo-s3-sink [OPTIONS]
+Usage: snowplow-kinesis-s3 [options]
 
-OPTIONS
---config filename
-                   Configuration file.
+--config <filename>
 ```
 
 ## Running
@@ -78,16 +75,16 @@ guest$ sbt "run --config my.conf"
     
 ## Find out more
 
-| Technical Docs              | Setup Guide           | Roadmap & Contributing               |         
-|-----------------------------|-----------------------|--------------------------------------|
-| ![i1] [techdocs-image]      | ![i2] [setup-image]   | ![i3] [roadmap-image]                |
-| [Technical Docs] [techdocs] | [Setup Guide] [setup] | _coming soon_                        |
+| Technical Docs             | Setup Guide          | Roadmap & Contributing |
+|----------------------------|----------------------|------------------------|
+| ![i1][techdocs-image]      | ![i2][setup-image]   | ![i3][roadmap-image]   |
+| [Technical Docs][techdocs] | [Setup Guide][setup] | _coming soon_          |
 
 ## Copyright and license
 
-Kinesis S3 is copyright 2014-2015 Snowplow Analytics Ltd.
+Kinesis S3 is copyright 2014-2017 Snowplow Analytics Ltd.
 
-Licensed under the [Apache License, Version 2.0] [license] (the "License");
+Licensed under the [Apache License, Version 2.0][license] (the "License");
 you may not use this software except in compliance with the License.
 
 Unless required by applicable law or agreed to in writing, software
@@ -99,7 +96,7 @@ limitations under the License.
 [travis-image]: https://travis-ci.org/snowplow/kinesis-s3.png?branch=master
 [travis]: http://travis-ci.org/snowplow/kinesis-s3
 
-[release-image]: http://img.shields.io/badge/release-0.4.1-blue.svg?style=flat
+[release-image]: http://img.shields.io/badge/release-0.5.0-blue.svg?style=flat
 [releases]: https://github.com/snowplow/kinesis-s3/releases
 
 [license-image]: http://img.shields.io/badge/license-Apache--2-blue.svg?style=flat

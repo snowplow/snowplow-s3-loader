@@ -21,8 +21,7 @@ import java.io.{
   OutputStream,
   DataOutputStream,
   ByteArrayInputStream,
-  ByteArrayOutputStream,
-  IOException
+  ByteArrayOutputStream
 }
 import java.util.Calendar
 import java.text.SimpleDateFormat
@@ -37,12 +36,6 @@ import com.twitter.elephantbird.mapreduce.io.RawBlockWriter
 // Scalaz
 import scalaz._
 import Scalaz._
-
-// Apache commons
-import org.apache.commons.codec.binary.Base64
-
-// Logging
-import org.apache.commons.logging.LogFactory
 
 // AWS libs
 import com.amazonaws.AmazonServiceException
@@ -61,14 +54,12 @@ import com.amazonaws.services.kinesis.connectors.interfaces.IEmitter
  */
 object LzoSerializer extends ISerializer {
 
-  val log = LogFactory.getLog(getClass)
-
   val lzoCodec = new LzopCodec()
   val conf = new Configuration()
   conf.set("io.compression.codecs", classOf[LzopCodec].getName)
   lzoCodec.setConf(conf)
 
-  def serialize(records: List[ EmitterInput ], baseFilename: String): SerializationResult = {
+  def serialize(records: List[EmitterInput], baseFilename: String): SerializationResult = {
 
     val indexOutputStream = new ByteArrayOutputStream()
     val outputStream = new ByteArrayOutputStream()
@@ -79,25 +70,10 @@ object LzoSerializer extends ISerializer {
     val rawBlockWriter = new RawBlockWriter(lzoOutputStream)
 
     // Populate the output stream with records
-    // TODO: Should there be a check for failures?
-    val results = for { 
-      Success(record) <- records 
-    } yield {
-      try {
-        rawBlockWriter.write(record)
-        record.success
-      } catch {
-        case e: IOException => {
-          log.warn(e)
-          val base64Record = new String(Base64.encodeBase64(record), "UTF-8")
-          FailedRecord(List("Error writing raw event to output stream: [%s]".format(e.toString)), base64Record).fail
-        }
-        
-        // Need to log OutOfMemoryErrors
-        case t: Throwable => {
-          log.error("Error writing raw stream to output stream", t)
-          throw t
-        }
+    val results = records.map { v =>
+      v match {
+        case Success(r) => serializeRecord(r, rawBlockWriter, (rbw: RawBlockWriter) => rbw.write(r))
+        case f => f
       }
     }
 

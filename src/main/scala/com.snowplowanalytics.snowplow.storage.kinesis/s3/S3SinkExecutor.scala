@@ -29,10 +29,10 @@ import serializers._
 /**
  * Boilerplate class for Kinessis Conenector
  */
-class S3SinkExecutor(config: KinesisConnectorConfiguration, badSink: ISink, serializer: ISerializer, maxConnectionTime: Long, tracker: Option[Tracker]) extends KinesisConnectorExecutorBase[ ValidatedRecord, EmitterInput ] {
+class S3SinkExecutor(config: KinesisConnectorConfiguration, badSink: ISink, serializer: ISerializer, maxConnectionTime: Long, tracker: Option[Tracker]) extends KinesisConnectorExecutorBase[ValidatedRecord, EmitterInput] {
   super.initialize(config)
 
   override def getKinesisConnectorRecordProcessorFactory = {
-    new KinesisConnectorRecordProcessorFactory[ ValidatedRecord, EmitterInput ](new S3Pipeline(badSink, serializer, maxConnectionTime, tracker), config)
+    new KinesisConnectorRecordProcessorFactory[ValidatedRecord, EmitterInput](new S3Pipeline(badSink, serializer, maxConnectionTime, tracker), config)
   }
 }

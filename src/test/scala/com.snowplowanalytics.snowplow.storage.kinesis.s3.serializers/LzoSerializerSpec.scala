@@ -55,12 +55,11 @@ import com.snowplowanalytics.snowplow.CollectorPayload.thrift.model1.CollectorPa
 
 // Specs2
 import org.specs2.mutable.Specification
-import org.specs2.scalaz.ValidationMatchers
 
 /**
  * Tests serialization and LZO compression of CollectorPayloads
  */
-class LzoSerializerSpec extends Specification with ValidationMatchers {
+class LzoSerializerSpec extends Specification {
 
   "The LzoSerializer" should {
     "correctly serialize and compress a list of CollectorPayloads" in {

@@ -21,31 +21,20 @@ package com.snowplowanalytics.snowplow.storage.kinesis.s3.sinks
 
 // Java
 import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets.UTF_8
 
 // Scala
 import scala.util.Random
 
 // Amazon
-import com.amazonaws.services.kinesis.model.ResourceNotFoundException
 import com.amazonaws.auth.AWSCredentialsProvider
-import com.amazonaws.services.kinesis.AmazonKinesisClient
-import com.amazonaws.services.kinesis.AmazonKinesis
-import com.amazonaws.regions._
-
-// Scalazon (for Kinesis interaction)
-import io.github.cloudify.scala.aws.kinesis.Client
-import io.github.cloudify.scala.aws.kinesis.Client.ImplicitExecution._
-import io.github.cloudify.scala.aws.kinesis.Definitions.{
-  Stream,
-  PutResult,
-  Record
-}
-import io.github.cloudify.scala.aws.kinesis.KinesisDsl._
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
+import com.amazonaws.services.kinesis.AmazonKinesisClientBuilder
+import com.amazonaws.services.kinesis.model._
 
 // Concurrent libraries
-import scala.concurrent.{Future,Await,TimeoutException}
+import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
 import scala.util.{Success, Failure}
 
 // Logging
@@ -59,70 +48,61 @@ import com.snowplowanalytics.snowplow.scalatracker.Tracker
  *
  * @param provider AWSCredentialsProvider
  * @param endpoint Kinesis stream endpoint
+ * @param region Kinesis stream region
  * @param name Kinesis stream name
  * @param config Configuration for the Kinesis stream
  */
-class KinesisSink(provider: AWSCredentialsProvider, endpoint: String, name: String, tracker: Option[Tracker])
-  extends ISink {
+class KinesisSink(
+  provider: AWSCredentialsProvider,
+  endpoint: String,
+  region: String,
+  name: String,
+  tracker: Option[Tracker]
+) extends ISink {
 
-  private lazy val log = LoggerFactory.getLogger(getClass())
-  import log.{error, debug, info, trace}
+  private val log = LoggerFactory.getLogger(getClass)
 
   // Explicitly create a client so we can configure the end point
-  val client = new AmazonKinesisClient(provider)
-  client.setEndpoint(endpoint)
+  val client = AmazonKinesisClientBuilder
+    .standard()
+    .withCredentials(provider)
+    .withEndpointConfiguration(new EndpointConfiguration(endpoint, region))
+    .build()
 
-  // Create a Kinesis client for stream interactions.
-  private implicit val kinesis = Client.fromClient(client)
-
-  // The output stream for enriched events.
-  private val stream = createAndLoadStream()
+  require(streamExists(name))
 
   /**
    * Checks if a stream exists.
    *
    * @param name Name of the stream to look for
-   * @param timeout How long to wait for a description of the stream
    * @return Whether the stream both exists and is active
    */
-  // TODO move out into a kinesis helpers library
-  def streamExists(name: String, timeout: Int = 60): Boolean = {
-
-    val exists: Boolean = try {
-      val streamDescribeFuture = for {
-        s <- Kinesis.stream(name).describe
-      } yield s
-
-      val description = Await.result(streamDescribeFuture, Duration(timeout, SECONDS))
-      description.isActive
-
+  private def streamExists(name: String): Boolean = {
+    val exists = try {
+      val describeStreamResult = client.describeStream(name)
+      describeStreamResult.getStreamDescription.getStreamStatus == "ACTIVE"
     } catch {
       case rnfe: ResourceNotFoundException => false
     }
 
     if (exists) {
-      info(s"Stream $name exists and is active")
+      log.info(s"Stream $name exists and is active")
     } else {
-      info(s"Stream $name doesn't exist or is not active")
+      log.info(s"Stream $name doesn't exist or is not active")
     }
 
     exists
   }
 
-  /**
-   * Creates a new stream if one doesn't exist
-   *
-   * @param How long to wait for the stream to be created
-   * @return The new stream
-   */
-  // TODO move out into a kinesis helpers library
-  def createAndLoadStream(timeout: Int = 60): Stream = {
-
-    if (streamExists(name)) {
-      Kinesis.stream(name)
-    } else {
-      throw new RuntimeException(s"Cannot write because stream $name doesn't exist or is not active")
+  private def put(name: String, data: ByteBuffer, key: String): Future[PutRecordResult] = Future {
+    val putRecordRequest = {
+      val p = new PutRecordRequest()
+      p.setStreamName(name)
+      p.setData(data)
+      p.setPartitionKey(key)
+      p
     }
+    client.putRecord(putRecordRequest)
   }
 
   /**
@@ -133,24 +113,16 @@ class KinesisSink(provider: AWSCredentialsProvider, endpoint: String, name: Stri
    *            record is assigned. Defaults to a random string.
    * @param good Unused parameter which exists to extend ISink
    */
-  def store(output: String, key: Option[String], good: Boolean) {
-    val putData = for {
-      p <- stream.put(
-        ByteBuffer.wrap(output.getBytes),
-        key.getOrElse(Random.nextInt.toString)
-      )
-    } yield p
-
-    putData onComplete {
+  def store(output: String, key: Option[String], good: Boolean): Unit =
+    put(name, ByteBuffer.wrap(output.getBytes(UTF_8)), key.getOrElse(Random.nextInt.toString)) onComplete {
       case Success(result) => {
-        info(s"Writing successful")
-        info(s"  + ShardId: ${result.shardId}")
-        info(s"  + SequenceNumber: ${result.sequenceNumber}")
+        log.info("Writing successful")
+        log.info(s"  + ShardId: ${result.getShardId}")
+        log.info(s"  + SequenceNumber: ${result.getSequenceNumber}")
       }
       case Failure(f) => {
-        error(s"Writing failed.")
-        error(s"  + " + f.getMessage)
+        log.error("Writing failed")
+        log.error("  + " + f.getMessage)
       }
     }
-  }
 }

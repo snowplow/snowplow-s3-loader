@@ -12,11 +12,23 @@
  */
 package com.snowplowanalytics.snowplow.storage.kinesis.s3.serializers
 
-// Java libs
-import java.io.ByteArrayOutputStream
+import com.snowplowanalytics.snowplow.storage.kinesis.s3._
 
-// This project
-import com.snowplowanalytics.snowplow.storage.kinesis.s3.EmitterInput
+// Java libs
+import java.io.{ByteArrayOutputStream, IOException}
+
+// Scalaz
+import scalaz._
+import Scalaz._
+
+// Scala
+import scala.util.control.NonFatal
+
+// SLF4j
+import org.slf4j.LoggerFactory
+
+// Apache commons
+import org.apache.commons.codec.binary.Base64
 
 case class NamedStream(filename: String, stream: ByteArrayOutputStream)
 
@@ -26,5 +38,24 @@ case class SerializationResult(namedStreams: List[NamedStream], results: List[Em
  * Shared interface for all serializers
  */
 trait ISerializer {
-  def serialize(records: List[ EmitterInput ], baseFilename: String): SerializationResult
+  def serialize(records: List[EmitterInput], baseFilename: String): SerializationResult
+
+  val log = LoggerFactory.getLogger(getClass)
+
+  def serializeRecord[T](
+    record: RawRecord,
+    serializer: T,
+    serialize: T => Unit
+  ): ValidatedRecord =
+    try {
+      serialize(serializer)
+      record.success
+    } catch {
+      case e: IOException =>
+        val base64Record = new String(Base64.encodeBase64(record), "UTF-8")
+        FailedRecord(List(s"Error writing raw event to output stream: [$e]"), base64Record).failure
+      case NonFatal(e) =>
+        log.warn("Error writing raw event to output stream", e)
+        FailedRecord(List(s"Error writing raw event to output stream: [$e]"), "").failure
+    }
 }

@@ -30,16 +30,15 @@ import org.apache.hadoop.conf.Configuration
 import com.hadoop.compression.lzo.LzopCodec
 
 // Elephant bird
-import com.twitter.elephantbird.mapreduce.io.{
-  ThriftBlockWriter
-}
+import com.twitter.elephantbird.mapreduce.io.ThriftBlockWriter
 
-// Logging
-import org.apache.commons.logging.{Log,LogFactory}
+// SLF4j
+import org.slf4j.LoggerFactory
 
 // AWS libs
 import com.amazonaws.AmazonServiceException
-import com.amazonaws.services.s3.AmazonS3Client
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
+import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.amazonaws.services.s3.model.ObjectMetadata
 
 // AWS Kinesis connector libs
@@ -79,21 +78,24 @@ import serializers._
  *
  * Once the buffer is full, the emit function is called.
  */
-class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, serializer: ISerializer, maxConnectionTime: Long, tracker: Option[Tracker]) extends IEmitter[ EmitterInput ] {
+class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, serializer: ISerializer, maxConnectionTime: Long, tracker: Option[Tracker]) extends IEmitter[EmitterInput] {
 
   /**
    * The amount of time to wait in between unsuccessful index requests (in milliseconds).
    * 10 seconds = 10 * 1000 = 10000
    */
-  private val BackoffPeriod = 10000
+  private val BackoffPeriod = 10000L
 
   // An ISO valid timestamp formatter
   private val TstampFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(DateTimeZone.UTC)
 
   val bucket = config.S3_BUCKET
-  val log = LogFactory.getLog(classOf[S3Emitter])
-  val client = new AmazonS3Client(config.AWS_CREDENTIALS_PROVIDER)
-  client.setEndpoint(config.S3_ENDPOINT)
+  val log = LoggerFactory.getLogger(getClass)
+  val client = AmazonS3ClientBuilder
+    .standard()
+    .withCredentials(config.AWS_CREDENTIALS_PROVIDER)
+    .withEndpointConfiguration(new EndpointConfiguration(config.S3_ENDPOINT, config.REGION_NAME))
+    .build()
 
   val dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
@@ -116,16 +118,13 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, serialize
    * @param buffer BasicMemoryBuffer containing EmitterInputs
    * @return list of inputs which failed transformation
    */
-  override def emit(buffer: UnmodifiableBuffer[ EmitterInput ]): java.util.List[ EmitterInput ] = {
+  override def emit(buffer: UnmodifiableBuffer[EmitterInput]): java.util.List[EmitterInput] = {
 
     log.info(s"Flushing buffer with ${buffer.getRecords.size} records.")
 
     val records = buffer.getRecords().asScala.toList
-
     val baseFilename = getBaseFilename(buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber)
-
     val serializationResults = serializer.serialize(records, baseFilename)
-
     val (successes, failures) = serializationResults.results.partition(_.isSuccess)
 
     log.info(s"Successfully serialized ${successes.size} records out of ${successes.size + failures.size}")
@@ -152,7 +151,7 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, serialize
           val inputStream = new ByteArrayInputStream(outputStream.toByteArray)
 
           val objMeta = new ObjectMetadata()
-          objMeta.setContentLength(outputStream.size)
+          objMeta.setContentLength(outputStream.size.toLong)
 
           client.putObject(bucket, filename, inputStream, objMeta)
 
@@ -198,7 +197,7 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, serialize
    *
    * Prevents shutdown hooks from running
    */
-  private def forceShutdown() {
+  private def forceShutdown(): Unit = {
     log.error(s"Shutting down application as unable to connect to S3 for over $maxConnectionTime ms")
     tracker foreach {
       t =>
@@ -211,7 +210,7 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, serialize
   /**
    * Closes the client when the KinesisConnectorRecordProcessor is shut down
    */
-  override def shutdown() {
+  override def shutdown(): Unit = {
     client.shutdown
   }
 
@@ -221,7 +220,7 @@ class S3Emitter(config: KinesisConnectorConfiguration, badSink: ISink, serialize
    *
    * @param records List of failed records to send to Kinesis
    */
-  override def fail(records: java.util.List[ EmitterInput ]) {
+  override def fail(records: java.util.List[EmitterInput]): Unit = {
     // TODO: Should there be a check for Successes?
     for (Failure(record) <- records.toList) {
       log.warn(s"Record failed: $record.line")

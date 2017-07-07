@@ -16,9 +16,6 @@ package com.snowplowanalytics.snowplow.storage.kinesis.s3
 import java.io.File
 import java.util.Properties
 
-// Argot
-import org.clapper.argot._
-
 // Config
 import com.typesafe.config.{Config, ConfigFactory}
 
@@ -28,8 +25,8 @@ import com.amazonaws.auth.AWSCredentialsProvider
 // AWS Kinesis Connector libs
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration
 
-// Loggings
-import org.apache.commons.logging.LogFactory
+// SLF4j
+import org.slf4j.LoggerFactory
 
 // Tracker
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
@@ -47,43 +44,30 @@ import serializers._
  */
 object SinkApp extends App {
 
-  val log = LogFactory.getLog(getClass)
-
-  // Argument specifications
-  import ArgotConverters._
-
-  // General bumf for our app
-  val parser = new ArgotParser(
-    programName = "generated",
-    compactUsage = true,
-    preUsage = Some("%s: Version %s. Copyright (c) 2014-2015, %s.".format(
-      generated.Settings.name,
-      generated.Settings.version,
-      generated.Settings.organization)
-    )
-  )
-
-  // Optional config argument
-  val config = parser.option[Config](List("config"),
-                                     "filename",
-                                     "Configuration file.") {
-    (c, opt) =>
-
-      val file = new File(c)
-      if (file.exists) {
-        ConfigFactory.parseFile(file)
-      } else {
-        parser.usage("Configuration file \"%s\" does not exist".format(c))
-        ConfigFactory.empty()
-      }
+  case class FileConfig(config: File = new File("."))
+  val parser = new scopt.OptionParser[FileConfig](generated.Settings.name) {
+    head(generated.Settings.name, generated.Settings.version)
+    opt[File]("config").required().valueName("<filename>")
+      .action((f: File, c: FileConfig) => c.copy(f))
+      .validate(f =>
+        if (f.exists) success
+        else failure(s"Configuration file $f does not exist")
+      )
   }
-  parser.parse(args)
 
-  val conf = config.value.getOrElse(throw new RuntimeException("--config argument must be provided"))
+  val conf = parser.parse(args, FileConfig()) match {
+    case Some(c) => ConfigFactory.parseFile(c.config).resolve()
+    case None    => ConfigFactory.empty()
+  }
+
+  if (conf.isEmpty()) {
+    System.err.println("Empty configuration file")
+    System.exit(1)
+  }
 
   val tracker = if (conf.hasPath("sink.monitoring.snowplow")) {
     SnowplowTracking.initializeTracker(conf.getConfig("sink.monitoring.snowplow")).some
-  } else { 
+  } else {
     None
   }
 
@@ -91,18 +75,19 @@ object SinkApp extends App {
 
   // TODO: make the conf file more like the Elasticsearch equivalent
   val kinesisSinkRegion = conf.getConfig("sink").getConfig("kinesis").getString("region")
-  val kinesisSinkEndpoint = s"https://kinesis.${kinesisSinkRegion}.amazonaws.com"
+  val kinesisSinkEndpoint = getKinesisEndpoint(kinesisSinkRegion)
   val kinesisSink = conf.getConfig("sink").getConfig("kinesis").getConfig("out")
   val kinesisSinkName = kinesisSink.getString("stream-name")
 
   val logLevel = conf.getConfig("sink").getConfig("logging").getString("level")
   System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, logLevel)
+  val log = LoggerFactory.getLogger(getClass)
 
   val credentialConfig = conf.getConfig("sink").getConfig("aws")
 
   val credentials = CredentialsLookup.getCredentialsProvider(credentialConfig.getString("access-key"), credentialConfig.getString("secret-key"))
 
-  val badSink = new KinesisSink(credentials, kinesisSinkEndpoint, kinesisSinkName, tracker)
+  val badSink = new KinesisSink(credentials, kinesisSinkEndpoint, kinesisSinkRegion, kinesisSinkName, tracker)
 
   val serializer = conf.getConfig("sink").getConfig("s3").getString("format") match {
     case "lzo" => LzoSerializer
@@ -137,7 +122,7 @@ object SinkApp extends App {
     val kinesis = connector.getConfig("kinesis")
     val kinesisIn = kinesis.getConfig("in")
     val kinesisRegion = kinesis.getString("region")
-    val kEndpoint = s"https://kinesis.${kinesisSinkRegion}.amazonaws.com"
+    val kEndpoint = getKinesisEndpoint(kinesisRegion)
     val streamName = kinesisIn.getString("stream-name")
     val initialPosition = kinesisIn.getString("initial-position")
     val appName = kinesis.getString("app-name")
@@ -146,6 +131,7 @@ object SinkApp extends App {
     val s3Region = s3.getString("region")
     val s3Endpoint = s3Region match {
       case "us-east-1" => "https://s3.amazonaws.com"
+      case "cn-north-1" => "https://s3.cn-north-1.amazonaws.com.cn"
       case _ => s"https://s3-$s3Region.amazonaws.com"
     }
     val bucket = s3.getString("bucket")
@@ -184,4 +170,9 @@ object SinkApp extends App {
     new KinesisConnectorConfiguration(props, credentials)
   }
 
+  private def getKinesisEndpoint(region: String): String =
+    region match {
+      case "cn-north-1" => "kinesis.cn-north-1.amazonaws.com.cn"
+      case _ => s"https://kinesis.$region.amazonaws.com"
+    }
 }
