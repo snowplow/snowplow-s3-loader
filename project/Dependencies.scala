@@ -14,6 +14,7 @@ import sbt._
 
 object Dependencies {
   val resolvers = Seq(
+    Resolver.jcenterRepo,
     "Snowplow Analytics Maven releases repo" at "http://maven.snplow.com/releases/",
     "Twitter maven repo"                     at "http://maven.twttr.com/"
   )
@@ -28,6 +29,8 @@ object Dependencies {
     val hadoopLZO        = "0.4.20"
     val jodaTime         = "2.9.9"
     val config           = "1.3.1"
+    val nsqClient        = "1.1.0-rc1"
+    val jacksonCbor      = "2.8.8"
     // Thrift (test only)
     val collectorPayload = "0.0.0"
     // Scala
@@ -42,8 +45,13 @@ object Dependencies {
   object Libraries {
     // Java
     val slf4j            = "org.slf4j"                 %  "slf4j-simple"              % V.slf4j
-    val kinesisClient    = "com.amazonaws"             %  "amazon-kinesis-client"     % V.kinesisClient
-    val kinesisConnector = "com.amazonaws"             %  "amazon-kinesis-connectors" % V.kinesisConnector
+    val kinesisClient    = ("com.amazonaws"            %  "amazon-kinesis-client"     % V.kinesisClient)
+      .exclude("com.fasterxml.jackson.dataformat", "jackson-dataformat-cbor")
+    val kinesisConnector = ("com.amazonaws"            %  "amazon-kinesis-connectors" % V.kinesisConnector)
+      .exclude("com.fasterxml.jackson.dataformat", "jackson-dataformat-cbor")
+    // the kcl's version of jackson-dataformat-cbor is conflicting with json4s' jackson-core library.
+    // jackson-dataformat-cbor is excluded from kcl and compatible version is added as an dependency.
+    val jacksonCbor      = "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor" % V.jacksonCbor
     val hadoop           = ("org.apache.hadoop"        %  "hadoop-common"             % V.hadoop)
       .exclude("org.slf4j", "slf4j-log4j12")
       .exclude("commons-beanutils", "commons-beanutils")
@@ -56,6 +64,7 @@ object Dependencies {
     val hadoopLZO        = "com.hadoop.gplcompression" %  "hadoop-lzo"                % V.hadoopLZO
     val jodaTime         = "joda-time"                 %  "joda-time"                 % V.jodaTime
     val config           = "com.typesafe"              %  "config"                    % V.config
+    val nsqClient        = "com.snowplowanalytics"     %  "nsq-java-client_2.10"      % V.nsqClient
     // Thrift (test only)
     val collectorPayload = "com.snowplowanalytics"     %  "collector-payload-1"       % V.collectorPayload % "test"
     // Scala
