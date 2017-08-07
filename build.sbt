@@ -30,6 +30,8 @@ lazy val root = project.in(file("."))
       Dependencies.Libraries.elephantbird,
       Dependencies.Libraries.hadoopLZO,
       Dependencies.Libraries.jodaTime,
+      Dependencies.Libraries.nsqClient,
+      Dependencies.Libraries.jacksonCbor,
       // Scala
       Dependencies.Libraries.scopt,
       Dependencies.Libraries.config,
