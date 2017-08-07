@@ -65,69 +65,93 @@ object SinkApp extends App {
     System.exit(1)
   }
 
-  val tracker = if (conf.hasPath("sink.monitoring.snowplow")) {
+  val tracker = if (conf.hasPath("monitoring.snowplow")) {
     SnowplowTracking.initializeTracker(conf.getConfig("sink.monitoring.snowplow")).some
   } else {
     None
   }
 
-  val maxConnectionTime = conf.getConfig("sink").getConfig("s3").getLong("max-timeout")
+  val maxConnectionTime = conf.getConfig("s3").getLong("max-timeout")
 
   // TODO: make the conf file more like the Elasticsearch equivalent
-  val kinesisSinkRegion = conf.getConfig("sink").getConfig("kinesis").getString("region")
+  val kinesisSinkRegion = conf.getConfig("kinesis").getString("region")
   val kinesisSinkEndpoint = getKinesisEndpoint(kinesisSinkRegion)
-  val kinesisSink = conf.getConfig("sink").getConfig("kinesis").getConfig("out")
-  val kinesisSinkName = kinesisSink.getString("stream-name")
-
-  val logLevel = conf.getConfig("sink").getConfig("logging").getString("level")
+  val kinesisSinkName = conf.getConfig("streams").getString("stream-name-out")
+  val nsqConfig = new S3LoaderNsqConfig(conf)
+ 
+  val logLevel = conf.getConfig("logging").getString("level")
   System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, logLevel)
   val log = LoggerFactory.getLogger(getClass)
 
-  val credentialConfig = conf.getConfig("sink").getConfig("aws")
+  val credentialConfig = conf.getConfig("aws")
 
   val credentials = CredentialsLookup.getCredentialsProvider(credentialConfig.getString("access-key"), credentialConfig.getString("secret-key"))
 
-  val badSink = new KinesisSink(credentials, kinesisSinkEndpoint, kinesisSinkRegion, kinesisSinkName, tracker)
+  val badSink = conf.getString("sink") match {
+    case "kinesis" => new KinesisSink(credentials, kinesisSinkEndpoint, kinesisSinkRegion, kinesisSinkName, tracker)
+    case "NSQ" => new NsqSink(nsqConfig)
+  }
 
-  val serializer = conf.getConfig("sink").getConfig("s3").getString("format") match {
+  val serializer = conf.getConfig("s3").getString("format") match {
     case "lzo" => LzoSerializer
     case "gzip" => GZipSerializer
     case _ => throw new Exception("Invalid serializer. Check sink.s3.format key in configuration file")
   }
 
-  val executor = new S3SinkExecutor(convertConfig(conf, credentials), badSink, serializer, maxConnectionTime, tracker)
-
-  tracker match {
-    case Some(t) => SnowplowTracking.initializeSnowplowTracking(t)
-    case None => None
+  val executor = conf.getString("source") match {
+      // Read records from Kinesis
+      case "kinesis" => new KinesisSourceExecutor(convertConfig(conf, credentials), badSink, serializer, maxConnectionTime, tracker).success
+      // Read records from NSQ
+      case "NSQ" => new NsqSourceExecutor(convertConfig(conf, credentials), nsqConfig, badSink, serializer, maxConnectionTime, tracker).success
+      case _ => "Source must be set to kinesis' or 'NSQ'".failure
   }
 
-  executor.run()
 
-  // If the stream cannot be found, the KCL's "cw-metrics-publisher" thread will prevent the
-  // application from exiting naturally so we explicitly call System.exit.
-  System.exit(1)
+  executor.fold(
+    err => throw new RuntimeException(err),
+    exec => {
+      tracker foreach {
+        t => SnowplowTracking.initializeSnowplowTracking(t)
+      }
+      exec.run()
+
+      // If the stream cannot be found, the KCL's "cw-metrics-publisher" thread will prevent the
+      // application from exiting naturally so we explicitly call System.exit.
+      // This did not applied for NSQ because NSQ consumer is non-blocking and fall here 
+      // right after consumer.start()
+      conf.getString("source") match { 
+        case "kinesis" => System.exit(1)
+        // do anything
+        case "NSQ" =>    
+      }
+    }
+  )
 
   /**
    * This function converts the config file into the format
    * expected by the Kinesis connector interfaces.
    *
-   * @param connector The configuration HOCON
+   * @param conf The configuration HOCON
    * @return A KinesisConnectorConfiguration
    */
   def convertConfig(conf: Config, credentials: AWSCredentialsProvider): KinesisConnectorConfiguration = {
     val props = new Properties()
-    val connector = conf.resolve.getConfig("sink")
 
-    val kinesis = connector.getConfig("kinesis")
-    val kinesisIn = kinesis.getConfig("in")
+    val streams = conf.getConfig("streams")
+    val streamName = streams.getString("stream-name-in")
+    
+    val buffer = streams.getConfig("buffer")
+    val byteLimit = buffer.getString("byte-limit")
+    val recordLimit = buffer.getString("record-limit")
+    val timeLimit = buffer.getString("time-limit")
+
+    val kinesis = conf.getConfig("kinesis")
     val kinesisRegion = kinesis.getString("region")
     val kEndpoint = getKinesisEndpoint(kinesisRegion)
-    val streamName = kinesisIn.getString("stream-name")
-    val initialPosition = kinesisIn.getString("initial-position")
+    val initialPosition = kinesis.getString("initial-position")
     val appName = kinesis.getString("app-name")
 
-    val s3 = connector.getConfig("s3")
+    val s3 = conf.getConfig("s3")
     val s3Region = s3.getString("region")
     val s3Endpoint = s3Region match {
       case "us-east-1" => "https://s3.amazonaws.com"
@@ -136,12 +160,7 @@ object SinkApp extends App {
     }
     val bucket = s3.getString("bucket")
 
-    val buffer = connector.getConfig("buffer")
-    val byteLimit = buffer.getString("byte-limit")
-    val recordLimit = buffer.getString("record-limit")
-    val timeLimit = buffer.getString("time-limit")
-
-    val maxRecords = kinesisIn.getString("max-records")
+    val maxRecords = kinesis.getString("max-records")
 
     props.setProperty(KinesisConnectorConfiguration.PROP_KINESIS_INPUT_STREAM, streamName)
     props.setProperty(KinesisConnectorConfiguration.PROP_KINESIS_ENDPOINT, kEndpoint)
@@ -175,4 +194,20 @@ object SinkApp extends App {
       case "cn-north-1" => "kinesis.cn-north-1.amazonaws.com.cn"
       case _ => s"https://kinesis.$region.amazonaws.com"
     }
+}
+
+/**
+  * Rigidly load the configuration of the NSQ here to error
+  */
+class S3LoaderNsqConfig(config: Config) {   
+  private val nsq = config.getConfig("NSQ")
+  val nsqSourceChannelName = nsq.getString("channel-name")
+  val nsqHost = nsq.getString("host")
+  val nsqPort = nsq.getInt("port")
+  val nsqlookupPort = nsq.getInt("lookup-port")
+  val nsqBufferSize = config.getInt("streams.buffer.record-limit")
+
+  private val streams = config.getConfig("streams")
+  val nsqSourceTopicName = streams.getString("stream-name-in")
+  val nsqSinkTopicName = streams.getString("stream-name-out")
 }
