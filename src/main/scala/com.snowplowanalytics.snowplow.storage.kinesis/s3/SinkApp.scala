@@ -78,7 +78,8 @@ object SinkApp extends App {
   val kinesisSinkEndpoint = getKinesisEndpoint(kinesisSinkRegion)
   val kinesisSink = conf.getConfig("sink").getConfig("kinesis").getConfig("out")
   val kinesisSinkName = kinesisSink.getString("stream-name")
-
+  val nsqConfig = new S3LoaderNsqConfig(conf.getConfig("sink"))
+ 
   val logLevel = conf.getConfig("sink").getConfig("logging").getString("level")
   System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, logLevel)
   val log = LoggerFactory.getLogger(getClass)
@@ -87,7 +88,10 @@ object SinkApp extends App {
 
   val credentials = CredentialsLookup.getCredentialsProvider(credentialConfig.getString("access-key"), credentialConfig.getString("secret-key"))
 
-  val badSink = new KinesisSink(credentials, kinesisSinkEndpoint, kinesisSinkRegion, kinesisSinkName, tracker)
+  val badSink = conf.getString("source") match {
+    case "kinesis" => new KinesisSink(credentials, kinesisSinkEndpoint, kinesisSinkRegion, kinesisSinkName, tracker)
+    case "NSQ" => new NsqSink(nsqConfig)
+  }
 
   val serializer = conf.getConfig("sink").getConfig("s3").getString("format") match {
     case "lzo" => LzoSerializer
@@ -95,18 +99,34 @@ object SinkApp extends App {
     case _ => throw new Exception("Invalid serializer. Check sink.s3.format key in configuration file")
   }
 
-  val executor = new S3SinkExecutor(convertConfig(conf, credentials), badSink, serializer, maxConnectionTime, tracker)
-
-  tracker match {
-    case Some(t) => SnowplowTracking.initializeSnowplowTracking(t)
-    case None => None
+  val executor = conf.getString("source") match {
+      // Read records from Kinesis
+      case "kinesis" => new KinesisSourceExecutor(convertConfig(conf, credentials), badSink, serializer, maxConnectionTime, tracker).success
+      // Read records from NSQ
+      case "NSQ" => new NsqSourceExecutor(convertConfig(conf, credentials), nsqConfig, badSink, serializer, maxConnectionTime, tracker).success
+      case _ => "Source must be set to kinesis' or 'NSQ'".failure
   }
 
-  executor.run()
 
-  // If the stream cannot be found, the KCL's "cw-metrics-publisher" thread will prevent the
-  // application from exiting naturally so we explicitly call System.exit.
-  System.exit(1)
+  executor.fold(
+    err => throw new RuntimeException(err),
+    exec => {
+      tracker foreach {
+        t => SnowplowTracking.initializeSnowplowTracking(t)
+      }
+      exec.run()
+
+      // If the stream cannot be found, the KCL's "cw-metrics-publisher" thread will prevent the
+      // application from exiting naturally so we explicitly call System.exit.
+      // This did not applied for NSQ because NSQ consumer is non-blocking and fall here 
+      // right after consumer.start()
+      conf.getString("source") match { 
+        case "kinesis" => System.exit(1)
+        // do anything
+        case "NSQ" =>    
+      }
+    }
+  )
 
   /**
    * This function converts the config file into the format
@@ -175,4 +195,18 @@ object SinkApp extends App {
       case "cn-north-1" => "kinesis.cn-north-1.amazonaws.com.cn"
       case _ => s"https://kinesis.$region.amazonaws.com"
     }
+}
+
+/**
+  * Rigidly load the configuration of the NSQ here to error
+  */
+class S3LoaderNsqConfig(config: Config) {   
+  private val nsq = config.getConfig("NSQ")
+  val nsqGoodSourceTopicName = nsq.getString("good-source-topic")
+  val nsqGoodSourceChannelName = nsq.getString("good-source-channel")
+  val nsqBadTopicName = nsq.getString("bad-sink")
+  val nsqHost = nsq.getString("nsq-host")
+  val nsqdPort = nsq.getInt("nsqd-port")
+  val nsqlookupdPort = nsq.getInt("nsqlookupd-port")
+  val nsqBufferSize = config.getInt("buffer.record-limit")
 }

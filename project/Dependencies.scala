@@ -28,6 +28,7 @@ object Dependencies {
     val hadoopLZO        = "0.4.20"
     val jodaTime         = "2.9.9"
     val config           = "1.3.1"
+    val nsqClient        = "1.0.0.RC4"
     // Thrift (test only)
     val collectorPayload = "0.0.0"
     // Scala
@@ -56,6 +57,7 @@ object Dependencies {
     val hadoopLZO        = "com.hadoop.gplcompression" %  "hadoop-lzo"                % V.hadoopLZO
     val jodaTime         = "joda-time"                 %  "joda-time"                 % V.jodaTime
     val config           = "com.typesafe"              %  "config"                    % V.config
+    val nsqClient        = "com.github.brainlag"       %  "nsq-client"                % V.nsqClient
     // Thrift (test only)
     val collectorPayload = "com.snowplowanalytics"     %  "collector-payload-1"       % V.collectorPayload % "test"
     // Scala

@@ -1,5 +1,10 @@
 # Default configuration for kinesis-lzo-s3-sink
 
+# Sources currently supported are:
+# 'kinesis' for reading records from a Kinesis stream
+# 'NSQ' for reading records from NSQ
+source = "{{source}}"
+
 sink {
 
   # The following are used to authenticate for the Amazon Kinesis sink.
@@ -13,6 +18,27 @@ sink {
   aws {
     access-key: "iam"
     secret-key: "iam"
+  }
+
+  # Config for NSQ sink and NSQ source
+  NSQ {
+    #Topic name for good event source
+    good-source-topic: "{{sinkKinesisNsqSourceGoodTopicName}}"
+
+    #Channel name for good event source
+    good-source-channel: "{{sinkKinesisNsqSourceGoodChannelName}}"
+
+    #Topic name for bad event sink
+    bad-sink: "{{sinkKinesisNsqSinkTopicBadName}}"
+     
+    #Host name for NSQ tools
+    nsq-host: "{{NsqHost}}"
+
+    #Port for nsqd
+    nsqd-port: "{{NsqdPort}}"
+
+    #Port for nsqlookupd
+    nsqlookupd-port: {{NsqlookupdPort}}
   }
 
   kinesis {
@@ -63,9 +89,9 @@ sink {
   # - the number of stored records exceeds record-limit or
   # - the time in milliseconds since it was last emptied exceeds time-limit
   buffer {
-    byte-limit: {{sinkLzoBufferByteThreshold}}
+    byte-limit: {{sinkLzoBufferByteThreshold}} # Not supported by NSQ; will be ignored
     record-limit: {{sinkLzoBufferRecordThreshold}}
-    time-limit: {{sinkLzoBufferTimeThreshold}}
+    time-limit: {{sinkLzoBufferTimeThreshold}} # Not supported by NSQ; will be ignored
   }
 
   # Set the Logging Level for the S3 Sink
