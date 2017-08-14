@@ -69,7 +69,7 @@ class KinesisSink(
     .withEndpointConfiguration(new EndpointConfiguration(endpoint, region))
     .build()
 
-  require(streamExists(name))
+  require(streamExists(name), s"Kinesis stream $name doesn't exist")
 
   /**
    * Checks if a stream exists.
