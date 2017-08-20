@@ -15,7 +15,7 @@
 lazy val root = project.in(file("."))
   .settings(
     name        := "snowplow-s3-loader",
-    version     := "0.5.0",
+    version     := "0.6.0-rc1",
     description := "S3 Loader"
   )
   .settings(BuildSettings.buildSettings)

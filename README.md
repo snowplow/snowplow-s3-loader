@@ -6,7 +6,7 @@
 
 ## Overview
 
-The Snowplow S3 Loader consumes records from an [Amazon Kinesis][kinesis] stream, and writes them to S3.
+The Snowplow S3 Loader consumes records from an [Amazon Kinesis][kinesis] stream or [NSQ][nsq] topic, and writes them to S3.
 
 There are 2 file formats supported:
  * LZO
@@ -49,9 +49,9 @@ NOTE: These are already installed in the Vagrant quickstart environment.
 The Snowplow S3 Loader has the following command-line interface:
 
 ```
-snowplow-s3-loader: Version 0.5.0
+snowplow-s3-loader: Version 0.6.0
 
-Usage: java -jar snowplow-s3-loader.jar [options]
+Usage: snowplow-s3-loader [options]
 
 --config <filename>
 ```
@@ -70,7 +70,7 @@ You will need to edit all fields in the config.  Consult [this portion][config] 
 Next, start the sink, making sure to specify your new config file:
 
 ```bash
-guest$ sbt "run --config my.conf"
+guest$ java -jar snowplow-s3-loader.jar --config my.conf
 ```
     
 ## Find out more
@@ -103,6 +103,7 @@ limitations under the License.
 [license]: http://www.apache.org/licenses/LICENSE-2.0
 
 [kinesis]: http://aws.amazon.com/kinesis/
+[nsq]: http://nsq.io/
 [snowplow]: http://snowplowanalytics.com
 [hadoop-lzo]: https://github.com/twitter/hadoop-lzo
 [protobufs]: https://github.com/google/protobuf/

@@ -1,3 +1,12 @@
+Version 0.6.0 (2017-xx-xx)
+Refactor to change purpose of the S3Emitter class (#110)
+Support AT_TIMESTAMP as initial position (#109)
+Move configuration example to an examples top-level folder (#107)
+Configuration decoding with case-classy (#105)
+Stop making the assembly jar executable (#104)
+Rename to Snowplow S3 Loader (#66)
+Add NSQ as a stream source (#64)
+
 Version 0.5.0 (2017-06-30)
 --------------------------
 Add a newline at the end of a gzipped tsv file (#49)
