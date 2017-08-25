@@ -16,14 +16,12 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-
-package com.snowplowanalytics.snowplow.storage.kinesis
+package com.snowplowanalytics.s3
 
 // Scalaz
 import scalaz._
-import Scalaz._
 
-package object s3 {
+package object loader {
 
   /**
    * Type for a RawRecord
