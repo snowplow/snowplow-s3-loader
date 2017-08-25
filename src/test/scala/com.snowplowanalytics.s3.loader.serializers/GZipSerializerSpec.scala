@@ -1,34 +1,15 @@
-package com.snowplowanalytics.snowplow
-package storage.kinesis.s3.serializers
+package com.snowplowanalytics.s3.loader.serializers
 
 // Java
-import java.util.Properties
 import java.io.{
   File,
-  FileInputStream,
-  FileOutputStream,
-  BufferedInputStream
+  FileOutputStream
 }
-
 import java.nio.file.{
   FileSystems,
   Files
 }
-
 import java.nio.charset.Charset
-
-// AWS libs
-import com.amazonaws.auth.EnvironmentVariableCredentialsProvider
-
-// AWS Kinesis Connector libs
-import com.amazonaws.services.kinesis.connectors.{
-  KinesisConnectorConfiguration,
-  UnmodifiableBuffer
-}
-import com.amazonaws.services.kinesis.connectors.impl.BasicMemoryBuffer
-
-// Elephant Bird
-import com.twitter.elephantbird.mapreduce.io.RawBlockReader
 
 // Scalaz
 import scalaz._
@@ -37,7 +18,6 @@ import Scalaz._
 // Scala
 import scala.sys.process._
 import scala.collection.JavaConversions._
-import scala.collection.JavaConverters._
 
 // Specs2
 import org.specs2.mutable.Specification

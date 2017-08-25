@@ -1,4 +1,4 @@
-# Kinesis S3
+# Snowplow S3 Loader
 
 [![Build Status][travis-image]][travis]
 [![Release][release-image]][releases] 
@@ -6,7 +6,7 @@
 
 ## Overview
 
-The Kinesis S3 Sink consumes records from an [Amazon Kinesis][kinesis] stream, and writes them to S3.
+The Snowplow S3 Loader consumes records from an [Amazon Kinesis][kinesis] stream, and writes them to S3.
 
 There are 2 file formats supported:
  * LZO
@@ -27,8 +27,8 @@ The records are treated as byte arrays containing UTF-8 encoded strings (whether
 Assuming git, **[Vagrant][vagrant-install]** and **[VirtualBox][virtualbox-install]** installed:
 
 ```bash
- host$ git clone https://github.com/snowplow/kinesis-s3.git
- host$ cd kinesis-s3
+ host$ git clone https://github.com/snowplow/snowplow-s3-loader.git
+ host$ cd snowplow-s3-loader
  host$ vagrant up && vagrant ssh
 guest$ cd /vagrant
 guest$ sbt test
@@ -46,12 +46,12 @@ NOTE: These are already installed in the Vagrant quickstart environment.
 
 ## Command Line Interface
 
-The Kinesis S3 LZO Sink has the following command-line interface:
+The Snowplow S3 Loader has the following command-line interface:
 
 ```
-snowplow-kinesis-s3: Version 0.5.0
+snowplow-s3-loader: Version 0.5.0
 
-Usage: snowplow-kinesis-s3 [options]
+Usage: java -jar snowplow-s3-loader.jar [options]
 
 --config <filename>
 ```
@@ -82,7 +82,7 @@ guest$ sbt "run --config my.conf"
 
 ## Copyright and license
 
-Kinesis S3 is copyright 2014-2017 Snowplow Analytics Ltd.
+Snowplow S3 Loader is copyright 2014-2017 Snowplow Analytics Ltd.
 
 Licensed under the [Apache License, Version 2.0][license] (the "License");
 you may not use this software except in compliance with the License.

@@ -50,7 +50,7 @@ object BuildSettings {
   lazy val scalifySettings = Seq(
     sourceGenerators in Compile += Def.task {
       val file = (sourceManaged in Compile).value / "settings.scala"
-      IO.write(file, """package com.snowplowanalytics.snowplow.storage.kinesis.s3.generated
+      IO.write(file, """package com.snowplowanalytics.s3.loader.generated
         |object Settings {
         |  val organization = "%s"
         |  val version = "%s"

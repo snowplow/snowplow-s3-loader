@@ -10,7 +10,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.snowplowanalytics.snowplow.storage.kinesis.s3
+package com.snowplowanalytics.s3.loader
 
 // Java
 import java.io.File
@@ -27,9 +27,6 @@ import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration
 
 // SLF4j
 import org.slf4j.LoggerFactory
-
-// Tracker
-import com.snowplowanalytics.snowplow.scalatracker.Tracker
 
 // Scalaz
 import scalaz._

@@ -16,11 +16,13 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-package com.snowplowanalytics.snowplow.storage.kinesis.s3.sinks
+
+package com.snowplowanalytics.s3.loader
 
 /**
- * Shared interface for all sinks
- */
-trait ISink {
-  def store(output: String, key: Option[String], good: Boolean): Unit
-}
+  * Case class to contain a Failed Record:
+  * - The list of errors
+  * - The original line, Base64 Encoded
+  */
+case class FailedRecord(errors: List[String], line: String)
+
