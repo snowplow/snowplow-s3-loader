@@ -10,8 +10,9 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.snowplowanalytics.snowplow.storage.kinesis.s3
+package com.snowplowanalytics.s3.loader
 
+// Scala
 import scala.collection.JavaConverters._
 
 // Java libs
@@ -22,18 +23,11 @@ import java.text.SimpleDateFormat
 import com.amazonaws.auth.AWSCredentialsProvider
 
 // AWS Kinesis connector libs
-import com.amazonaws.services.kinesis.connectors.{
-  UnmodifiableBuffer,
-  KinesisConnectorConfiguration
-}
+import com.amazonaws.services.kinesis.connectors.UnmodifiableBuffer
 import com.amazonaws.services.kinesis.connectors.interfaces.IEmitter
 
 // Scala
 import scala.collection.JavaConversions._
-
-// Scalaz
-import scalaz._
-import Scalaz._
 
 // Tracker
 import com.snowplowanalytics.snowplow.scalatracker.Tracker

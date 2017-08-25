@@ -10,16 +10,10 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.snowplowanalytics.snowplow.storage.kinesis.s3
+package com.snowplowanalytics.s3.loader
 
 // AWS Kinesis Connector libs
-import com.amazonaws.services.kinesis.connectors.interfaces.{
-  IEmitter,
-  IBuffer,
-  ITransformer,
-  IFilter,
-  IKinesisConnectorPipeline
-}
+import com.amazonaws.services.kinesis.connectors.interfaces.IKinesisConnectorPipeline
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration
 import com.amazonaws.services.kinesis.connectors.impl.{BasicMemoryBuffer, AllPassFilter}
 

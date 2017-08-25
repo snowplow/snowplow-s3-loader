@@ -14,9 +14,9 @@
  */
 lazy val root = project.in(file("."))
   .settings(
-    name        := "snowplow-kinesis-s3",
+    name        := "snowplow-s3-loader",
     version     := "0.5.0",
-    description := "Kinesis sink for S3"
+    description := "S3 Loader"
   )
   .settings(BuildSettings.buildSettings)
   .settings(BuildSettings.sbtAssemblySettings)
@@ -45,4 +45,4 @@ lazy val root = project.in(file("."))
     )
   )
 
-shellPrompt := { _ => "kinesis-s3> " }
+shellPrompt := { _ => "s3-loader> " }

@@ -10,27 +10,15 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.snowplowanalytics.snowplow
-package storage.kinesis.s3.serializers
+package com.snowplowanalytics.s3.loader.serializers
 
 // Java
-import java.util.Properties
 import java.io.{
   File,
   FileInputStream,
   FileOutputStream,
   BufferedInputStream
 }
-
-// AWS libs
-import com.amazonaws.auth.EnvironmentVariableCredentialsProvider
-
-// AWS Kinesis Connector libs
-import com.amazonaws.services.kinesis.connectors.{
-  KinesisConnectorConfiguration,
-  UnmodifiableBuffer
-}
-import com.amazonaws.services.kinesis.connectors.impl.BasicMemoryBuffer
 
 // Elephant Bird
 import com.twitter.elephantbird.mapreduce.io.RawBlockReader
@@ -47,8 +35,6 @@ import Scalaz._
 
 // Scala
 import scala.sys.process._
-import scala.collection.JavaConversions._
-import scala.collection.JavaConverters._
 
 // Snowplow
 import com.snowplowanalytics.snowplow.CollectorPayload.thrift.model1.CollectorPayload
