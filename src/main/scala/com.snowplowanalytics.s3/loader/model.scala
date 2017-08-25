@@ -16,8 +16,7 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-
-package com.snowplowanalytics.snowplow.storage.kinesis.s3
+package com.snowplowanalytics.s3.loader
 
 // Scalaz
 import scalaz._

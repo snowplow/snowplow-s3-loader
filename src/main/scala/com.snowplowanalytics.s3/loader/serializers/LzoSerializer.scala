@@ -10,11 +10,10 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.snowplowanalytics.snowplow.storage.kinesis.s3.serializers
+package com.snowplowanalytics.s3.loader.serializers
 
+// Scala
 import scala.collection.JavaConverters._
-
-import com.snowplowanalytics.snowplow.storage.kinesis.s3._
 
 // Java libs
 import java.io.{
@@ -48,6 +47,9 @@ import com.amazonaws.services.kinesis.connectors.{
   KinesisConnectorConfiguration
 }
 import com.amazonaws.services.kinesis.connectors.interfaces.IEmitter
+
+// This project
+import com.snowplowanalytics.s3.loader._
 
 /**
  * Object to handle LZO compression of raw events

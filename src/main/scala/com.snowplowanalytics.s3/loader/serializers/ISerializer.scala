@@ -10,9 +10,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.snowplowanalytics.snowplow.storage.kinesis.s3.serializers
-
-import com.snowplowanalytics.snowplow.storage.kinesis.s3._
+package com.snowplowanalytics.s3.loader.serializers
 
 // Java libs
 import java.io.{ByteArrayOutputStream, IOException}
@@ -29,6 +27,9 @@ import org.slf4j.LoggerFactory
 
 // Apache commons
 import org.apache.commons.codec.binary.Base64
+
+// This project
+import com.snowplowanalytics.s3.loader._
 
 case class NamedStream(filename: String, stream: ByteArrayOutputStream)
 

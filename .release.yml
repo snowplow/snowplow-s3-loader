@@ -11,7 +11,7 @@ targets:
 # Required: packages to be deployed
 packages:
   - repo     : "snowplow-generic"
-    name     : "kinesis-s3"
+    name     : "snowplow-s3-loader"
     user_org : "snowplow"
     publish  : true
 
@@ -33,10 +33,10 @@ packages:
     # Required: Artifact
     artifacts:
         # The artifact name is composed like so: {{prefix}}{{version}}{{suffix}}.zip
-      - prefix : "kinesis_s3_"
+      - prefix : "snowplow_s3_loader_"
         suffix : ""
         type   : "zip"
 
         # The binaries to put in the zip
         binary_paths:
-          - target/scala-2.11/snowplow-kinesis-s3-<%= ENV['TRAVIS_TAG'] %>
+          - target/scala-2.11/snowplow-s3-loader-<%= ENV['TRAVIS_TAG'] %>.jar

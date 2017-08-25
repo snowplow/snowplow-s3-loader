@@ -1,5 +1,4 @@
-package com.snowplowanalytics.snowplow
-package storage.kinesis.s3.serializers
+package com.snowplowanalytics.s3.loader.serializers
 
 // Java
 import java.util.Properties

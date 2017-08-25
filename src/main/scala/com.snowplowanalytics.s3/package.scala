@@ -16,11 +16,26 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-package com.snowplowanalytics.snowplow.storage.kinesis.s3.sinks
+package com.snowplowanalytics.s3
 
-/**
- * Shared interface for all sinks
- */
-trait ISink {
-  def store(output: String, key: Option[String], good: Boolean): Unit
+// Scalaz
+import scalaz._
+import Scalaz._
+
+package object loader {
+
+  /**
+   * Type for a RawRecord
+   */
+  type RawRecord = Array[Byte]
+
+  /**
+   * Validation for a SnowplowRawEvent
+   */
+  type ValidatedRecord = Validation[FailedRecord, RawRecord]
+
+  /**
+   * Currently the same as ValidatedRecord, but could change in the future
+   */
+  type EmitterInput = Validation[FailedRecord, RawRecord]
 }
