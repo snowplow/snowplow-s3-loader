@@ -1,10 +1,11 @@
-# Default configuration for kinesis-lzo-s3-sink
+# Default configuration for s3-loader
 
 # Sources currently supported are:
 # 'kinesis' for reading records from a Kinesis stream
 # 'nsq' for reading records from a NSQ topic
 source: "{{source}}"
 
+# Sink is used for sending events which processing is failed.
 # Sinks currently supported are:
 # 'kinesis' for writing records to a Kinesis stream
 # 'nsq' for writing records to a NSQ topic
@@ -19,58 +20,58 @@ sink: "{{sink}}"
 #
 # If both are set to 'env', use environment variables AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
 aws {
-  access-key: "iam"
-  secret-key: "iam"
+  accessKey: "iam"
+  secretKey: "iam"
 }
 
 # Config for NSQ
 nsq {
   # Channel name for NSQ source
-  channel-name: "{{NsqSourceChannelName}}"
+  channelName: "{{nsqSourceChannelName}}"
     
   # Host name for NSQ tools
-  host: "{{NsqHost}}"
+  host: "{{nsqHost}}"
 
   # Port for nsqd
-  port: "{{NsqdPort}}"
+  port: "{{nsqdPort}}"
 
   # Port for nsqlookupd
-  lookup-port: {{NsqlookupdPort}}
+  lookupPort: {{nsqlookupdPort}}
 }
 
 kinesis {
   # LATEST: most recent data.
   # TRIM_HORIZON: oldest available data.
-  # Note: This only affects the first run of this application
-  # on a stream.
-  initial-position: "TRIM_HORIZON"
+  # "AT_TIMESTAMP": Start from the record at or after the specified timestamp
+  # Note: This only affects the first run of this application on a stream.
+  initialPosition: "{{kinesisInitialPosition}}"
 
   # Maximum number of records to read per GetRecords call     
-  max-records: {{sinkKinesisMaxRecords}}
+  maxRecords: {{kinesisMaxRecords}}
 
-  region: "{{sinkKinesisRegion}}"
+  region: "{{kinesisRegion}}"
 
-  # "app-name" is used for a DynamoDB table to maintain stream state.
+  # "appName" is used for a DynamoDB table to maintain stream state.
   # You can set it automatically using: "SnowplowLzoS3Sink-$\\{sink.kinesis.in.stream-name\\}"
-  app-name: "{{sinkKinesisAppName}}"
+  appName: "{{appName}}"
 }
 
 streams {
   # Input stream name
-  stream-name-in = "{{InStreamName}}"
+  streamNameIn = "{{InStreamName}}"
 
   # Stream for events for which the storage process fails
-  stream-name-out = "{{OutStreamName}}"
+  streamNameOut = "{{OutStreamName}}"
 
   # Events are accumulated in a buffer before being sent to S3.
   # The buffer is emptied whenever:
-  # - the combined size of the stored records exceeds byte-limit or
-  # - the number of stored records exceeds record-limit or
-  # - the time in milliseconds since it was last emptied exceeds time-limit
+  # - the combined size of the stored records exceeds byteLimit or
+  # - the number of stored records exceeds recordLimit or
+  # - the time in milliseconds since it was last emptied exceeds timeLimit
   buffer {
-    byte-limit: {{sinkLzoBufferByteThreshold}} # Not supported by NSQ; will be ignored
-    record-limit: {{sinkLzoBufferRecordThreshold}}
-    time-limit: {{sinkLzoBufferTimeThreshold}} # Not supported by NSQ; will be ignored
+    byteLimit: {{bufferByteThreshold}} # Not supported by NSQ; will be ignored
+    recordLimit: {{bufferRecordThreshold}}
+    timeLimit: {{bufferTimeThreshold}} # Not supported by NSQ; will be ignored
   }
 }
 
@@ -78,29 +79,27 @@ s3 {
   # If using us-east-1, then endpoint should be "http://s3.amazonaws.com".
   # Otherwise "http://s3-<<region>>.s3.amazonaws.com", e.g.
   # http://s3-eu-west-1.amazonaws.com
-  region: "{{sinkKinesisS3Region}}"
-  bucket: "{{sinkKinesisS3Bucket}}"
+  region: "{{S3Region}}"
+  bucket: "{{S3bucket}}"
 
   # Format is one of lzo or gzip
   # Note, that you can use gzip only for enriched data stream.
-  format: "{{sinkKinesisFormat}}"
+  format: "{{format}}"
 
   # Maximum Timeout that the application is allowed to fail for
-  max-timeout: {{sinkKinesisMaxTimeout}}
+  maxTimeout: {{maxTimeout}}
 }
 
 # Set the Logging Level for the S3 Sink
 # Options: ERROR, WARN, INFO, DEBUG, TRACE
 logging {
-  level: "{{sinkLzoLogLevel}}"
+  level: "{{LogLevel}}"
 }
 
 # Optional section for tracking endpoints
 monitoring {
-  snowplow {
-    collector-uri: "{{collectorUri}}"
-    collector-port: 80
-    app-id: "{{sinkLzoAppName}}"
-    method: "GET"
-  }
+  collectorUri: "{{collectorUri}}"
+  collectorPort: 80 
+  appId: "{{appName}}"
+  method: "{{method}}"
 }

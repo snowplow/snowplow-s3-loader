@@ -29,13 +29,14 @@ import com.snowplowanalytics.snowplow.scalatracker.Tracker
 // This project
 import sinks._
 import serializers._
+import model._
 
 /**
  * S3Pipeline class sets up the Emitter/Buffer/Transformer/Filter
  */
-class KinesisS3Pipeline(badSink: ISink, serializer: ISerializer, maxConnectionTime: Long, tracker: Option[Tracker]) extends IKinesisConnectorPipeline[ValidatedRecord, EmitterInput] {
+class KinesisS3Pipeline(s3LoaderConfig: S3LoaderConfig, badSink: ISink, serializer: ISerializer, maxConnectionTime: Long, tracker: Option[Tracker]) extends IKinesisConnectorPipeline[ValidatedRecord, EmitterInput] {
 
-  override def getEmitter(configuration: KinesisConnectorConfiguration) = new KinesisS3Emitter(configuration, badSink, serializer, maxConnectionTime, tracker)
+  override def getEmitter(configuration: KinesisConnectorConfiguration) = new KinesisS3Emitter(s3LoaderConfig, configuration.AWS_CREDENTIALS_PROVIDER, badSink, serializer, maxConnectionTime, tracker)
 
   override def getBuffer(configuration: KinesisConnectorConfiguration) = new BasicMemoryBuffer[ValidatedRecord](configuration)
 

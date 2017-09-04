@@ -31,6 +31,9 @@ import com.snowplowanalytics.snowplow.scalatracker.Tracker
 import com.snowplowanalytics.snowplow.scalatracker.SelfDescribingJson
 import com.snowplowanalytics.snowplow.scalatracker.emitters.AsyncEmitter
 
+// This project
+import model._
+
 /**
  * Functionality for sending Snowplow events for monitoring purposes
  */
@@ -42,15 +45,15 @@ object SnowplowTracking {
   /**
    * Configure a Tracker based on the configuration HOCON
    *
-   * @param config The "monitoring.snowplow" section of the HOCON
+   * @param config The "monitoring" section of the HOCON
    * @return a new tracker instance
    */
-  def initializeTracker(config: Config): Tracker = {
-    val endpoint = config.getString("collector-uri")
-    val port = config.getInt("collector-port")
-    val appName = config.getString("app-id")
+  def initializeTracker(config: MonitoringConfig): Tracker = {
+    val endpoint = config.collectorUri
+    val port = config.collectorPort
+    val appName = config.appId
     // Not yet used
-    val method = config.getString("method")
+    val method = config.method
     val emitter = AsyncEmitter.createAndStart(endpoint, port)
     new Tracker(List(emitter), generated.Settings.name, appName)
   }

@@ -18,6 +18,9 @@ import scala.collection.JavaConverters._
 import java.util.Calendar
 import java.text.SimpleDateFormat
 
+//AWS libs
+import com.amazonaws.auth.AWSCredentialsProvider
+
 // AWS Kinesis connector libs
 import com.amazonaws.services.kinesis.connectors.{
   UnmodifiableBuffer,
@@ -38,6 +41,7 @@ import com.snowplowanalytics.snowplow.scalatracker.Tracker
 // This project
 import sinks._
 import serializers._
+import model._
 
 /**
  * Emitter for flushing Kinesis event data to S3.
@@ -45,14 +49,15 @@ import serializers._
  * Once the buffer is full, the emit function is called.
  */
 class KinesisS3Emitter(
-  config: KinesisConnectorConfiguration, 
+  config: S3LoaderConfig,
+  provider: AWSCredentialsProvider,
   badSink: ISink, 
   serializer: ISerializer, 
   maxConnectionTime: Long, 
   tracker: Option[Tracker]
 ) extends IEmitter[EmitterInput]  {
 
-  val s3Emitter = new S3Emitter(config, badSink, maxConnectionTime, tracker)
+  val s3Emitter = new S3Emitter(config, provider, badSink, maxConnectionTime, tracker)
   val dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
   /**
