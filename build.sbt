@@ -15,8 +15,8 @@
 lazy val root = project.in(file("."))
   .settings(
     name        := "snowplow-s3-loader",
-    version     := "0.5.0",
-    description := "S3 Loader"
+    version     := "0.6.0",
+    description := "Load the contents of a Kinesis stream or NSQ topic to S3"
   )
   .settings(BuildSettings.buildSettings)
   .settings(BuildSettings.sbtAssemblySettings)
