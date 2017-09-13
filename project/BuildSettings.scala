@@ -37,6 +37,7 @@ object BuildSettings {
     "-Yno-adapted-args",
     "-Ywarn-dead-code",
     "-Ywarn-numeric-widen",
+    "-Ywarn-unused-import",
     "-Xfuture",
     "-Xlint"
   )
