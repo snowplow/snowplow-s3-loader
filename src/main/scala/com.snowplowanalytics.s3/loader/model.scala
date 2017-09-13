@@ -88,7 +88,6 @@ package model {
     kinesis: KinesisConfig,
     streams: StreamsConfig,
     s3: S3Config,
-    logging: LoggingConfig,
     monitoring: Option[MonitoringConfig]
   )
 }
