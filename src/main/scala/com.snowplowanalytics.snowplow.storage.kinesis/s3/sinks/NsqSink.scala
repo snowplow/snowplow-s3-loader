@@ -24,14 +24,17 @@ package sinks
 // NSQ
 import com.snowplowanalytics.client.nsq.NSQProducer
 
+// This project
+import model._
+
 /**
  * NSQ sink
  * 
  * @param config Configuration for NSQ
  */
-class NsqSink(config: S3LoaderNsqConfig) extends ISink {
+class NsqSink(config: S3LoaderConfig) extends ISink {
   
-  private val producer = new NSQProducer().addAddress(config.nsqHost, config.nsqPort).start()
+  private val producer = new NSQProducer().addAddress(config.nsq.host, config.nsq.port).start()
     
   /**
    * Write a record to the NSQ stream
@@ -41,6 +44,6 @@ class NsqSink(config: S3LoaderNsqConfig) extends ISink {
    * @param good Unused parameter which exists to extend ISink
    */
   override def store(output: String, key: Option[String], good: Boolean): Unit =
-    producer.produce(config.nsqSinkTopicName, output.getBytes())      
+    producer.produce(config.streams.outStreamName, output.getBytes())
 }
 
