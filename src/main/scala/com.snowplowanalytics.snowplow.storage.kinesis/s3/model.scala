@@ -19,6 +19,12 @@
 
 package com.snowplowanalytics.snowplow.storage.kinesis.s3
 
+// Java
+import java.text.SimpleDateFormat
+
+// Scala
+import scala.util.Try
+
 package model {
 
   case class AWSConfig(accessKey: String, secretKey: String)
@@ -30,10 +36,20 @@ package model {
   )
   case class KinesisConfig(
     initialPosition: String,
+    initialTimestamp: Option[String],
     maxRecords: Long,
     region: String,
     appName: String
   ) {
+    val timestampEither = initialTimestamp
+      .toRight("An initial timestamp needs to be provided when choosing AT_TIMESTAMP")
+      .right.flatMap { s =>
+        val format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
+        utils.fold(Try(format.parse(s)))(t => Left(t.getMessage), Right(_))
+      }
+    require(initialPosition != "AT_TIMESTAMP" || timestampEither.isRight, timestampEither.left.getOrElse(""))
+    val timestamp = timestampEither.right.toOption
+
     val endpoint = region match {
       case "cn-north-1" => "kinesis.cn-north-1.amazonaws.com.cn"
       case _ => s"https://kinesis.$region.amazonaws.com"
