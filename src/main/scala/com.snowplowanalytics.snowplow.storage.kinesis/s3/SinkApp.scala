@@ -146,9 +146,26 @@ object SinkApp {
 
     val executor = config.source match {
         // Read records from Kinesis
-        case "kinesis" => new KinesisSourceExecutor(convertConfig(config, credentials), config, badSink, serializer, maxConnectionTime, tracker).success
+        case "kinesis" =>
+          new KinesisSourceExecutor(convertConfig(config, credentials),
+                                    config.kinesis.initialPosition,
+                                    config.kinesis.timestamp,
+                                    config.s3,
+                                    badSink,
+                                    serializer,
+                                    maxConnectionTime,
+                                    tracker
+                                   ).success
         // Read records from NSQ
-        case "nsq" => new NsqSourceExecutor(config, credentials, badSink, serializer, maxConnectionTime, tracker).success
+        case "nsq" =>
+          new NsqSourceExecutor(config,
+                                credentials,
+                                badSink,
+                                serializer,
+                                maxConnectionTime,
+                                tracker
+                               ).success
+
         case _ => "Source must be set to kinesis' or 'NSQ'".failure
     }
 

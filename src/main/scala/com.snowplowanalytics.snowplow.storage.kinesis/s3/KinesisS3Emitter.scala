@@ -49,7 +49,7 @@ import model._
  * Once the buffer is full, the emit function is called.
  */
 class KinesisS3Emitter(
-  config: S3LoaderConfig,
+  s3Config: S3Config,
   provider: AWSCredentialsProvider,
   badSink: ISink, 
   serializer: ISerializer, 
@@ -57,7 +57,7 @@ class KinesisS3Emitter(
   tracker: Option[Tracker]
 ) extends IEmitter[EmitterInput]  {
 
-  val s3Emitter = new S3Emitter(config, provider, badSink, maxConnectionTime, tracker)
+  val s3Emitter = new S3Emitter(s3Config, provider, badSink, maxConnectionTime, tracker)
   val dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
   /**
