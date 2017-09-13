@@ -37,6 +37,7 @@ object Dependencies {
     val json4s          = "3.2.11"
     val scalaz7         = "7.2.13"
     val snowplowTracker = "0.3.0"
+    val pureconfig      = "0.8.0"
     // Scala (test only)
     val specs2          = "3.9.1"
   }
@@ -66,6 +67,7 @@ object Dependencies {
     val json4sJackson    = "org.json4s"                %% "json4s-jackson"            % V.json4s
     val scalaz7          = "org.scalaz"                %% "scalaz-core"               % V.scalaz7
     val snowplowTracker  = "com.snowplowanalytics"     %% "snowplow-scala-tracker"    % V.snowplowTracker
+    val pureconfig       = "com.github.pureconfig"     %% "pureconfig"                % V.pureconfig
     // Scala (test only)
     val specs2           = "org.specs2"                %% "specs2-core"               % V.specs2           % "test"
   }
