@@ -10,16 +10,10 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.snowplowanalytics.snowplow.storage.kinesis.s3
+package com.snowplowanalytics.s3.loader
 
 // AWS Kinesis Connector libs
-import com.amazonaws.services.kinesis.connectors.interfaces.{
-  IEmitter,
-  IBuffer,
-  ITransformer,
-  IFilter,
-  IKinesisConnectorPipeline
-}
+import com.amazonaws.services.kinesis.connectors.interfaces.IKinesisConnectorPipeline
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration
 import com.amazonaws.services.kinesis.connectors.impl.{BasicMemoryBuffer, AllPassFilter}
 
@@ -29,13 +23,14 @@ import com.snowplowanalytics.snowplow.scalatracker.Tracker
 // This project
 import sinks._
 import serializers._
+import model._
 
 /**
  * S3Pipeline class sets up the Emitter/Buffer/Transformer/Filter
  */
-class S3Pipeline(badSink: ISink, serializer: ISerializer, maxConnectionTime: Long, tracker: Option[Tracker]) extends IKinesisConnectorPipeline[ValidatedRecord, EmitterInput] {
+class KinesisS3Pipeline(s3Config: S3Config, badSink: ISink, serializer: ISerializer, maxConnectionTime: Long, tracker: Option[Tracker]) extends IKinesisConnectorPipeline[ValidatedRecord, EmitterInput] {
 
-  override def getEmitter(configuration: KinesisConnectorConfiguration) = new S3Emitter(configuration, badSink, serializer, maxConnectionTime, tracker)
+  override def getEmitter(configuration: KinesisConnectorConfiguration) = new KinesisS3Emitter(s3Config, configuration.AWS_CREDENTIALS_PROVIDER, badSink, serializer, maxConnectionTime, tracker)
 
   override def getBuffer(configuration: KinesisConnectorConfiguration) = new BasicMemoryBuffer[ValidatedRecord](configuration)
 

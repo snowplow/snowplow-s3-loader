@@ -10,21 +10,14 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.snowplowanalytics.snowplow.storage.kinesis.s3.serializers
-
-import scala.collection.JavaConverters._
-
-import com.snowplowanalytics.snowplow.storage.kinesis.s3._
+package com.snowplowanalytics.s3.loader
+package serializers
 
 // Java libs
 import java.io.{
-  OutputStream,
   DataOutputStream,
-  ByteArrayInputStream,
   ByteArrayOutputStream
 }
-import java.util.Calendar
-import java.text.SimpleDateFormat
 
 // Java lzo
 import org.apache.hadoop.conf.Configuration
@@ -35,19 +28,6 @@ import com.twitter.elephantbird.mapreduce.io.RawBlockWriter
 
 // Scalaz
 import scalaz._
-import Scalaz._
-
-// AWS libs
-import com.amazonaws.AmazonServiceException
-import com.amazonaws.services.s3.AmazonS3Client
-import com.amazonaws.services.s3.model.ObjectMetadata
-
-// AWS Kinesis connector libs
-import com.amazonaws.services.kinesis.connectors.{
-  UnmodifiableBuffer,
-  KinesisConnectorConfiguration
-}
-import com.amazonaws.services.kinesis.connectors.interfaces.IEmitter
 
 /**
  * Object to handle LZO compression of raw events

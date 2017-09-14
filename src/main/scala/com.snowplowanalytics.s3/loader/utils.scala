@@ -1,5 +1,5 @@
- /*
- * Copyright (c) 2014-2015 Snowplow Analytics Ltd.
+/*
+ * Copyright (c) 2013-2017 Snowplow Analytics Ltd.
  * All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
@@ -16,27 +16,14 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
+package com.snowplowanalytics.s3.loader
 
-package com.snowplowanalytics.snowplow.storage.kinesis
+import scala.util.{Failure, Success, Try}
 
-// Scalaz
-import scalaz._
-import Scalaz._
-
-package object s3 {
-
-  /**
-   * Type for a RawRecord
-   */
-  type RawRecord = Array[Byte]
-
-  /**
-   * Validation for a SnowplowRawEvent
-   */
-  type ValidatedRecord = Validation[FailedRecord, RawRecord]
-
-  /**
-   * Currently the same as ValidatedRecord, but could change in the future
-   */
-  type EmitterInput = Validation[FailedRecord, RawRecord]
+object utils {
+    // to rm once 2.12 as well as the right projections
+    def fold[A, B](t: Try[A])(ft: Throwable => B, fa: A => B): B = t match {
+      case Success(a) => fa(a)
+      case Failure(t) => ft(t)
+    }
 }

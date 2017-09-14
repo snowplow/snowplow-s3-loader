@@ -14,9 +14,9 @@
  */
 lazy val root = project.in(file("."))
   .settings(
-    name        := "snowplow-kinesis-s3",
-    version     := "0.5.0",
-    description := "Kinesis sink for S3"
+    name        := "snowplow-s3-loader",
+    version     := "0.6.0",
+    description := "Load the contents of a Kinesis stream or NSQ topic to S3"
   )
   .settings(BuildSettings.buildSettings)
   .settings(BuildSettings.sbtAssemblySettings)
@@ -30,12 +30,15 @@ lazy val root = project.in(file("."))
       Dependencies.Libraries.elephantbird,
       Dependencies.Libraries.hadoopLZO,
       Dependencies.Libraries.jodaTime,
+      Dependencies.Libraries.nsqClient,
+      Dependencies.Libraries.jacksonCbor,
       // Scala
       Dependencies.Libraries.scopt,
       Dependencies.Libraries.config,
       Dependencies.Libraries.scalaz7,
       Dependencies.Libraries.json4sJackson,
       Dependencies.Libraries.snowplowTracker,
+      Dependencies.Libraries.pureconfig,
       // Scala (test only)
       Dependencies.Libraries.specs2,
       // Thrift (test only)
@@ -43,4 +46,4 @@ lazy val root = project.in(file("."))
     )
   )
 
-shellPrompt := { _ => "kinesis-s3> " }
+shellPrompt := { _ => "s3-loader> " }

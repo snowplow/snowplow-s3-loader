@@ -17,7 +17,7 @@
  * governing permissions and limitations there under.
  */
 
-package com.snowplowanalytics.snowplow.storage.kinesis.s3.sinks
+package com.snowplowanalytics.s3.loader.sinks
 
 // Java
 import java.nio.ByteBuffer
@@ -69,7 +69,7 @@ class KinesisSink(
     .withEndpointConfiguration(new EndpointConfiguration(endpoint, region))
     .build()
 
-  require(streamExists(name))
+  require(streamExists(name), s"Kinesis stream $name doesn't exist")
 
   /**
    * Checks if a stream exists.

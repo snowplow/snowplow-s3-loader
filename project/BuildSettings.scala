@@ -37,6 +37,7 @@ object BuildSettings {
     "-Yno-adapted-args",
     "-Ywarn-dead-code",
     "-Ywarn-numeric-widen",
+    "-Ywarn-unused-import",
     "-Xfuture",
     "-Xlint"
   )
@@ -50,7 +51,7 @@ object BuildSettings {
   lazy val scalifySettings = Seq(
     sourceGenerators in Compile += Def.task {
       val file = (sourceManaged in Compile).value / "settings.scala"
-      IO.write(file, """package com.snowplowanalytics.snowplow.storage.kinesis.s3.generated
+      IO.write(file, """package com.snowplowanalytics.s3.loader.generated
         |object Settings {
         |  val organization = "%s"
         |  val version = "%s"
@@ -66,14 +67,7 @@ object BuildSettings {
   // sbt-assembly settings for building a fat jar
   import sbtassembly.AssemblyPlugin.autoImport._
   lazy val sbtAssemblySettings = Seq(
-    // Executable jarfile
-    assemblyOption in assembly :=
-      (assemblyOption in assembly).value.copy(prependShellScript = Some(
-        Seq("#!/usr/bin/env sh", """exec java -jar "$0" "$@"""" + "\n")
-      )),
-    // Name it as an executable
-    assemblyJarName in assembly := { s"${name.value}-${version.value}" },
-
+    assemblyJarName in assembly := { s"${name.value}-${version.value}.jar" },
     assemblyMergeStrategy in assembly := {
       case PathList("javax", "servlet", xs @ _*)         => MergeStrategy.first
       case PathList("org", "objectweb", "asm", xs @ _*)  => MergeStrategy.first
