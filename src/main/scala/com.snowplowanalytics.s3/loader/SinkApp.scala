@@ -87,8 +87,6 @@ object SinkApp {
     val kinesisSinkEndpoint = config.kinesis.endpoint
     val kinesisSinkName = config.streams.outStreamName
 
-    val logLevel = config.logging.level
-    System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, logLevel)
     val log = LoggerFactory.getLogger(getClass)
 
     val credentials = CredentialsLookup.getCredentialsProvider(config.aws.accessKey, config.aws.secretKey)

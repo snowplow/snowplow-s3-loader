@@ -91,12 +91,6 @@ s3 {
   maxTimeout = {{maxTimeout}}
 }
 
-# Set the Logging Level for the S3 Sink
-# Options: ERROR, WARN, INFO, DEBUG, TRACE
-logging {
-  level = "{{LogLevel}}"
-}
-
 # Optional section for tracking endpoints
 monitoring {
   snowplow{
