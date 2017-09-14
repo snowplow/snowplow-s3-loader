@@ -42,6 +42,7 @@ import com.amazonaws.AmazonServiceException
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.amazonaws.services.s3.model.ObjectMetadata
+import com.amazonaws.auth.AWSCredentialsProvider
 
 // json4s
 import org.json4s.jackson.JsonMethods._
@@ -54,29 +55,32 @@ import org.joda.time.format.DateTimeFormat
 // This project
 import sinks._
 import serializers._
+import model._
 
 /**
  * Emitter for flushing data to S3.
  *
- * @param config Configuration for S3 Client
+ * @param config S3Loader configuration
+ * @param provider AWSCredentialsProvider
  * @param badSink Sink instance for not sent data
  * @param maxConnectionTime Max time for attempting to send S3
  * @param tracker Tracker instance
  */
 class S3Emitter(
-  config: KinesisConnectorConfiguration, 
+  config: S3Config,
+  provider: AWSCredentialsProvider,
   badSink: ISink,
   maxConnectionTime: Long,
   tracker: Option[Tracker]
 ) {
 
   // create Amazon S3 Client
-  private val bucket = config.S3_BUCKET
+  private val bucket = config.bucket
   val log = LoggerFactory.getLogger(getClass)
   val client = AmazonS3ClientBuilder
     .standard()
-    .withCredentials(config.AWS_CREDENTIALS_PROVIDER)
-    .withEndpointConfiguration(new EndpointConfiguration(config.S3_ENDPOINT, config.REGION_NAME))
+    .withCredentials(provider)
+    .withEndpointConfiguration(new EndpointConfiguration(config.endpoint, config.region))
     .build()
 
   /**

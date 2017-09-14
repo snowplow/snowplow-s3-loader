@@ -39,6 +39,9 @@ import com.snowplowanalytics.snowplow.scalatracker.Tracker
 import scalaz._
 import Scalaz._
 
+//AWS libs
+import com.amazonaws.auth.AWSCredentialsProvider
+
 // Joda-Time
 import org.joda.time.{DateTime, DateTimeZone}
 import org.joda.time.format.DateTimeFormat
@@ -49,19 +52,20 @@ import org.slf4j.LoggerFactory
 // This project
 import sinks._
 import serializers._
+import model._
 
 /**
  * Executor for NSQSource
  *
- * @param config the kinesis config for getting informations for S3
- * @param nsqConfig the NSQ configuration
- * @param badSink the configured BadSink
- * @param serializer the instance of one of the serializer
- * @param maxConnectionTime max time for trying to connect S3 instance
+ * @param config S3Loader configuration
+ * @param provider AWSCredentialsProvider
+ * @param badSink Configured BadSink
+ * @param serializer Serializer instance
+ * @param maxConnectionTime Max time for trying to connect S3 instance
  */
 class NsqSourceExecutor(
-  config: KinesisConnectorConfiguration,
-  nsqConfig: S3LoaderNsqConfig,
+  config: S3LoaderConfig,
+  provider: AWSCredentialsProvider,
   badSink: ISink,
   serializer: ISerializer,
   maxConnectionTime: Long,
@@ -73,7 +77,7 @@ class NsqSourceExecutor(
   //nsq messages will be buffered in msgBuffer until buffer size become equal to nsqBufferSize
   val msgBuffer = new ListBuffer[EmitterInput]()
 
-  val s3Emitter = new S3Emitter(config, badSink, maxConnectionTime, tracker)
+  val s3Emitter = new S3Emitter(config.s3, provider, badSink, maxConnectionTime, tracker)
   private val TimeFormat = DateTimeFormat.forPattern("HH:mm:ss.SSS").withZone(DateTimeZone.UTC)
   private val DateFormat = DateTimeFormat.forPattern("yyyy-MM-dd").withZone(DateTimeZone.UTC)
 
@@ -133,15 +137,15 @@ class NsqSourceExecutor(
 
     val errorCallback = new NSQErrorCallback {
       override def error(e: NSQException) =
-        log.error(s"Exception while consuming topic $nsqConfig.nsqGoodSourceTopicName", e)
+        log.error(s"Exception while consuming topic $config.streams.inStreamName", e)
     }
 
     val lookup = new DefaultNSQLookup
     // use NSQLookupd
-    lookup.addLookupAddress(nsqConfig.nsqHost, nsqConfig.nsqlookupPort)
+    lookup.addLookupAddress(config.nsq.host, config.nsq.lookupPort)
     val consumer = new NSQConsumer(lookup,
-                                   nsqConfig.nsqSourceTopicName,
-                                   nsqConfig.nsqSourceChannelName,
+                                   config.streams.inStreamName,
+                                   config.nsq.channelName,
                                    nsqCallback,
                                    new NSQConfig(),
                                    errorCallback)
