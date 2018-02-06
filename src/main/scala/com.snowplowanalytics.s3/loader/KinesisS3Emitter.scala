@@ -52,15 +52,26 @@ class KinesisS3Emitter(
 ) extends IEmitter[EmitterInput]  {
 
   val s3Emitter = new S3Emitter(s3Config, provider, badSink, maxConnectionTime, tracker)
-  val dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+  val calendar = Calendar.getInstance()
 
   /**
    * Determines the filename in S3, which is the corresponding
    * Kinesis sequence range of records in the file.
    */
-  protected def getBaseFilename(firstSeq: String, lastSeq: String): String =
-    dateFormat.format(Calendar.getInstance().getTime()) +
-      "-" + firstSeq + "-" + lastSeq
+  protected def getBaseFilename(firstSeq: String, lastSeq: String): String = {
+    val date = calendar.getTime()
+    val dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    val (yearFormat, monthFormat, dayFormat) = ( new SimpleDateFormat("yyyy"), new SimpleDateFormat("MM"), new SimpleDateFormat("dd"))
+
+    var prefix = ""
+    if (s3Config.partitioningFormat == "flat") {
+      prefix = s"${dateFormat.format(date)}-"
+    } else if (s3Config.partitioningFormat == "hive") {
+      prefix = s"Year=${yearFormat.format(date)}/Month=${monthFormat.format(date)}/Day=${dayFormat.format(date)}/"
+    }
+
+    return s"${prefix}${firstSeq}-${lastSeq}"
+  }
 
   /**
    * Reads items from a buffer and saves them to s3.
