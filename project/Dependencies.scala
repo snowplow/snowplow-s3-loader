@@ -41,6 +41,8 @@ object Dependencies {
     val pureconfig      = "0.8.0"
     // Scala (test only)
     val specs2          = "3.9.1"
+    val scalactic       = "3.0.4"
+    val scalatest       = "3.0.4"
   }
 
   object Libraries {
@@ -76,5 +78,7 @@ object Dependencies {
     val pureconfig       = "com.github.pureconfig"     %% "pureconfig"                % V.pureconfig
     // Scala (test only)
     val specs2           = "org.specs2"                %% "specs2-core"               % V.specs2           % "test"
+    val scalactic        = "org.scalactic"             %% "scalactic"                 % V.scalactic
+    val scalatest        = "org.scalatest"             %% "scalatest"                 % V.scalatest
   }
 }

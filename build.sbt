@@ -41,6 +41,8 @@ lazy val root = project.in(file("."))
       Dependencies.Libraries.pureconfig,
       // Scala (test only)
       Dependencies.Libraries.specs2,
+      Dependencies.Libraries.scalactic,
+      Dependencies.Libraries.scalatest,
       // Thrift (test only)
       Dependencies.Libraries.collectorPayload
     )

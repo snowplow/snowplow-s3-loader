@@ -64,7 +64,8 @@ package model {
     region: String,
     bucket: String,
     format: String,
-    maxTimeout: Long
+    maxTimeout: Long,
+    partitioningFormat: String = "flat"
   ) {
     val endpoint = region match {
       case "us-east-1" => "https://s3.amazonaws.com"
