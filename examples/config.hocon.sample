@@ -51,7 +51,7 @@ kinesis {
   # Note: Time need to specified in UTC.
   initialTimestamp = "{{timestamp}}"
 
-  # Maximum number of records to read per GetRecords call     
+  # Maximum number of records to read per GetRecords call
   maxRecords = {{kinesisMaxRecords}}
 
   region = "{{kinesisRegion}}"
@@ -89,6 +89,9 @@ s3 {
 
   # Maximum Timeout that the application is allowed to fail for
   maxTimeout = {{maxTimeout}}
+
+  # Uncomment to enable output file structure that uses a hive partitioning (e.g.: "Year=2017/Month=05/Day=17/*"):
+  # partitioningFormat = "hive"
 }
 
 # Optional section for tracking endpoints
