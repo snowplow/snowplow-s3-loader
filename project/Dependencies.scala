@@ -16,7 +16,7 @@ object Dependencies {
   val resolvers = Seq(
     Resolver.jcenterRepo,
     "Snowplow Analytics Maven releases repo" at "http://maven.snplow.com/releases/",
-    "Twitter maven repo"                     at "http://maven.twttr.com/"
+    "Twitter maven repo"                     at "https://maven.twttr.com/"
   )
 
   object V {
