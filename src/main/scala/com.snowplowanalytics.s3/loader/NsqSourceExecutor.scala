@@ -77,7 +77,7 @@ class NsqSourceExecutor(
   val msgBuffer = new ListBuffer[EmitterInput]()
 
   val s3Emitter = new S3Emitter(config.s3, provider, badSink, maxConnectionTime, tracker)
-  private val TimeFormat = DateTimeFormat.forPattern("HH:mm:ss.SSS").withZone(DateTimeZone.UTC)
+  private val TimeFormat = DateTimeFormat.forPattern("HHmmssSSS").withZone(DateTimeZone.UTC)
   private val DateFormat = DateTimeFormat.forPattern("yyyy-MM-dd").withZone(DateTimeZone.UTC)
 
   private def getBaseFilename(startTime: Long, endTime: Long): String = {
