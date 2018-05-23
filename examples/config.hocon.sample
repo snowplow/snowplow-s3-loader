@@ -87,7 +87,7 @@ s3 {
   # Note, that you can use gzip only for enriched data stream.
   format = "{{format}}"
 
-  # Maximum Timeout that the application is allowed to fail for
+  # Maximum Timeout that the application is allowed to fail for (in milliseconds)
   maxTimeout = {{maxTimeout}}
 }
 
