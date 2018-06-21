@@ -58,6 +58,10 @@ kinesis {
 
   # "appName" is used for a DynamoDB table to maintain stream state.
   appName = "{{appName}}"
+
+  ## Optional endpoint url configuration to override aws kinesis endpoints,
+  ## this can be used to specify local endpoints when using localstack
+  # customEndpoint = {{kinesisEndpoint}}
 }
 
 streams {
@@ -89,6 +93,10 @@ s3 {
 
   # Maximum Timeout that the application is allowed to fail for (in milliseconds)
   maxTimeout = {{maxTimeout}}
+
+  ## Optional endpoint url configuration to override aws s3 endpoints,
+  ## this can be used to specify local endpoints when using localstack
+  # customEndpoint = {{kinesisEndpoint}}
 }
 
 # Optional section for tracking endpoints
