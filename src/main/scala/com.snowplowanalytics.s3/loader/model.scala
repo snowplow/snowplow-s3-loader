@@ -38,7 +38,8 @@ package model {
     initialTimestamp: Option[String],
     maxRecords: Long,
     region: String,
-    appName: String
+    appName: String,
+    customEndpoint: Option[String]
   ) {
     val timestampEither = initialTimestamp
       .toRight("An initial timestamp needs to be provided when choosing AT_TIMESTAMP")
@@ -49,10 +50,10 @@ package model {
     require(initialPosition != "AT_TIMESTAMP" || timestampEither.isRight, timestampEither.left.getOrElse(""))
     val timestamp = timestampEither.right.toOption
 
-    val endpoint = region match {
+    val endpoint = customEndpoint.getOrElse(region match {
       case "cn-north-1" => "kinesis.cn-north-1.amazonaws.com.cn"
       case _ => s"https://kinesis.$region.amazonaws.com"
-    }
+    })
   }
   case class BufferConfig(byteLimit: Long, recordLimit: Long, timeLimit: Long)
   case class StreamsConfig(
@@ -64,13 +65,14 @@ package model {
     region: String,
     bucket: String,
     format: String,
-    maxTimeout: Long
+    maxTimeout: Long,
+    customEndpoint: Option[String]
   ) {
-    val endpoint = region match {
+    val endpoint = customEndpoint.getOrElse(region match {
       case "us-east-1" => "https://s3.amazonaws.com"
       case "cn-north-1" => "https://s3.cn-north-1.amazonaws.com.cn"
       case _ => s"https://s3-$region.amazonaws.com"
-    }
+    })
   }
   case class LoggingConfig(level: String)
   case class SnowplowMonitoringConfig(
