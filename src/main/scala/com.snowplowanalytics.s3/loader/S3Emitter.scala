@@ -74,6 +74,7 @@ class S3Emitter(
 
   // create Amazon S3 Client
   private val bucket = config.bucket
+  private val directoryPattern = config.directoryPattern
   val log = LoggerFactory.getLogger(getClass)
   val client = AmazonS3ClientBuilder
     .standard()
@@ -153,6 +154,7 @@ class S3Emitter(
   def attemptEmit(namedStream: NamedStream, connectionAttemptStartTime: Long): Boolean = {
 
     var attemptCount: Long = 1
+    val connectionAttemptStartDateTime = new DateTime(connectionAttemptStartTime)
     while (true) {
       if (attemptCount > 1 && System.currentTimeMillis() - connectionAttemptStartTime > maxConnectionTime) {
         forceShutdown()
@@ -160,7 +162,22 @@ class S3Emitter(
 
       try {
         val outputStream = namedStream.stream
-        val filename = namedStream.filename
+        // replace the pattern with actual date values
+        val detectBracesExpression = "\\{(.*?)\\}".r
+        val replacements = detectBracesExpression
+          .findAllMatchIn(bucket)
+          .map(_.toString.trim)
+          .map(str =>
+            (str, DateTimeFormat.forPattern(str).withZone(DateTimeZone.UTC).print(connectionAttemptStartDateTime))
+          )
+          .toList
+        var directory = directoryPattern.getOrElse("")
+        for (replacement <- replacements) {
+          directory = directory.replace(replacement._1, replacement._2)
+        }
+        // ensure trailing slash in the directory
+        directory = if (directory.endsWith("/")) directory else s"$directory/"
+        val filename = s"$directory${namedStream.filename}"
         val inputStream = new ByteArrayInputStream(outputStream.toByteArray)
 
         val objMeta = new ObjectMetadata()

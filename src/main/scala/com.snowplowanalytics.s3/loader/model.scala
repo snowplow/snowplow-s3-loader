@@ -64,7 +64,8 @@ package model {
     region: String,
     bucket: String,
     format: String,
-    maxTimeout: Long
+    maxTimeout: Long,
+    directoryPattern: Option[String]
   ) {
     val endpoint = region match {
       case "us-east-1" => "https://s3.amazonaws.com"

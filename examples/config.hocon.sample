@@ -82,6 +82,9 @@ streams {
 s3 {
   region = "{{s3Region}}"
   bucket = "{{s3bucket}}"
+  # optional directory structure to use while storing data on s3, you can place date format strings which will be
+  # replaced with date time values
+  directoryPattern = "{{s3DirectoryPattern}}"
 
   # Format is one of lzo or gzip
   # Note, that you can use gzip only for enriched data stream.
