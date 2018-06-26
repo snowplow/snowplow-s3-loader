@@ -21,6 +21,8 @@ package com.snowplowanalytics.s3.loader
 //Java
 import java.io.ByteArrayInputStream
 
+import scala.util.Try
+
 // Scala
 import scala.util.control.NonFatal
 import scala.collection.JavaConversions._
@@ -165,10 +167,12 @@ class S3Emitter(
         // replace the pattern with actual date values
         val detectBracesExpression = "\\{(.*?)\\}".r
         val replacements = detectBracesExpression
-          .findAllMatchIn(bucket)
+          .findAllMatchIn(directoryPattern.getOrElse(""))
           .map(_.toString.trim)
-          .map(str =>
-            (str, DateTimeFormat.forPattern(str).withZone(DateTimeZone.UTC).print(connectionAttemptStartDateTime))
+          .map(str => {
+            val converted = Try(DateTimeFormat.forPattern(str).withZone(DateTimeZone.UTC).print(connectionAttemptStartDateTime))
+            (str, converted.getOrElse(str))
+          }
           )
           .toList
         var directory = directoryPattern.getOrElse("")
