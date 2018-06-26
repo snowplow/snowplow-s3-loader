@@ -175,13 +175,13 @@ class S3Emitter(
           }
           )
           .toList
-        var directory = directoryPattern.getOrElse("")
-        for (replacement <- replacements) {
-          directory = directory.replace(replacement._1, replacement._2)
+        val directory = replacements.foldLeft(directoryPattern.getOrElse("")) {
+          (dir, replacement) => dir.replace(replacement._1, replacement._2)
         }
-        // ensure trailing slash in the directory if it exists
-        directory = if (directory.endsWith("/") && ! directory.isEmpty) directory else s"$directory/"
-        val filename = s"$directory${namedStream.filename}"
+        // ensure trailing slash in the directory only if a pattern was supplied
+        val filename = if (directory.endsWith("/") || directory.isEmpty) s"$directory${namedStream.filename}"
+        else s"$directory/${namedStream.filename}"
+
         val inputStream = new ByteArrayInputStream(outputStream.toByteArray)
 
         val objMeta = new ObjectMetadata()
