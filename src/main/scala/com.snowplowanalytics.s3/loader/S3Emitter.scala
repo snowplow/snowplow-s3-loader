@@ -179,8 +179,8 @@ class S3Emitter(
         for (replacement <- replacements) {
           directory = directory.replace(replacement._1, replacement._2)
         }
-        // ensure trailing slash in the directory
-        directory = if (directory.endsWith("/")) directory else s"$directory/"
+        // ensure trailing slash in the directory if it exists
+        directory = if (directory.endsWith("/") && ! directory.isEmpty) directory else s"$directory/"
         val filename = s"$directory${namedStream.filename}"
         val inputStream = new ByteArrayInputStream(outputStream.toByteArray)
 
