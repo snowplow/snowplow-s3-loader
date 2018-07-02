@@ -164,29 +164,14 @@ class S3Emitter(
 
       try {
         val outputStream = namedStream.stream
-        // replace the pattern with actual date values
-        val detectBracesExpression = "\\{(.*?)\\}".r
-        val replacements = detectBracesExpression
-          .findAllMatchIn(directoryPattern.getOrElse(""))
-          .map(_.toString.trim)
-          .map(str => {
-            val converted = Try(DateTimeFormat.forPattern(str).withZone(DateTimeZone.UTC).print(connectionAttemptStartDateTime))
-            (str, converted.getOrElse(str))
-          }
-          )
-          .toList
-        val directory = replacements.foldLeft(directoryPattern.getOrElse("")) {
-          (dir, replacement) => dir.replace(replacement._1, replacement._2)
-        }
-        // ensure trailing slash in the directory only if a pattern was supplied
-        val filename = if (directory.endsWith("/") || directory.isEmpty) s"$directory${namedStream.filename}"
-        else s"$directory/${namedStream.filename}"
+
+        val s3Key = DynamicPath.decorateDirectoryWithTime(directoryPattern.getOrElse(""), namedStream.filename, connectionAttemptStartDateTime)
 
         val inputStream = new ByteArrayInputStream(outputStream.toByteArray)
 
         val objMeta = new ObjectMetadata()
         objMeta.setContentLength(outputStream.size.toLong)
-        client.putObject(bucket, filename, inputStream, objMeta)
+        client.putObject(bucket, s3Key, inputStream, objMeta)
 
         return true
       } catch {
