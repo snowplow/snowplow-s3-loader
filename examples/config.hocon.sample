@@ -88,6 +88,7 @@ s3 {
   bucket = "{{s3bucket}}"
   # optional directory structure to use while storing data on s3, you can place date format strings which will be
   # replaced with date time values
+  # eg: directoryPattern = "enriched/good/run_yr={YYYY}/run_mo={MM}/run_dy={DD}"
   directoryPattern = "{{s3DirectoryPattern}}"
 
   # Format is one of lzo or gzip
