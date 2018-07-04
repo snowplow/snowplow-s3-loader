@@ -21,8 +21,6 @@ package com.snowplowanalytics.s3.loader
 //Java
 import java.io.ByteArrayInputStream
 
-import scala.util.Try
-
 // Scala
 import scala.util.control.NonFatal
 import scala.collection.JavaConversions._
@@ -165,7 +163,7 @@ class S3Emitter(
       try {
         val outputStream = namedStream.stream
 
-        val s3Key = DynamicPath.decorateDirectoryWithTime(directoryPattern.getOrElse(""), namedStream.filename, connectionAttemptStartDateTime)
+        val s3Key = DynamicPath.decorateDirectoryWithTime(directoryPattern, namedStream.filename, connectionAttemptStartDateTime)
 
         val inputStream = new ByteArrayInputStream(outputStream.toByteArray)
 
