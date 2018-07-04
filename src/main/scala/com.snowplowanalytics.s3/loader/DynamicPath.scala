@@ -21,25 +21,37 @@ import scala.util.Try
   * Object to handle S3 dynamic path generation
   */
 object DynamicPath {
-  def decorateDirectoryWithTime(directoryPattern: String, fileName: String, decoratorDateTime: DateTime): String = {
-    // replace the pattern with actual date values
-    val detectBracesExpression = "\\{(.*?)\\}".r
-    val replacements = detectBracesExpression
-      .findAllMatchIn(directoryPattern)
-      .map(_.toString.trim)
-      .map(str => {
-        val converted = Try(DateTimeFormat.forPattern(str).withZone(DateTimeZone.UTC).print(decoratorDateTime))
-        (str, converted.getOrElse(str))
-      }
-      )
-      .toList
-    val directory = replacements.foldLeft(directoryPattern) {
-      (dir, replacement) => dir.replace(replacement._1, replacement._2)
+  /**
+    * Function to decorate the directory pattern with time components from a given DateTime, it returns a string with
+    * the final file path decorated with DateTime Values as per the directory pattern supplied
+    *
+    * @param directoryPattern  A string option which contains patterns enclosed in {curly braces}.
+    *                          These patterns conform to the DateTime Formatter symbols as described here -
+    *                          https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html
+    * @param fileName          Name of the file to be placed in the directory
+    * @param decoratorDateTime The DateTime to be used for decorating the directory patterns with actual values
+    */
+  def decorateDirectoryWithTime(directoryPattern: Option[String], fileName: String, decoratorDateTime: DateTime): String = {
+    directoryPattern match {
+      case Some(pattern) =>
+        // replace the pattern with actual date values
+        val detectBracesExpression = "\\{(.*?)\\}".r
+        val replacements = detectBracesExpression
+          .findAllMatchIn(pattern)
+          .map(_.toString.trim)
+          .map { str =>
+            (str, Try(DateTimeFormat.forPattern(str).withZone(DateTimeZone.UTC).print(decoratorDateTime)).getOrElse(str))
+          }
+          .toList
+        val directory = replacements.foldLeft(pattern) {
+          (dir, replacement) => dir.replace(replacement._1, replacement._2)
+        }
+        // ensure trailing slash in the directory only if a pattern was supplied
+        val finalPath = if (directory.endsWith("/") || directory.isEmpty) s"$directory$fileName"
+        else s"$directory/$fileName"
+        finalPath
+      case None => fileName
     }
-    // ensure trailing slash in the directory only if a pattern was supplied
-    val finalPath = if (directory.endsWith("/") || directory.isEmpty) s"$directory$fileName"
-    else s"$directory/$fileName"
-    finalPath
   }
 }
 
