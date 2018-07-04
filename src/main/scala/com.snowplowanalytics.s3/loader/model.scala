@@ -66,6 +66,7 @@ package model {
     bucket: String,
     format: String,
     maxTimeout: Long,
+    directoryPattern: Option[String],
     customEndpoint: Option[String]
   ) {
     val endpoint = customEndpoint.getOrElse(region match {
