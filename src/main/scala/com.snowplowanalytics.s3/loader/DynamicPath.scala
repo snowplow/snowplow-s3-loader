@@ -43,9 +43,12 @@ object DynamicPath {
             (str, Try(DateTimeFormat.forPattern(str).withZone(DateTimeZone.UTC).print(decoratorDateTime)).getOrElse(str))
           }
           .toList
-        val directory = replacements.foldLeft(pattern) {
+        val directoryWithBraces = replacements.foldLeft(pattern) {
           (dir, replacement) => dir.replace(replacement._1, replacement._2)
         }
+        // Remove braces from the final pure directory path
+        val pure = """\{([^}]*)\}""".r
+        val directory = pure.replaceAllIn(directoryWithBraces, "$1")
         // ensure trailing slash in the directory only if a pattern was supplied
         val finalPath = if (directory.endsWith("/") || directory.isEmpty) s"$directory$fileName"
         else s"$directory/$fileName"
