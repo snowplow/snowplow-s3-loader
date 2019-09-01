@@ -14,6 +14,8 @@ package com.snowplowanalytics.s3.loader
 
 // Scala
 import scala.collection.JavaConverters._
+import scala.util.Try
+import scala.util.{Success => TrySuccess}
 
 // Java libs
 import java.util.Calendar
@@ -32,10 +34,21 @@ import scala.collection.JavaConversions._
 // Tracker
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
 
+// Json4s
+import org.json4s.jackson.JsonMethods.parse
+
+// Iglu Core
+import com.snowplowanalytics.iglu.core._
+import com.snowplowanalytics.iglu.core.json4s.implicits._
+
+// Scalaz
+import scalaz._
+
 // This project
 import sinks._
 import serializers._
 import model._
+import KinesisS3Emitter._
 
 /**
  * Emitter for flushing Kinesis event data to S3.
@@ -48,19 +61,12 @@ class KinesisS3Emitter(
   badSink: ISink, 
   serializer: ISerializer, 
   maxConnectionTime: Long, 
-  tracker: Option[Tracker]
+  tracker: Option[Tracker],
+  partition: Boolean,
+  partitionErrorDir: String
 ) extends IEmitter[EmitterInput]  {
 
   val s3Emitter = new S3Emitter(s3Config, provider, badSink, maxConnectionTime, tracker)
-  val dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-
-  /**
-   * Determines the filename in S3, which is the corresponding
-   * Kinesis sequence range of records in the file.
-   */
-  protected def getBaseFilename(firstSeq: String, lastSeq: String): String =
-    dateFormat.format(Calendar.getInstance().getTime()) +
-      "-" + firstSeq + "-" + lastSeq
 
   /**
    * Reads items from a buffer and saves them to s3.
@@ -77,7 +83,19 @@ class KinesisS3Emitter(
     s3Emitter.log.info(s"Flushing buffer with ${buffer.getRecords.size} records.")
 
     val records = buffer.getRecords().asScala.toList
-    val baseFilename = getBaseFilename(buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber)
+    if (partition) {
+      partitionWithSchemaKey(records, partitionErrorDir).foldLeft(List[EmitterInput]()) {
+        case (acc, (prefix, l)) =>
+          val baseFilename = getBaseFilename(buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber, Some(prefix.getName))
+          acc ::: emitRecords(l, baseFilename)
+      }
+    } else {
+      val baseFilename = getBaseFilename(buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber)
+      emitRecords(records, baseFilename)
+    }
+  }
+
+  private def emitRecords(records: List[EmitterInput], baseFilename: String) = {
     val serializationResults = serializer.serialize(records, baseFilename)
     val (successes, failures) = serializationResults.results.partition(_.isSuccess)
 
@@ -107,4 +125,66 @@ class KinesisS3Emitter(
    */
   override def fail(records: java.util.List[EmitterInput]): Unit =
     s3Emitter.sendFailures(records)
+}
+
+object KinesisS3Emitter {
+
+  /** Type of row which determined according to schema of self describing data */
+  sealed trait RowType extends Product with Serializable {
+    def getName: String
+  }
+
+  object RowType {
+    /** Represents cases where row type could not be determined
+      * since either row is not valid json or it is not self
+      * describing json
+      */
+    case class PartitionError(errorDir: String) extends RowType {
+      override def getName: String = errorDir
+    }
+
+    /** Represents cases where type of row can be determined successfully
+      * e.g. does have proper schema key
+      */
+    case class SelfDescribing(rowType: String) extends RowType {
+      override def getName: String = rowType
+    }
+
+    case object UnexpectedError extends RowType {
+      override def getName: String = "unexpected_error"
+    }
+  }
+
+  val dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+  /**
+    * Determines the filename in S3, which is the corresponding
+    * Kinesis sequence range of records in the file.
+    */
+  private def getBaseFilename(firstSeq: String, lastSeq: String, prefix: Option[String] = None): String =
+    prefix.map(p => if (p.isEmpty) "" else p + "/").getOrElse("") + dateFormat.format(Calendar.getInstance().getTime()) +
+      "-" + firstSeq + "-" + lastSeq
+
+  /**
+    * Assume records are self describing data and group them according
+    * to their schema key. Put records which are not self describing data
+    * to under "old bad row type".
+    */
+  private[loader] def partitionWithSchemaKey(records: List[EmitterInput], errorDir: String) = {
+    records.groupBy {
+      case Success(byteRecord) =>
+        val strRecord = new String(byteRecord, "UTF-8")
+        Try(parse(strRecord)) match {
+          case TrySuccess(e) =>
+            val json = parse(strRecord)
+            val schemaKey = SchemaKey.extract(json)
+            schemaKey.fold(
+              e => RowType.PartitionError(errorDir),
+              k => RowType.SelfDescribing(s"${k.vendor}.${k.name}")
+            )
+          case _ => RowType.PartitionError(errorDir)
+        }
+      case _ => RowType.UnexpectedError
+    }
+  }
 }

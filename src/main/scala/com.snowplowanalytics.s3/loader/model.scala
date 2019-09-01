@@ -91,6 +91,8 @@ package model {
     kinesis: KinesisConfig,
     streams: StreamsConfig,
     s3: S3Config,
-    monitoring: Option[MonitoringConfig]
+    monitoring: Option[MonitoringConfig],
+    partition: Option[Boolean],
+    partitionErrorDir: Option[String]
   )
 }

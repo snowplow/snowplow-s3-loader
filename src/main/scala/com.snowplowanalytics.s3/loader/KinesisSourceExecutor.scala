@@ -49,7 +49,9 @@ class KinesisSourceExecutor(
   badSink: ISink,
   serializer: ISerializer,
   maxConnectionTime: Long,
-  tracker: Option[Tracker]
+  tracker: Option[Tracker],
+  partition: Boolean,
+  partitionErrorDir: String
 ) extends KinesisConnectorExecutorBase[ValidatedRecord, EmitterInput] {
 
   val LOG = LoggerFactory.getLogger(getClass)
@@ -113,5 +115,5 @@ class KinesisSourceExecutor(
   initialize(config, null)
 
   override def getKinesisConnectorRecordProcessorFactory =
-    new KinesisConnectorRecordProcessorFactory[ValidatedRecord, EmitterInput](new KinesisS3Pipeline(s3Config, badSink, serializer, maxConnectionTime, tracker), config)
+    new KinesisConnectorRecordProcessorFactory[ValidatedRecord, EmitterInput](new KinesisS3Pipeline(s3Config, badSink, serializer, maxConnectionTime, tracker, partition, partitionErrorDir), config)
 }

@@ -149,7 +149,9 @@ object SinkApp {
                                     badSink,
                                     serializer,
                                     maxConnectionTime,
-                                    tracker
+                                    tracker,
+                                    config.partition.getOrElse(false),
+                                    config.partitionErrorDir.getOrElse("")
                                    ).success
         // Read records from NSQ
         case "nsq" =>
