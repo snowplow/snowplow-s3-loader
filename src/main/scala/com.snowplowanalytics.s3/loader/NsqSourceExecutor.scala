@@ -113,9 +113,9 @@ class NsqSourceExecutor(
             log.info(s"Successfully serialized ${successes.size} records out of ${successes.size + failures.size}")
 
             if (successes.size > 0) {
-              serializationResults.namedStreams.foreach {
+              serializationResults.namedStreams.foreach { stream =>
                 val connectionAttemptStartTime = System.currentTimeMillis()
-                s3Emitter.attemptEmit(_, connectionAttemptStartTime) match {
+                s3Emitter.attemptEmit(stream, false, connectionAttemptStartTime) match {
                   case false => log.error(s"Error while sending to S3")
                   case true => log.info(s"Successfully sent ${successes.size} records")
                 }
