@@ -64,6 +64,7 @@ package model {
   case class S3Config(
     region: String,
     bucket: String,
+    partitionedBucket: Option[String],
     format: String,
     maxTimeout: Long,
     directoryPattern: Option[String],

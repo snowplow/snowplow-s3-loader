@@ -39,6 +39,7 @@ object Dependencies {
     val scalaz7         = "7.2.13"
     val snowplowTracker = "0.3.0"
     val pureconfig      = "0.8.0"
+    val igluCore        = "0.5.0"
     // Scala (test only)
     val specs2          = "3.9.1"
   }
@@ -74,6 +75,7 @@ object Dependencies {
     val scalaz7          = "org.scalaz"                %% "scalaz-core"               % V.scalaz7
     val snowplowTracker  = "com.snowplowanalytics"     %% "snowplow-scala-tracker"    % V.snowplowTracker
     val pureconfig       = "com.github.pureconfig"     %% "pureconfig"                % V.pureconfig
+    val igluCoreJson4s   = "com.snowplowanalytics"     %% "iglu-core-json4s"          % V.igluCore
     // Scala (test only)
     val specs2           = "org.specs2"                %% "specs2-core"               % V.specs2           % "test"
   }
