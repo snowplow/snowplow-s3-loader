@@ -29,8 +29,10 @@ import org.slf4j.LoggerFactory
 // Apache commons
 import org.apache.commons.codec.binary.Base64
 
+/** Pair of (file)name and its lazy content */
 case class NamedStream(filename: String, stream: ByteArrayOutputStream)
 
+/** Final list of created [[NamedStream]]s and rows being written */
 case class SerializationResult(namedStreams: List[NamedStream], results: List[EmitterInput])
 
 /**
