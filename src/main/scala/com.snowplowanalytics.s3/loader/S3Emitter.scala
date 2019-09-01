@@ -73,7 +73,6 @@ class S3Emitter(
 ) {
 
   // create Amazon S3 Client
-  private val bucket = config.bucket
   private val directoryPattern = config.directoryPattern
   val log = LoggerFactory.getLogger(getClass)
   val client = AmazonS3ClientBuilder
@@ -98,7 +97,7 @@ class S3Emitter(
     try {
       Thread.sleep(sleepTime)
     } catch {
-        case e: InterruptedException => ()
+        case _: InterruptedException => ()
     }
   }
 
@@ -149,11 +148,22 @@ class S3Emitter(
   /**
   * Keep attempting to send the data to S3 until it succeeds
   *
+  * @param namedStream stream of rows with filename
+  * @param partition whether to send rows into `s3.bucketJson` (true) or `s3.bucket` (false)
   * @return success status of sending to S3
   */
-  def attemptEmit(namedStream: NamedStream, connectionAttemptStartTime: Long): Boolean = {
+  def attemptEmit(namedStream: NamedStream, partition: Boolean, connectionAttemptStartTime: Long): Boolean = {
 
     var attemptCount: Long = 1
+
+    def logAndSleep(e: Throwable): Unit = {
+      tracker.foreach {
+        t => SnowplowTracking.sendFailureEvent(t, BackoffPeriod, connectionAttemptStartTime, attemptCount, e.toString)
+      }
+      attemptCount = attemptCount + 1
+      sleep(BackoffPeriod)
+
+    }
     val connectionAttemptStartDateTime = new DateTime(connectionAttemptStartTime)
     while (true) {
       if (attemptCount > 1 && System.currentTimeMillis() - connectionAttemptStartTime > maxConnectionTime) {
@@ -169,28 +179,19 @@ class S3Emitter(
 
         val objMeta = new ObjectMetadata()
         objMeta.setContentLength(outputStream.size.toLong)
+        val bucket = if (partition) config.bucketJson.getOrElse(config.bucket) else config.bucket
         client.putObject(bucket, s3Key, inputStream, objMeta)
 
         return true
       } catch {
         // Retry on failure
-        case ase: AmazonServiceException => {
-          log.error("S3 could not process the request", ase)
-          tracker match {
-            case Some(t) => SnowplowTracking.sendFailureEvent(t, BackoffPeriod, connectionAttemptStartTime, attemptCount, ase.toString)
-            case None => None
-          }
-          attemptCount = attemptCount + 1
-          sleep(BackoffPeriod)
+        case e: AmazonServiceException => {
+          log.error("S3 could not process the request", e)
+          logAndSleep(e)
         }
         case NonFatal(e) => {
           log.error("S3Emitter threw an unexpected exception", e)
-          tracker match {
-            case Some(t) => SnowplowTracking.sendFailureEvent(t, BackoffPeriod, connectionAttemptStartTime, attemptCount, e.toString)
-            case None => None
-          }
-          attemptCount = attemptCount + 1
-          sleep(BackoffPeriod)
+          logAndSleep(e)
         }
       }
     }
