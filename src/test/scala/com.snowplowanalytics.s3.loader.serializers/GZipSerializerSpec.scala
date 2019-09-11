@@ -11,9 +11,9 @@ import java.nio.file.{
 }
 import java.nio.charset.Charset
 
-// Scalaz
-import scalaz._
-import Scalaz._
+// cats
+import cats.data.Validated
+import cats.syntax.validated._
 
 // Scala
 import scala.sys.process._
@@ -35,8 +35,8 @@ class GZipSerializerSpec extends Specification {
       cleanup()
 
       val binaryInputs = List(
-        List("A", "B", 1000, "a", "b").mkString("\t").getBytes.success,
-        List("X", "Y", 2000, "x", "y").mkString("\t").getBytes.success
+        List("A", "B", 1000, "a", "b").mkString("\t").getBytes.valid,
+        List("X", "Y", 2000, "x", "y").mkString("\t").getBytes.valid
       )
 
       val serializationResult = GZipSerializer.serialize(binaryInputs, decompressedFilename)
@@ -54,7 +54,7 @@ class GZipSerializerSpec extends Specification {
       cleanup()
 
       binaryInputs map {
-        case Success(e) =>
+        case Validated.Valid(e) =>
           val rawResult = input.head.getBytes
 
           input = input.tail

@@ -34,9 +34,8 @@ import scala.collection.JavaConversions._
 // Tracker
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
 
-// Scalaz
-import scalaz._
-import Scalaz._
+// cats
+import cats.syntax.validated._
 
 //AWS libs
 import com.amazonaws.auth.AWSCredentialsProvider
@@ -99,7 +98,7 @@ class NsqSourceExecutor(
       val nsqBufferSize = config.streams.buffer.recordLimit
 
       override def message(msg: NSQMessage): Unit = {
-        val validMsg = msg.getMessage.success
+        val validMsg = msg.getMessage.valid
         msgBuffer.synchronized {
           msgBuffer += validMsg
           msg.finished()
@@ -108,11 +107,11 @@ class NsqSourceExecutor(
             val bufferEndTime = System.currentTimeMillis()
             val baseFilename = getBaseFilename(bufferStartTime, bufferEndTime)
             val serializationResults = serializer.serialize(msgBuffer.toList, baseFilename)
-            val (successes, failures) = serializationResults.results.partition(_.isSuccess)
+            val (successes, failures) = serializationResults.results.partition(_.isValid)
 
             log.info(s"Successfully serialized ${successes.size} records out of ${successes.size + failures.size}")
 
-            if (successes.size > 0) {
+            if (successes.nonEmpty) {
               serializationResults.namedStreams.foreach { stream =>
                 val connectionAttemptStartTime = System.currentTimeMillis()
                 s3Emitter.attemptEmit(stream, false, connectionAttemptStartTime) match {
@@ -122,7 +121,7 @@ class NsqSourceExecutor(
               }
             }
 
-            if (failures.size > 0) {
+            if (failures.nonEmpty) {
               s3Emitter.sendFailures(failures)
             }
 
