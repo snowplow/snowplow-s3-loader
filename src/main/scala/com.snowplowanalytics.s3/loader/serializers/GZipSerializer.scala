@@ -13,8 +13,8 @@
 package com.snowplowanalytics.s3.loader
 package serializers
 
-// Scalaz
-import scalaz._
+// cats
+import cats.data.Validated
 
 // Java libs
 import java.io.ByteArrayOutputStream
@@ -29,18 +29,16 @@ object GZipSerializer extends ISerializer {
     val gzipOutputStream = new GZIPOutputStream(outputStream, 64 * 1024)
 
     // Populate the output stream with records
-    val results = records.map { v =>
-      v match {
-        case Success(r) => serializeRecord(r, gzipOutputStream,
-          (g: GZIPOutputStream) => {
-            g.write(r)
-            g.write("\n".getBytes)
-          })
-        case f => f
-      }
+    val results = records.map {
+      case Validated.Valid(r) => serializeRecord(r, gzipOutputStream,
+        (g: GZIPOutputStream) => {
+          g.write(r)
+          g.write("\n".getBytes)
+        })
+      case f => f
     }
 
-    gzipOutputStream.close
+    gzipOutputStream.close()
 
     val namedStreams = List(NamedStream(s"$baseFilename.gz", outputStream))
 

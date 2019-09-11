@@ -13,9 +13,9 @@
 package com.snowplowanalytics.s3.loader
 
 // AWS Kinesis Connector libs
-import com.amazonaws.services.kinesis.connectors.interfaces.IKinesisConnectorPipeline
+import com.amazonaws.services.kinesis.connectors.interfaces.{IBuffer, IEmitter, IFilter, IKinesisConnectorPipeline, ITransformer}
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration
-import com.amazonaws.services.kinesis.connectors.impl.{BasicMemoryBuffer, AllPassFilter}
+import com.amazonaws.services.kinesis.connectors.impl.{AllPassFilter, BasicMemoryBuffer}
 
 // Tracker
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
@@ -27,16 +27,21 @@ import model._
 
 /**
  * S3Pipeline class sets up the Emitter/Buffer/Transformer/Filter
+ * Comes from Kinesis Connectors
  */
 class KinesisS3Pipeline(s3Config: S3Config, badSink: ISink, serializer: ISerializer, maxConnectionTime: Long, tracker: Option[Tracker]) extends IKinesisConnectorPipeline[ValidatedRecord, EmitterInput] {
 
-  override def getEmitter(configuration: KinesisConnectorConfiguration) = new KinesisS3Emitter(s3Config, configuration.AWS_CREDENTIALS_PROVIDER, badSink, serializer, maxConnectionTime, tracker)
+  def getEmitter(configuration: KinesisConnectorConfiguration): IEmitter[EmitterInput]  =
+    new KinesisS3Emitter(s3Config, configuration.AWS_CREDENTIALS_PROVIDER, badSink, serializer, maxConnectionTime, tracker)
 
-  override def getBuffer(configuration: KinesisConnectorConfiguration) = new BasicMemoryBuffer[ValidatedRecord](configuration)
+  def getBuffer(configuration: KinesisConnectorConfiguration): IBuffer[ValidatedRecord] =
+    new BasicMemoryBuffer[ValidatedRecord](configuration)
 
-  override def getTransformer(c: KinesisConnectorConfiguration) = new RawEventTransformer()
+  def getTransformer(c: KinesisConnectorConfiguration): ITransformer[ValidatedRecord, EmitterInput] =
+    new RawEventTransformer()
 
-  override def getFilter(c: KinesisConnectorConfiguration) = new AllPassFilter[ValidatedRecord]()
+  def getFilter(c: KinesisConnectorConfiguration): IFilter[ValidatedRecord] =
+    new AllPassFilter[ValidatedRecord]()
 
 }
 

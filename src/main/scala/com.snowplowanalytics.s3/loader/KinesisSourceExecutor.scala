@@ -39,7 +39,8 @@ import serializers._
 import model._
 
 /**
- * Boilerplate class for Kinessis Conenector
+ * A worker (Runnable) class for Kinesis Connector,
+ * initializes config and passes control over to [[KinesisS3Pipeline]]
  */
 class KinesisSourceExecutor(
   config: KinesisConnectorConfiguration,
@@ -53,6 +54,8 @@ class KinesisSourceExecutor(
 ) extends KinesisConnectorExecutorBase[ValidatedRecord, EmitterInput] {
 
   val LOG = LoggerFactory.getLogger(getClass)
+
+  initialize(config, null)
 
   def getKCLConfig(initialPosition: String, timestamp: Option[Date], kcc: KinesisConnectorConfiguration): KinesisClientLibConfiguration = {
       val cfg = new KinesisClientLibConfiguration(
@@ -76,7 +79,7 @@ class KinesisSourceExecutor(
           .withRegionName(kcc.REGION_NAME)
 
       timestamp.filter(_ => initialPosition == "AT_TIMESTAMP")
-        .map(cfg.withTimestampAtInitialPositionInStream(_))
+        .map(cfg.withTimestampAtInitialPositionInStream)
         .getOrElse(cfg.withInitialPositionInStream(kcc.INITIAL_POSITION_IN_STREAM))
   }
 
@@ -86,7 +89,6 @@ class KinesisSourceExecutor(
     * @param kinesisConnectorConfiguration Amazon Kinesis connector configuration
     * @param metricFactory would be used to emit metrics in Amazon Kinesis Client Library
     */
-
   override def initialize(kinesisConnectorConfiguration: KinesisConnectorConfiguration, metricFactory: IMetricsFactory): Unit = {
     val kinesisClientLibConfiguration = getKCLConfig(initialPosition, initialTimestamp, kinesisConnectorConfiguration)
 
@@ -107,11 +109,11 @@ class KinesisSourceExecutor(
       new Worker(getKinesisConnectorRecordProcessorFactory(),
                  kinesisClientLibConfiguration)
     }
-    LOG.info(getClass().getSimpleName() + " worker created")
+    LOG.info(getClass.getSimpleName + " worker created")
   }
 
-  initialize(config, null)
-
-  override def getKinesisConnectorRecordProcessorFactory =
-    new KinesisConnectorRecordProcessorFactory[ValidatedRecord, EmitterInput](new KinesisS3Pipeline(s3Config, badSink, serializer, maxConnectionTime, tracker), config)
+  override def getKinesisConnectorRecordProcessorFactory = {
+    val pipeline = new KinesisS3Pipeline(s3Config, badSink, serializer, maxConnectionTime, tracker)
+    new KinesisConnectorRecordProcessorFactory[ValidatedRecord, EmitterInput](pipeline, config)
+  }
 }

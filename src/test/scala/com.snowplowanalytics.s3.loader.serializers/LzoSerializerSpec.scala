@@ -29,9 +29,8 @@ import org.apache.thrift.{
   TDeserializer
 }
 
-// Scalaz
-import scalaz._
-import Scalaz._
+// cats
+import cats.syntax.validated._
 
 // Scala
 import scala.sys.process._
@@ -62,8 +61,8 @@ class LzoSerializerSpec extends Specification {
       cleanup()
 
       val inputEvents = List(
-        new CollectorPayload("A", "B", 1000, "a", "b").success,
-        new CollectorPayload("X", "Y", 2000, "x", "y").success)
+        new CollectorPayload("A", "B", 1000, "a", "b").valid,
+        new CollectorPayload("X", "Y", 2000, "x", "y").valid)
 
       val binaryInputs = inputEvents.map(e => e.map(x => serializer.serialize(x)))
 
@@ -80,12 +79,12 @@ class LzoSerializerSpec extends Specification {
 
       cleanup()
 
-      inputEvents map {e => {
+      inputEvents map { e => {
           val rawResult = reader.readNext()
           val target = new CollectorPayload
           deserializer.deserialize(target, rawResult)
 
-          target.success must_== e
+          target.valid must_== e
         }
       }
     }

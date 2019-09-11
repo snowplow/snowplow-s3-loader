@@ -16,9 +16,8 @@ package serializers
 // Java libs
 import java.io.{ByteArrayOutputStream, IOException}
 
-// Scalaz
-import scalaz._
-import Scalaz._
+// cats
+import cats.syntax.validated._
 
 // Scala
 import scala.util.control.NonFatal
@@ -50,13 +49,13 @@ trait ISerializer {
   ): ValidatedRecord =
     try {
       serialize(serializer)
-      record.success
+      record.valid
     } catch {
       case e: IOException =>
         val base64Record = new String(Base64.encodeBase64(record), "UTF-8")
-        FailedRecord(List(s"Error writing raw event to output stream: [$e]"), base64Record).failure
+        FailedRecord(List(s"Error writing raw event to output stream: [$e]"), base64Record).invalid
       case NonFatal(e) =>
         log.warn("Error writing raw event to output stream", e)
-        FailedRecord(List(s"Error writing raw event to output stream: [$e]"), "").failure
+        FailedRecord(List(s"Error writing raw event to output stream: [$e]"), "").invalid
     }
 }

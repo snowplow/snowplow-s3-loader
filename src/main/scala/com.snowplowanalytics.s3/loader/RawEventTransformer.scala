@@ -25,8 +25,7 @@ import org.apache.thrift.{TSerializer, TDeserializer}
 import org.slf4j.LoggerFactory
 
 // Scalaz
-import scalaz._
-import Scalaz._
+import cats.syntax.validated._
 
 /**
  * Thrift serializer/deserializer class
@@ -40,7 +39,7 @@ class RawEventTransformer extends ITransformer[ValidatedRecord, EmitterInput] {
 
   override def toClass(record: Record): ValidatedRecord = {
     log.debug(s"Converting record: [$record] to EmitterInput before adding it to the buffer")
-    record.getData.array.success
+    record.getData.array.valid
   }
 
   override def fromClass(record: ValidatedRecord) = record
