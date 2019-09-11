@@ -19,7 +19,7 @@
 package com.snowplowanalytics.s3
 
 // Scalaz
-import scalaz._
+import cats.data.Validated
 
 package object loader {
 
@@ -31,10 +31,10 @@ package object loader {
   /**
    * Validation for a SnowplowRawEvent
    */
-  type ValidatedRecord = Validation[FailedRecord, RawRecord]
+  type ValidatedRecord = Validated[FailedRecord, RawRecord]
 
   /**
    * Currently the same as ValidatedRecord, but could change in the future
    */
-  type EmitterInput = Validation[FailedRecord, RawRecord]
+  type EmitterInput = Validated[FailedRecord, RawRecord]
 }

@@ -14,30 +14,13 @@ package com.snowplowanalytics.s3.loader
 
 // Java
 import java.io.File
-import java.util.Properties
 
 // Config
 import com.typesafe.config.ConfigFactory
 
-// AWS libs
-import com.amazonaws.auth.AWSCredentialsProvider
-
-// AWS Kinesis Connector libs
-import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration
-
-// SLF4j
-import org.slf4j.LoggerFactory
-
-// Scalaz
-import scalaz._
-import Scalaz._
-
 // Pureconfig
 import pureconfig._
 
-// This project
-import sinks._
-import serializers._
 import model._
 
 /**
@@ -45,9 +28,12 @@ import model._
  */
 object SinkApp {
 
+  private case class FileConfig(config: File)
+
+  implicit def hint[T]: ProductHint[T] = ProductHint[T](ConfigFieldMapping(CamelCase, CamelCase))
+
   def main(args: Array[String]): Unit = {
 
-    case class FileConfig(config: File = new File("."))
     val parser = new scopt.OptionParser[FileConfig](generated.Settings.name) {
       head(generated.Settings.name, generated.Settings.version)
       opt[File]("config").required().valueName("<filename>")
@@ -58,131 +44,19 @@ object SinkApp {
         )
     }
 
-    val conf = parser.parse(args, FileConfig()) match {
-      case Some(c) => ConfigFactory.parseFile(c.config).resolve()
-      case None    => ConfigFactory.empty()
-    }
-
-    if (conf.isEmpty()) {
-      System.err.println("Empty configuration file")
-      System.exit(1)
-    }
-
-    implicit def hint[T] = ProductHint[T](ConfigFieldMapping(CamelCase, CamelCase))
-    loadConfig[S3LoaderConfig](conf) match {
-      case Left(e) =>
-        System.err.println(s"configuration error: $e")
+    parser.parse(args, FileConfig(new File("."))) match {
+      case Some(c) =>
+        val config = ConfigFactory.parseFile(c.config).resolve()
+        loadConfig[S3LoaderConfig](config) match {
+          case Right(config) =>
+            S3Loader.run(config)
+          case Left(e) =>
+            System.err.println(s"Configuration error: $e")
+            System.exit(1)
+        }
+      case None =>
+        System.err.println(s"No config provided")
         System.exit(1)
-      case Right(c) =>
-        main(c)
     }
-  }
-
-  def main(config: S3LoaderConfig): Unit = {
-    val tracker = config.monitoring.map(e => SnowplowTracking.initializeTracker(e.snowplow))
-    val maxConnectionTime = config.s3.maxTimeout
-
-    // TODO: make the conf file more like the Elasticsearch equivalent
-    val kinesisSinkRegion = config.kinesis.region
-    val kinesisSinkEndpoint = config.kinesis.endpoint
-    val kinesisSinkName = config.streams.outStreamName
-
-    val log = LoggerFactory.getLogger(getClass)
-
-    val credentials = CredentialsLookup.getCredentialsProvider(config.aws.accessKey, config.aws.secretKey)
-
-    /**
-    * This function converts the config file into the format
-    * expected by the Kinesis connector interfaces.
-    *
-    * @param conf The configuration HOCON
-    * @return A KinesisConnectorConfiguration
-    */
-    def convertConfig(conf: S3LoaderConfig, credentials: AWSCredentialsProvider): KinesisConnectorConfiguration = {
-      val props = new Properties()
-
-      props.setProperty(KinesisConnectorConfiguration.PROP_KINESIS_INPUT_STREAM, conf.streams.inStreamName)
-      props.setProperty(KinesisConnectorConfiguration.PROP_KINESIS_ENDPOINT, conf.kinesis.endpoint)
-      props.setProperty(KinesisConnectorConfiguration.PROP_APP_NAME, conf.kinesis.appName)
-      props.setProperty(KinesisConnectorConfiguration.PROP_INITIAL_POSITION_IN_STREAM, conf.kinesis.initialPosition)
-
-      props.setProperty(KinesisConnectorConfiguration.PROP_S3_ENDPOINT, conf.s3.endpoint)
-      props.setProperty(KinesisConnectorConfiguration.PROP_S3_BUCKET, conf.s3.bucket)
-
-      props.setProperty(KinesisConnectorConfiguration.PROP_BUFFER_BYTE_SIZE_LIMIT, conf.streams.buffer.byteLimit.toString)
-      props.setProperty(KinesisConnectorConfiguration.PROP_BUFFER_RECORD_COUNT_LIMIT, conf.streams.buffer.recordLimit.toString)
-      props.setProperty(KinesisConnectorConfiguration.PROP_BUFFER_MILLISECONDS_LIMIT, conf.streams.buffer.timeLimit.toString)
-
-      props.setProperty(KinesisConnectorConfiguration.PROP_CONNECTOR_DESTINATION, "s3")
-
-      // So that the region of the DynamoDB table is correct
-      props.setProperty(KinesisConnectorConfiguration.PROP_REGION_NAME, conf.kinesis.region)
-
-      // The emit method retries sending to S3 indefinitely, so it only needs to be called once
-      props.setProperty(KinesisConnectorConfiguration.PROP_RETRY_LIMIT, "1")
-
-      props.setProperty(KinesisConnectorConfiguration.PROP_MAX_RECORDS, conf.kinesis.maxRecords.toString)
-
-      log.info(s"Initializing sink with KinesisConnectorConfiguration: $props")
-
-      new KinesisConnectorConfiguration(props, credentials)
-    }
-
-    val badSink = config.sink match {
-      case "kinesis" => new KinesisSink(credentials, kinesisSinkEndpoint, kinesisSinkRegion, kinesisSinkName, tracker)
-      case "nsq" => new NsqSink(config)
-    }
-
-    val serializer = config.s3.format match {
-      case "lzo" => LzoSerializer
-      case "gzip" => GZipSerializer
-      case _ => throw new IllegalArgumentException("Invalid serializer. Check s3.format key in configuration file")
-    }
-
-    val executor = config.source match {
-        // Read records from Kinesis
-        case "kinesis" =>
-          new KinesisSourceExecutor(convertConfig(config, credentials),
-                                    config.kinesis.initialPosition,
-                                    config.kinesis.timestamp,
-                                    config.s3,
-                                    badSink,
-                                    serializer,
-                                    maxConnectionTime,
-                                    tracker
-                                   ).success
-        // Read records from NSQ
-        case "nsq" =>
-          new NsqSourceExecutor(config,
-                                credentials,
-                                badSink,
-                                serializer,
-                                maxConnectionTime,
-                                tracker
-                               ).success
-
-        case _ => "Source must be set to kinesis' or 'NSQ'".failure
-    }
-
-    executor.fold(
-      err => throw new IllegalArgumentException(err),
-      exec => {
-        tracker foreach {
-          t => SnowplowTracking.initializeSnowplowTracking(t)
-        }
-        exec.run()
-
-        // If the stream cannot be found, the KCL's "cw-metrics-publisher" thread will prevent the
-        // application from exiting naturally so we explicitly call System.exit.
-        // This does not apply to NSQ because NSQ consumer is non-blocking and fall here
-        // right after consumer.start()
-        config.source match {
-          case "kinesis" => System.exit(1)
-          // do anything
-          case "nsq" =>
-        }
-      }
-    )
-
   }
 }

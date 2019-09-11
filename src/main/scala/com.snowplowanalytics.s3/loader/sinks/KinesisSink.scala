@@ -44,13 +44,13 @@ import org.slf4j.LoggerFactory
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
 
 /**
- * Kinesis Sink
+ * Configuration for the Kinesis stream
  *
  * @param provider AWSCredentialsProvider
  * @param endpoint Kinesis stream endpoint
  * @param region Kinesis stream region
  * @param name Kinesis stream name
- * @param config Configuration for the Kinesis stream
+ * @param tracker Snowplow Tracker instance
  */
 class KinesisSink(
   provider: AWSCredentialsProvider,
