@@ -12,8 +12,7 @@
  */
 package com.snowplowanalytics.s3.loader
 
-import scalaz._
-import Scalaz._
+import cats.syntax.validated._
 
 import org.specs2.mutable.Specification
 import com.snowplowanalytics.s3.loader.KinesisS3Emitter.RowType
@@ -84,30 +83,29 @@ class KinesisS3EmitterSpec extends Specification {
       val failure = FailedRecord(List("error1", "error2"), "line")
 
       val records = List(
-        Success(dataType11),
-        Success(dataType21),
-        Success(dataType22),
-        Success(dataType31),
-        Success(dataType32),
-        Success(dataType33),
-        Failure(failure),
-        Failure(failure),
-        Success(nonSelfDescribingJson),
-        Success(nonJsonData)
+        dataType11.valid,
+        dataType21.valid,
+        dataType22.valid,
+        dataType31.valid,
+        dataType32.valid,
+        dataType33.valid,
+        failure.invalid,
+        failure.invalid,
+        nonSelfDescribingJson.valid,
+        nonJsonData.valid
       )
 
       val res = KinesisS3Emitter.partitionByType(records)
 
       val expected = Map(
-        RowType.SelfDescribing("com.acme1", "example1", 2) -> List(dataType11.success),
-        RowType.SelfDescribing("com.acme1", "example2", 2) -> List(dataType21.success, dataType22.success),
-        RowType.SelfDescribing("com.acme2", "example1", 2) -> List(dataType31.success, dataType32.success, dataType33.success),
-        RowType.ReadingError -> List(failure.failure, failure.failure),
-        RowType.Unpartitioned -> List(nonSelfDescribingJson.success, nonJsonData.success)
+        RowType.SelfDescribing("com.acme1", "example1", 2) -> List(dataType11.valid),
+        RowType.SelfDescribing("com.acme1", "example2", 2) -> List(dataType21.valid, dataType22.valid),
+        RowType.SelfDescribing("com.acme2", "example1", 2) -> List(dataType31.valid, dataType32.valid, dataType33.valid),
+        RowType.ReadingError -> List(failure.invalid, failure.invalid),
+        RowType.Unpartitioned -> List(nonSelfDescribingJson.valid, nonJsonData.valid)
       )
 
       res must beEqualTo(expected)
     }
   }
-
 }

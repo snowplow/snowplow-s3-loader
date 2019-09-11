@@ -41,8 +41,8 @@ import org.json4s.jackson.JsonMethods.parse
 import com.snowplowanalytics.iglu.core._
 import com.snowplowanalytics.iglu.core.json4s.implicits._
 
-// Scalaz
-import scalaz._
+// cats
+import cats.data.Validated
 
 // This project
 import sinks._
@@ -105,7 +105,7 @@ class KinesisS3Emitter(
    */
   private def emitRecords(records: List[EmitterInput], partition: Boolean, baseFilename: String): List[EmitterInput] = {
     val serializationResults = serializer.serialize(records, baseFilename)
-    val (successes, failures) = serializationResults.results.partition(_.isSuccess)
+    val (successes, failures) = serializationResults.results.partition(_.isValid)
     val successSize = successes.size
 
     s3Emitter.log.warn(s"Successfully serialized $successSize records out of ${successSize + failures.size}")
@@ -174,7 +174,7 @@ object KinesisS3Emitter {
     */
   private[loader] def partitionByType(records: List[EmitterInput]): Map[RowType, List[EmitterInput]] =
     records.groupBy {
-      case Success(byteRecord) =>
+      case Validated.Valid(byteRecord) =>
         val strRecord = new String(byteRecord, "UTF-8")
         Try(parse(strRecord)) match {
           case TrySuccess(json) =>

@@ -26,8 +26,8 @@ import com.hadoop.compression.lzo.LzopCodec
 // Elephant bird
 import com.twitter.elephantbird.mapreduce.io.RawBlockWriter
 
-// Scalaz
-import scalaz._
+// cats
+import cats.data.Validated
 
 /**
  * Object to handle LZO compression of raw events
@@ -50,14 +50,12 @@ object LzoSerializer extends ISerializer {
     val rawBlockWriter = new RawBlockWriter(lzoOutputStream)
 
     // Populate the output stream with records
-    val results = records.map { v =>
-      v match {
-        case Success(r) => serializeRecord(r, rawBlockWriter, (rbw: RawBlockWriter) => rbw.write(r))
-        case f => f
-      }
+    val results = records.map {
+      case Validated.Valid(r) => serializeRecord(r, rawBlockWriter, (rbw: RawBlockWriter) => rbw.write(r))
+      case f => f
     }
 
-    rawBlockWriter.close
+    rawBlockWriter.close()
 
     val namedStreams = List(
       NamedStream(s"$baseFilename.lzo", outputStream),

@@ -31,9 +31,8 @@ import org.slf4j.LoggerFactory
 // Tracker
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
 
-// Scalaz
-import scalaz._
-import Scalaz._
+// cats
+import cats.data.Validated
 
 // AWS libs
 import com.amazonaws.AmazonServiceException
@@ -128,13 +127,13 @@ class S3Emitter(
   }
 
   /**
-  * Sends records which fail deserialization or compression
+  * Sends records which fail deserialization, compression or partitioning
   *
   * @param records List of failed records
   */
   def sendFailures(records: java.util.List[EmitterInput]): Unit = {
-    for (Failure(record) <- records.toList) {
-      log.warn(s"Record failed: $record.line")
+    for (Validated.Invalid(record) <- records.toList) {
+      log.warn(s"Record failed: ${record.line}")
       log.info("Sending failed record to Kinesis")
       val output = compact(render(
         ("line" -> record.line) ~ 
@@ -185,14 +184,12 @@ class S3Emitter(
         return true
       } catch {
         // Retry on failure
-        case e: AmazonServiceException => {
+        case e: AmazonServiceException =>
           log.error("S3 could not process the request", e)
           logAndSleep(e)
-        }
-        case NonFatal(e) => {
+        case NonFatal(e) =>
           log.error("S3Emitter threw an unexpected exception", e)
           logAndSleep(e)
-        }
       }
     }
     false

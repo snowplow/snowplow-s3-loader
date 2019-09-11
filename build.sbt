@@ -35,7 +35,7 @@ lazy val root = project.in(file("."))
       // Scala
       Dependencies.Libraries.scopt,
       Dependencies.Libraries.config,
-      Dependencies.Libraries.scalaz7,
+      Dependencies.Libraries.cats,
       Dependencies.Libraries.json4sJackson,
       Dependencies.Libraries.snowplowTracker,
       Dependencies.Libraries.pureconfig,
