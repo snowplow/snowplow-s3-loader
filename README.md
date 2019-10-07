@@ -24,14 +24,12 @@ The records are treated as byte arrays containing UTF-8 encoded strings (whether
 
 ## Quickstart
 
-Assuming git, **[Vagrant][vagrant-install]** and **[VirtualBox][virtualbox-install]** installed:
+Assuming git and [SBT][sbt] installed:
 
 ```bash
- host$ git clone https://github.com/snowplow/snowplow-s3-loader.git
- host$ cd snowplow-s3-loader
- host$ vagrant up && vagrant ssh
-guest$ cd /vagrant
-guest$ sbt test
+$ git clone https://github.com/snowplow/snowplow-s3-loader.git
+$ cd snowplow-s3-loader
+$ sbt assembly
 ```
 
 ## Prerequisites
@@ -41,8 +39,6 @@ You must have `lzop` and `lzop-dev` installed. In Ubuntu, install them like this
 ```bash
 host$ sudo apt-get install lzop liblzo2-dev
 ```
-
-NOTE: These are already installed in the Vagrant quickstart environment.
 
 ## Command Line Interface
 
@@ -61,8 +57,7 @@ Usage: snowplow-s3-loader [options]
 Create your own config file:
 
 ```bash
-guest$ cd /vagrant
-guest$ cp examples/config.hocon.sample my.conf
+$ cp examples/config.hocon.sample my.conf
 ```
 
 You will need to edit all fields in the config.  Consult [this portion][config] of the setup guide on how to fill in the fields.
@@ -110,9 +105,6 @@ limitations under the License.
 [elephant-bird]: https://github.com/twitter/elephant-bird/
 [s3]: http://aws.amazon.com/s3/
 [sbt]: http://typesafe.artifactoryonline.com/typesafe/ivy-releases/org.scala-sbt/sbt-launch/0.13.0/sbt-launch.jar
-
-[vagrant-install]: http://docs.vagrantup.com/v2/installation/index.html
-[virtualbox-install]: https://www.virtualbox.org/wiki/Downloads
 
 [setup]: https://github.com/snowplow/snowplow/wiki/snowplow-s3-loader-setup
 [config]: https://github.com/snowplow/snowplow/wiki/snowplow-s3-loader-setup#configuration
