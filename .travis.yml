@@ -1,21 +1,22 @@
 language: scala
 scala:
-  - 2.11.11
+- 2.11.11
 jdk:
-  - oraclejdk8
-
+- oraclejdk8
 before_script:
-  - sudo apt-get install -y lzop liblzo2-dev
-
+- sudo apt-get install -y lzop liblzo2-dev
 before_deploy: pip install --user release-manager==0.2.0
 deploy:
-  - provider: script
-    script: release-manager --config .release.yml --make-artifact --upload-artifact --check-version
-    skip_cleanup: true
-    on:
-      tags: true
-
+- provider: script
+  script: release-manager --config .release.yml --make-artifact --upload-artifact --check-version
+  skip_cleanup: true
+  on:
+    tags: true
 env:
   global:
   - secure: hJTWoOYgFMNaTZZ8gpIVl+SZQS5INschfkUUReuGXAzifaXTvT8J5a/aGryJqEOh/zMEOhKRZn136aHzMMnMDxoOkO4uSXnHnhi61DZHsbaZ51g0YvIjnJyS49ad+IKoIFJlcTKAMjvd+HK3TOHkkcWA/cc7EJWYbYwPEu3xfpkick6Y2+oQd3LYANS4wmTcVYMYKF08teQW3w0XqErHrxb7prIz7lEF8uC9BHHmUYfGEvdVLmphpsP/jJBPB+TB5IRwarEyEBaITEcVL/qeDRM3FxhErY6JI9omT6QRevO9dHx2mfpQFITCjeRf9IjJBiSr7fGVGUusxJSRqg1gMbGyImwUX4a13PaV0ACL1OUHCC3hQa3Rmoh0ObQBJ37rBvkyNKuEjJmt2bX7BMC5Ck7duJFNJhGqWiFpHyZV4MM8oYn+29OcJ7Ju03Qr6MXt04+iD3CjctHI9cbCe4mYuYJcyFYi847PaLicNqDg3Cj2Q2m8KzE9guBSY2PCUvxxFLR0LGFhXXtQYg2LxrAn8pnBE5QNVr6LQ9aoeQLYUscBCjMFyVNpciRLt/IPvzZRGL3vKiKwgJqxaV7CE1LXoTbIUTwCB8jnsqlSOPJbJQCciHA31GlFKz/m7kRRkI8G0Geie7leWjM6G7Pfr3aKXKpTw7HkN9F87AYJ47/YcFU=
   - secure: LdhTiGwDK5BivJ+/j4CLCMNGSkWN4WiTQRGGrFf2L7wSI2fdOtZTQUcKVCZolvyd6V296BLbPYxgoXs1hdDCQb/jyoQCiWDC54XuJun4gGiKko04ZY7/UCUDQ2oo6995+UcKlvQKhqL9mvGT6stuBIUefB/r+/dQhwR+L9ehFlAiOXDFEzRh3BYgIZDnbJbMvjRptzqz/d88iC7un9e+wf+F8qyObjwJ+7RrL6rddvXg1HUyv0Kt8Yv16uSlFJPuY3fyTqDmiGbm2bYqM7cUVGRokTUOwqwtBhW/uJ071r6SlTxpTNzTJARRV2KvIT+cMvNJflvFZLOL7A55fKfpTDxWCsXcbKu3D842lppqlGH4O+GM5G3+fArSnjHmFhVRwhNMsHlGG/brXHerhCPGb2+hkIaIg/sopWP+OoEWZvlRUihv9nOLTCCZy4F45dz/B38XRM9vXZscw1nX5uu/f4LvRtOIsinOHpOCFWtxloh8qWGarcvj0Q6Ix4f/rb4L/ZIN5PthZJVEswchSK9Ee4b6Pt0EIsM2gEPjdQ5RXvYb0IWRVxbgJH7ljtk+WxHDfr67gvLAzrD2X2bKQCp+mJ3xGdiH+Ddu1r8Pb/Z6g4icFAxBWQYaSuw2etvNNGcH+Y77R7Q+Q5Hbp8omXXBj243uje/zZpNwlEeoaVbOms4=
+  # DOCKER_USERNAME
+  - secure: PTSLAAiMP8R1MrPqp641QCF1JG75nOvWHMB9h5wSryYc1w6JLv2RGgP8OVQ9ZGdOHKqZGGRlE0nJOpDwYBooe4botZH045+sOOll8kKsyckKkK5dWKOCH+470wE2oBYlEa6p48oB2FS2anWZVfI9HDOO2RHeLrcXX24pm6DWCy92P4/rWVmSv/181si2513JJZ27RDXkdWD/Ap96RawRPE8vjrUpp+iVH7uz9UZthr8rwjcshkPUP9a5P7YXJDZbKiAhZx4pE9ZQPBiAm0msBsYkSo2QJz6/xMFFeOd1PCgB4QndKtlAkwcR4R6mywdBK/buFaUi7DdiYiO4ejcYb8FxL9KMTJfV2egGSIuUi4Y9ChvZJMXtpqia+DT6abuOSbwsR0OMMgMLJRmjVxXop7tpC5M9lfWAtyyc8cYam20dRFZYvuulXLyEBqlWXNCshQpXze68a7rR/QAUC00me46lTPiq6UR/bcMMTBZdzOtjSXiH2BEAbQKMEfno78PVVl8BaClsFy5Fj3TJKd39LGXx85r/eO64R30ivEOaPUagZbqV2KQu+z53sgXNve6h+21TF3Ip+koGRtRFf45E+fU0/+62oen7Msm/MP+H80680crtQ+S4lH5GNaFTObJAh+202aN4J/ADy8DNVpKFiO0SevPr65nS0eTIHo9EbF0=
+  # DOCKER_PASSWORD
+  - secure: lDIAOvEXJFAKsMBmIxhiBJ9IHI7Qbxv7P8jOBO+gXnCIGmwXrpKz9Z+kDwmsGCazRhfdQoOhvByI0McI0vKhKrKXedyUv8F0pgKXnohq2QB6DsoHBRcHCdxPok1QGgJA1Kg9lUF3mw0sYjap7cyd7vXtbaER5WwaUh3ErUpf4DMKeoQQoG0bvA1WkyE488Hi+hGPekE53yJwcCnv//zuBYkAChrdHAj6pj/a1mQy+rbk4gwbsmdCLPT7SDCsYhEBiddDK8ptSGbDyCW3pZ2JCAbOfwKnJrM9c9kB9F8L3ONKYVUGg2YPK7jYctF1OVvEBpS3I6VpJXRlLiR6YDI1pUjif6cus0YCcU5/xpxTia2M1SgCgzUmsCXCBPQG7P7NWxqBe4ZEs+cwTO3dsrGgEXlBPV4PvmjMGr35ycqVJ5nbOO74GmZWcv//1iAaPZVpFNU0eF5KcLFG1AhkFm35LIA/Psw11Byc0mReT9TbNURA7XntrJFrllilvR5BL2S0OS3swjMJIJgLewHHtE9vP4pCq4NInH/ZI55EG+XzbG1Z7HhKH8M2nind42k/OqYJ+9fS6tjFI0GSQ8WIDYdd8JnWU3OQqp/ntY7VsBmD6hkzX47aBjKL3gnKW5sn+ARJnz8IEC7p9H+14lGb01Kj7ZHfJ26QQBXIJ+UyMuNIF30=
