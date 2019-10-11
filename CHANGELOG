@@ -1,3 +1,23 @@
+Version 0.7.0 (2019-10-15)
+--------------------------
+Update flags to resemble ones used in GCS loader config (#157)
+Bump sbt-assembly to 0.14.10 (#156)
+Add sbt-native-packager and Docker config (#152)
+Extend copyright notice to 2019 (#154)
+Change Travis distribution to Trusty (#155)
+Add Docker Hub credentials to .travis.yml (#153)
+Remove vagrant setup (#140)
+Replace scalaz by cats (#148)
+Add partitioning for self-describing types (#146)
+Bump SBT to 1.2.8 (#151)
+Remove curly braces from transformed directory pattern (#137)
+Allow configurable and dynamic s3 path (#134)
+Allow override of kinesis and s3 endpoints in configuration (#131)
+Document that maxTimeout is in milliseconds (#129)
+Move Twitter repo to https (#127)
+Remove colons from NSQ filenames (#125)
+
+
 Version 0.6.0 (2017-09-14)
 --------------------------
 Remove logging section from example config (#115)
