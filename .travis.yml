@@ -7,9 +7,16 @@ jdk:
 before_script:
 - sudo apt-get install -y lzop liblzo2-dev
 before_deploy: pip install --user release-manager==0.2.0
+before_install:
+- docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
 deploy:
 - provider: script
   script: release-manager --config .release.yml --make-artifact --upload-artifact --check-version
+  skip_cleanup: true
+  on:
+    tags: true
+- provider: script
+  script: sbt docker:publish
   skip_cleanup: true
   on:
     tags: true
