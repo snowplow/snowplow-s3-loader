@@ -15,6 +15,9 @@
 import sbt._
 import Keys._
 
+import com.typesafe.sbt.packager.Keys._
+import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.Docker
+
 object BuildSettings {
 
   // Basic settings for our app
@@ -40,6 +43,14 @@ object BuildSettings {
     "-Ywarn-unused-import",
     "-Xfuture",
     "-Xlint"
+  )
+
+  lazy val dockerSettings = Seq(
+    maintainer in Docker := "Snowplow Analytics Ltd. <support@snowplowanalytics.com>",
+    daemonUser in Docker := "snowplow",
+    packageName in Docker := "snowplow/snowplow-s3-loader",
+    dockerBaseImage := "snowplow-docker-registry.bintray.io/snowplow/base-debian:0.1.0",
+    dockerUpdateLatest := true
   )
 
   lazy val javaCompilerOptions = Seq(

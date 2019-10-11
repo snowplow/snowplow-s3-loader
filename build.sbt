@@ -20,6 +20,7 @@ lazy val root = project.in(file("."))
   )
   .settings(BuildSettings.buildSettings)
   .settings(BuildSettings.sbtAssemblySettings)
+  .settings(BuildSettings.dockerSettings)
   .settings(
     libraryDependencies ++= Seq(
       // Java
@@ -46,5 +47,6 @@ lazy val root = project.in(file("."))
       Dependencies.Libraries.collectorPayload
     )
   )
+  .enablePlugins(JavaAppPackaging, DockerPlugin)
 
 shellPrompt := { _ => "s3-loader> " }
