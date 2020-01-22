@@ -72,7 +72,6 @@ class S3Emitter(
 ) {
 
   // create Amazon S3 Client
-  private val directoryPattern = config.directoryPattern
   val log = LoggerFactory.getLogger(getClass)
   val client = AmazonS3ClientBuilder
     .standard()
@@ -172,7 +171,7 @@ class S3Emitter(
       try {
         val outputStream = namedStream.stream
 
-        val s3Key = DynamicPath.decorateDirectoryWithTime(directoryPattern, namedStream.filename, connectionAttemptStartDateTime)
+        val s3Key = DynamicPath.decorateDirectoryWithTime(namedStream.filename, connectionAttemptStartDateTime)
 
         val inputStream = new ByteArrayInputStream(outputStream.toByteArray)
 

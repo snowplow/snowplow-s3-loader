@@ -88,10 +88,18 @@ s3 {
   bucket = "{{s3bucket}}"
   # optional bucket where to store partitioned data
   partitionedBucket = "{{s3bucket}}/partitioned"
-  # optional directory structure to use while storing data on s3, you can place date format strings which will be
-  # replaced with date time values
-  # eg: directoryPattern = "enriched/good/run_yr={YYYY}/run_mo={MM}/run_dy={DD}"
-  directoryPattern = "{{s3DirectoryPattern}}"
+
+  # optional date format prefix for directory pattern
+  # default: {YYYY}/{MM}/{dd}/{HH}
+  dateFormat = "{{s3DateFormat}}"
+
+  # optional directory structure to use while storing data on s3 (followed by dateFormat config)
+  # eg: outputDirectory = "enriched/good/"
+  outputDirectory = "{{s3OutputDirectory}}"
+
+  # optional filename prefix
+  # eg: output
+  filenamePrefix = "{{s3DFilenamePrefix}}"
 
   # Format is one of lzo or gzip
   # Note, that you can use gzip only for enriched data stream.
