@@ -18,8 +18,8 @@ import scala.util.Try
 import scala.util.{Success => TrySuccess}
 
 // Java libs
-import java.util.Calendar
-import java.text.SimpleDateFormat
+import java.time.format.DateTimeFormatter
+import java.time.LocalDateTime
 
 //AWS libs
 import com.amazonaws.auth.AWSCredentialsProvider
@@ -85,11 +85,10 @@ class KinesisS3Emitter(
 
     partitions.flatMap {
       case (RowType.Unpartitioned, partitionRecords) =>
-        val baseFileName = getBaseFilename(buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber, None)
+        val baseFileName = getBaseFilename(buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber, s3Config.outputDirectory, None, s3Config.dateFormat, s3Config.filenamePrefix)
         emitRecords(partitionRecords, false, baseFileName)
       case (data: RowType.SelfDescribing, partitionRecords) =>
-        val prefix = data.name
-        val baseFileName = getBaseFilename(buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber, Some(prefix))
+        val baseFileName = getBaseFilename(buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber,  s3Config.outputDirectory, Some(data.partition), s3Config.dateFormat, s3Config.filenamePrefix)
         emitRecords(partitionRecords, true, baseFileName)
       case (RowType.ReadingError, records) =>
         records // Should be handled later by serializer
@@ -152,22 +151,27 @@ object KinesisS3Emitter {
 
     /** JSON line with self-describing payload that can be partitioned */
     case class SelfDescribing(vendor: String, name: String, format: String, model: Int) extends RowType {
-      def prefix: String = s"$vendor.$name/$format-$model"
+      def partition: String = s"$vendor.$name/$format-$model"
     }
 
     /** Unrecognized line, e.g. non-string or non-SDJSON whereas partitioning is enabled */
     case object ReadingError extends RowType
   }
 
-  val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
 
   /**
     * Determines the filename in S3, which is the corresponding
     * Kinesis sequence range of records in the file.
     */
-  private def getBaseFilename(firstSeq: String, lastSeq: String, prefix: Option[String]): String =
-    prefix.map(p => if (p.isEmpty) "" else p + "/").getOrElse("") + dateFormat.format(Calendar.getInstance().getTime) +
-      "-" + firstSeq + "-" + lastSeq
+  def getBaseFilename(firstSeq: String, lastSeq: String, outputDirectory: Option[String], partition: Option[String], dateFormat: Option[String], filenamePrefix: Option[String], datetime: Option[LocalDateTime] = None): String = {
+ val path = List(outputDirectory, partition, dateFormat, filenamePrefix)
+      .flatMap(_.toList.filterNot(_.isEmpty))
+      .mkString("/")
+
+    val filename = List(path, DateTimeFormatter.ISO_LOCAL_DATE.format(datetime.getOrElse(LocalDateTime.now)), firstSeq, lastSeq).filterNot(_.isEmpty).mkString("-")
+
+    DynamicPath.normalize(filename)
+  }
 
   /**
     * Assume records are self describing data and group them according
