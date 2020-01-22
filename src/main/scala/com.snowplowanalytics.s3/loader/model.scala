@@ -67,8 +67,10 @@ package model {
     partitionedBucket: Option[String],
     format: String,
     maxTimeout: Long,
-    directoryPattern: Option[String],
-    customEndpoint: Option[String]
+    outputDirectory: Option[String],
+    customEndpoint: Option[String],
+    dateFormat: Option[String] = Some("{YYYY}/{MM}/{dd}/{HH}"),
+    filenamePrefix: Option[String] = Some("output")
   ) {
     val endpoint = customEndpoint.getOrElse(region match {
       case "us-east-1" => "https://s3.amazonaws.com"

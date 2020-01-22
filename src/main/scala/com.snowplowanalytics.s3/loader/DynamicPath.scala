@@ -14,8 +14,10 @@ package com.snowplowanalytics.s3.loader
 
 import org.joda.time.{DateTime, DateTimeZone}
 import org.joda.time.format.DateTimeFormat
+import cats.implicits._
 
 import scala.util.Try
+import java.nio.file.Paths
 
 /**
   * Object to handle S3 dynamic path generation
@@ -31,30 +33,34 @@ object DynamicPath {
     * @param fileName          Name of the file to be placed in the directory
     * @param decoratorDateTime The DateTime to be used for decorating the directory patterns with actual values
     */
-  def decorateDirectoryWithTime(directoryPattern: Option[String], fileName: String, decoratorDateTime: DateTime): String = {
-    directoryPattern match {
-      case Some(pattern) =>
-        // replace the pattern with actual date values
-        val detectBracesExpression = "\\{(.*?)\\}".r
-        val replacements = detectBracesExpression
-          .findAllMatchIn(pattern)
-          .map(_.toString.trim)
-          .map { str =>
-            (str, Try(DateTimeFormat.forPattern(str).withZone(DateTimeZone.UTC).print(decoratorDateTime)).getOrElse(str))
-          }
-          .toList
-        val directoryWithBraces = replacements.foldLeft(pattern) {
-          (dir, replacement) => dir.replace(replacement._1, replacement._2)
-        }
-        // Remove braces from the final pure directory path
-        val pure = """\{([^}]*)\}""".r
-        val directory = pure.replaceAllIn(directoryWithBraces, "$1")
-        // ensure trailing slash in the directory only if a pattern was supplied
-        val finalPath = if (directory.endsWith("/") || directory.isEmpty) s"$directory$fileName"
-        else s"$directory/$fileName"
-        finalPath
-      case None => fileName
-    }
+  def decorateDirectoryWithTime(outputDirectory: Option[String], fileName: String, decoratorDateTime: DateTime, dateFormat: Option[String], filenamePrefix: Option[String]): String =  {
+    val normalize = (pathStr: String) => Paths.get(pathStr).normalize.toString
+    val prefixedFileName = filenamePrefix.map(_+"-") |+| fileName.some
+    val path = (outputDirectory.toList ++
+                dateFormat.map(format(decoratorDateTime)).toList ++
+                prefixedFileName.toList).mkString("/")
+
+    normalize(path)
   }
+    
+  private [this] def format(decoratorDateTime: DateTime)(pattern: String): String = {
+    // replace the pattern with actual date values
+    val detectBracesExpression = "\\{(.*?)\\}".r
+    val replacements = detectBracesExpression
+      .findAllMatchIn(pattern)
+      .map(_.toString.trim)
+      .map { str =>
+        (str, Try(DateTimeFormat.forPattern(str).withZone(DateTimeZone.UTC).print(decoratorDateTime)).getOrElse(str))
+      }
+      .toList
+    val directoryWithBraces = replacements.foldLeft(pattern) {
+      (dir, replacement) => dir.replace(replacement._1, replacement._2)
+    }
+
+    // Remove braces from the final pure directory path
+    val pure = """\{([^}]*)\}""".r
+    pure.replaceAllIn(directoryWithBraces, "$1")
+  }
+                         
 }
 
