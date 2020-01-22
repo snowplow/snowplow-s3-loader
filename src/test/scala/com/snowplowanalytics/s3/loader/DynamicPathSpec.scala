@@ -23,32 +23,40 @@ class DynamicPathSpec extends Specification {
     val time = new DateTime(100000)
 
     "correctly decorate Time formats with one time pattern" in {
-      val directoryPattern = Some("something/{YYYY}")
-      val actual = DynamicPath.decorateDirectoryWithTime(directoryPattern, file, time)
-      actual must_== "something/1970/bar.gz"
+      val outputDirectory = Some("something/")
+      val dateFormat = Some("/{YYYY}/")
+      val filenamePrefix = None
+      val actual = DynamicPath.decorateDirectoryWithTime(outputDirectory, file, time, dateFormat, filenamePrefix)
+      actual must_== s"something/1970/bar.gz"
     }
 
     "correctly decorate Time formats with multiple time patterns" in {
-      val directoryPattern = Some("something/{YYYY}/{mm}dy={dd}")
-      val actual = DynamicPath.decorateDirectoryWithTime(directoryPattern, file, time)
+      val outputDirectory = Some("something")
+      val dateFormat = Some("{YYYY}/{mm}dy={dd}")
+      val filenamePrefix = None
+      val actual = DynamicPath.decorateDirectoryWithTime(outputDirectory, file, time, dateFormat, filenamePrefix)
       actual must_== "something/1970/01dy=01/bar.gz"
     }
 
     "correctly decorate Time formats with extra trailing slash" in {
-      val directoryPattern = Some("something/{YYYY}/{mm}dy={dd}/")
-      val actual = DynamicPath.decorateDirectoryWithTime(directoryPattern, file, time)
+      val outputDirectory = Some("something")
+      val dateFormat = Some("{YYYY}/{mm}dy={dd}")
+      val filenamePrefix = None      
+      val actual = DynamicPath.decorateDirectoryWithTime(outputDirectory, file, time, dateFormat, filenamePrefix)
       actual must_== "something/1970/01dy=01/bar.gz"
     }
 
     "correctly decorate Time formats with invalid time format" in {
-      val directoryPattern = Some("something/{YYYY}/{mm}dy={dd}/{foo}")
-      val actual = DynamicPath.decorateDirectoryWithTime(directoryPattern, file, time)
-      actual must_== "something/1970/01dy=01/foo/bar.gz"
+      val outputDirectory = Some("something/")
+      val dateFormat = Some("{YYYY}/{mm}dy={dd}/{foo}")
+      val filenamePrefix = Some("output")
+      val actual = DynamicPath.decorateDirectoryWithTime(outputDirectory, file, time, dateFormat, filenamePrefix)
+      actual must_== "something/1970/01dy=01/foo/output-bar.gz"
     }
 
     "correctly handle no format" in {
-      val directoryPattern = None
-      val actual = DynamicPath.decorateDirectoryWithTime(directoryPattern, file, time)
+      val outputDirectory = None
+      val actual = DynamicPath.decorateDirectoryWithTime(outputDirectory, file, time, None, None)
       actual must_== "bar.gz"
     }
 

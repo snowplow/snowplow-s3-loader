@@ -88,8 +88,7 @@ class KinesisS3Emitter(
         val baseFileName = getBaseFilename(buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber, None)
         emitRecords(partitionRecords, false, baseFileName)
       case (data: RowType.SelfDescribing, partitionRecords) =>
-        val prefix = data.name
-        val baseFileName = getBaseFilename(buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber, Some(prefix))
+        val baseFileName = getBaseFilename(buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber, Some(data.prefix))
         emitRecords(partitionRecords, true, baseFileName)
       case (RowType.ReadingError, records) =>
         records // Should be handled later by serializer
