@@ -12,14 +12,33 @@
  */
 package com.snowplowanalytics.s3.loader
 
+import java.time.LocalDateTime
+
 import cats.syntax.validated._
 
 import org.specs2.mutable.Specification
-import com.snowplowanalytics.s3.loader.KinesisS3Emitter.RowType
 
 class KinesisS3EmitterSpec extends Specification {
-
   "KinesisS3Emitter" should {
+    val firstSeq = "firstSeq"
+    val lastSeq = "lastSeq"
+    val partition = "com.snowplow.partition"
+    val outputDirectory = "outputDirectory"
+    val dateFormat = "{YYYY}/{MM}/{dd}/{HH}"
+    val filenamePrefix = "fileNamePrefix"
+    val datetime = LocalDateTime.of(1970, 1, 1, 0, 0)
+  
+    "format file name with optional components" in {
+      val actual = KinesisS3Emitter.getBaseFilename(firstSeq, lastSeq, Some(outputDirectory), Some(partition), Some(dateFormat), Some(filenamePrefix), Some(datetime))
+
+      actual must beEqualTo(s"$outputDirectory/$partition/$dateFormat/$filenamePrefix-1970-01-01-$firstSeq-$lastSeq")
+    }
+
+    "format file name without optional components" in {
+      val actual = KinesisS3Emitter.getBaseFilename(firstSeq, lastSeq, None, None, None, None, Some(datetime))
+
+      actual must beEqualTo(s"1970-01-01-$firstSeq-$lastSeq")
+    }
 
     "partition records correctly according to schema key" in {
       val dataType11 =
