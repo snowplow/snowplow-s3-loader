@@ -3,12 +3,14 @@
 # Sources currently supported are:
 # 'kinesis' for reading records from a Kinesis stream
 # 'nsq' for reading records from a NSQ topic
+# 'kafka' for reading records from a Kafka topic
 source = "{{source}}"
 
 # Sink is used for sending events which processing failed.
 # Sinks currently supported are:
 # 'kinesis' for writing records to a Kinesis stream
 # 'nsq' for writing records to a NSQ topic
+# 'kafka' for writing records to a Kafka topic
 sink = "{{sink}}"
 
 # The following are used to authenticate for the Amazon Kinesis sink.
@@ -36,6 +38,13 @@ nsq {
 
   # HTTP port for nsqlookupd
   lookupPort = {{nsqlookupdPort}}
+}
+
+# Config for Kafka
+kafka {
+  brokers = "{{kafkaBrokers}}"
+  appName = "{{appName}}"
+  startFromBeginning = false
 }
 
 kinesis {

@@ -26,10 +26,10 @@ import com.snowplowanalytics.client.nsq.NSQConfig
 import com.snowplowanalytics.client.nsq.callbacks.NSQMessageCallback
 import com.snowplowanalytics.client.nsq.callbacks.NSQErrorCallback
 import com.snowplowanalytics.client.nsq.exceptions.NSQException
+import org.slf4j.Logger
 
 // Scala
 import scala.collection.mutable.ListBuffer
-import scala.collection.JavaConversions._
 
 // Tracker
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
@@ -39,10 +39,6 @@ import cats.syntax.validated._
 
 //AWS libs
 import com.amazonaws.auth.AWSCredentialsProvider
-
-// Joda-Time
-import org.joda.time.{DateTime, DateTimeZone}
-import org.joda.time.format.DateTimeFormat
 
 // Logging
 import org.slf4j.LoggerFactory
@@ -65,34 +61,23 @@ class NsqSourceExecutor(
   config: S3LoaderConfig,
   provider: AWSCredentialsProvider,
   badSink: ISink,
-  serializer: ISerializer,
+  val serializer: ISerializer,
   maxConnectionTime: Long,
   tracker: Option[Tracker]
-) extends Runnable {
+) extends Runnable with IBufferedOutput {
 
-  lazy val log = LoggerFactory.getLogger(getClass())
+  lazy val log: Logger = LoggerFactory.getLogger(getClass)
+  lazy val s3Config: S3Config = config.s3
 
   //nsq messages will be buffered in msgBuffer until buffer size become equal to nsqBufferSize
   val msgBuffer = new ListBuffer[EmitterInput]()
 
-  val s3Emitter = new S3Emitter(config.s3, provider, badSink, maxConnectionTime, tracker)
-  private val TimeFormat = DateTimeFormat.forPattern("HHmmssSSS").withZone(DateTimeZone.UTC)
-  private val DateFormat = DateTimeFormat.forPattern("yyyy-MM-dd").withZone(DateTimeZone.UTC)
-
-  private def getBaseFilename(startTime: Long, endTime: Long): String = {
-    val currentTimeObject = new DateTime(System.currentTimeMillis())
-    val startTimeObject = new DateTime(startTime)
-    val endTimeObject = new DateTime(endTime)
-
-    DateFormat.print(currentTimeObject) + "-" +
-      TimeFormat.print(startTimeObject) + "-" +
-      TimeFormat.print(endTimeObject)   + "-" +
-      math.abs(util.Random.nextInt)
-  }
+  val s3Emitter =
+    new S3Emitter(config.s3, provider, badSink, maxConnectionTime, tracker)
 
   override def run: Unit = {
 
-    val nsqCallback = new  NSQMessageCallback {
+    val nsqCallback = new NSQMessageCallback {
       //start time of filling the buffer
       var bufferStartTime = System.currentTimeMillis()
       val nsqBufferSize = config.streams.buffer.recordLimit
@@ -105,25 +90,7 @@ class NsqSourceExecutor(
           if (msgBuffer.size >= nsqBufferSize) {
             //finish time of filling the buffer
             val bufferEndTime = System.currentTimeMillis()
-            val baseFilename = getBaseFilename(bufferStartTime, bufferEndTime)
-            val serializationResults = serializer.serialize(msgBuffer.toList, baseFilename)
-            val (successes, failures) = serializationResults.results.partition(_.isValid)
-
-            log.info(s"Successfully serialized ${successes.size} records out of ${successes.size + failures.size}")
-
-            if (successes.nonEmpty) {
-              serializationResults.namedStreams.foreach { stream =>
-                val connectionAttemptStartTime = System.currentTimeMillis()
-                s3Emitter.attemptEmit(stream, false, connectionAttemptStartTime) match {
-                  case false => log.error(s"Error while sending to S3")
-                  case true => log.info(s"Successfully sent ${successes.size} records")
-                }
-              }
-            }
-
-            if (failures.nonEmpty) {
-              s3Emitter.sendFailures(failures)
-            }
+            flushMessages(msgBuffer.toList, bufferStartTime, bufferEndTime)
 
             msgBuffer.clear()
             //make buffer start time of the next buffer the buffer finish time of the current buffer
@@ -135,18 +102,23 @@ class NsqSourceExecutor(
 
     val errorCallback = new NSQErrorCallback {
       override def error(e: NSQException) =
-        log.error(s"Exception while consuming topic $config.streams.inStreamName", e)
+        log.error(
+          s"Exception while consuming topic $config.streams.inStreamName",
+          e
+        )
     }
 
     val lookup = new DefaultNSQLookup
     // use NSQLookupd
     lookup.addLookupAddress(config.nsq.host, config.nsq.lookupPort)
-    val consumer = new NSQConsumer(lookup,
-                                   config.streams.inStreamName,
-                                   config.nsq.channelName,
-                                   nsqCallback,
-                                   new NSQConfig(),
-                                   errorCallback)
+    val consumer = new NSQConsumer(
+      lookup,
+      config.streams.inStreamName,
+      config.nsq.channelName,
+      nsqCallback,
+      new NSQConfig(),
+      errorCallback
+    )
     consumer.start()
   }
 }
