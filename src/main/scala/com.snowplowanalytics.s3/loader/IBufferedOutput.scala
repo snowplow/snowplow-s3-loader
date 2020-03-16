@@ -15,37 +15,6 @@ trait IBufferedOutput {
   val s3Emitter: S3Emitter
   val s3Config: S3Config
 
-  def getBaseFilename(startTime: Long, endTime: Long): String = {
-    val currentTimeObject = new DateTime(System.currentTimeMillis())
-    val startTimeObject = new DateTime(startTime)
-    val endTimeObject = new DateTime(endTime)
-
-    val fileName = (s3Config.filenamePrefix ::
-      DateFormat.print(currentTimeObject).some ::
-      TimeFormat.print(startTimeObject).some ::
-      TimeFormat.print(endTimeObject).some ::
-      math.abs(util.Random.nextInt).toString.some ::
-      Nil).flatten
-
-    val baseFolder = s3Config.outputDirectory ::
-      formatFolderDatePrefix(currentTimeObject) :: fileName
-      .mkString("-").some ::
-      Nil
-
-    val baseName = baseFolder.flatten.mkString("/")
-    baseName
-  }
-
-  private val TimeFormat =
-    DateTimeFormat.forPattern("HHmmssSSS").withZone(DateTimeZone.UTC)
-  private val DateFormat =
-    DateTimeFormat.forPattern("yyyy-MM-dd").withZone(DateTimeZone.UTC)
-
-  private val folderDateFormat =
-    s3Config.dateFormat.map(format => DateTimeFormat.forPattern(format))
-  private def formatFolderDatePrefix(currentTime: DateTime): Option[String] =
-    folderDateFormat.map(formatter => formatter.print(currentTime))
-
   def flushMessages(messages: List[EmitterInput],
                     bufferStartTime: Long,
                     bufferEndTime: Long): Unit = {
@@ -74,4 +43,35 @@ trait IBufferedOutput {
       s3Emitter.sendFailures(failures)
     }
   }
+
+  private[this] def getBaseFilename(startTime: Long, endTime: Long): String = {
+    val currentTimeObject = new DateTime(System.currentTimeMillis())
+    val startTimeObject = new DateTime(startTime)
+    val endTimeObject = new DateTime(endTime)
+
+    val fileName = (s3Config.filenamePrefix ::
+      DateFormat.print(currentTimeObject).some ::
+      TimeFormat.print(startTimeObject).some ::
+      TimeFormat.print(endTimeObject).some ::
+      math.abs(util.Random.nextInt).toString.some ::
+      Nil).flatten
+
+    val baseFolder = s3Config.outputDirectory ::
+      formatFolderDatePrefix(currentTimeObject) :: fileName
+      .mkString("-").some ::
+      Nil
+
+    val baseName = baseFolder.flatten.mkString("/")
+    baseName
+  }
+
+  private[this] val TimeFormat =
+    DateTimeFormat.forPattern("HHmmssSSS").withZone(DateTimeZone.UTC)
+  private[this] val DateFormat =
+    DateTimeFormat.forPattern("yyyy-MM-dd").withZone(DateTimeZone.UTC)
+
+  private[this] val folderDateFormat =
+    s3Config.dateFormat.map(format => DateTimeFormat.forPattern(format))
+  private[this] def formatFolderDatePrefix(currentTime: DateTime): Option[String] =
+    folderDateFormat.map(formatter => formatter.print(currentTime))
 }
