@@ -1,9 +1,10 @@
 package com.snowplowanalytics.s3.loader
 
+import cats.syntax.option._
 import com.snowplowanalytics.s3.loader.model.S3Config
 import com.snowplowanalytics.s3.loader.serializers.ISerializer
-import org.joda.time.{DateTime, DateTimeZone}
 import org.joda.time.format.DateTimeFormat
+import org.joda.time.{DateTime, DateTimeZone}
 import org.slf4j.Logger
 
 import scala.collection.JavaConversions._
@@ -19,15 +20,17 @@ trait IBufferedOutput {
     val startTimeObject = new DateTime(startTime)
     val endTimeObject = new DateTime(endTime)
 
-    val fileName = (s3Config.filenamePrefix :: Some(
-      DateFormat.print(currentTimeObject)
-    ) :: Some(TimeFormat.print(startTimeObject)) :: Some(
-      TimeFormat.print(endTimeObject)
-    ) :: Some(math.abs(util.Random.nextInt).toString) :: Nil).flatten
+    val fileName = (s3Config.filenamePrefix ::
+      DateFormat.print(currentTimeObject).some ::
+      TimeFormat.print(startTimeObject).some ::
+      TimeFormat.print(endTimeObject).some ::
+      math.abs(util.Random.nextInt).toString.some ::
+      Nil).flatten
 
-    val baseFolder = s3Config.outputDirectory :: formatFolderDatePrefix(
-      currentTimeObject
-    ) :: Some(fileName.mkString("-")) :: Nil
+    val baseFolder = s3Config.outputDirectory ::
+      formatFolderDatePrefix(currentTimeObject) :: fileName
+      .mkString("-").some ::
+      Nil
 
     val baseName = baseFolder.flatten.mkString("/")
     baseName
