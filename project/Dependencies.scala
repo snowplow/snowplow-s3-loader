@@ -40,6 +40,7 @@ object Dependencies {
     val snowplowTracker = "0.3.0"
     val pureconfig      = "0.8.0"
     val igluCore        = "0.5.0"
+    val kafka           = "2.4.0"
     // Scala (test only)
     val specs2          = "3.9.1"
   }
@@ -76,6 +77,7 @@ object Dependencies {
     val snowplowTracker  = "com.snowplowanalytics"     %% "snowplow-scala-tracker"    % V.snowplowTracker
     val pureconfig       = "com.github.pureconfig"     %% "pureconfig"                % V.pureconfig
     val igluCoreJson4s   = "com.snowplowanalytics"     %% "iglu-core-json4s"          % V.igluCore
+    val kafka            = "org.apache.kafka"          %% "kafka"                     % V.kafka
     // Scala (test only)
     val specs2           = "org.specs2"                %% "specs2-core"               % V.specs2           % "test"
   }

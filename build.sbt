@@ -16,7 +16,7 @@ lazy val root = project.in(file("."))
   .settings(
     name        := "snowplow-s3-loader",
     version     := "0.7.0",
-    description := "Load the contents of a Kinesis stream or NSQ topic to S3"
+    description := "Load the contents of a Kinesis stream, NSQ or Kafka topic to S3"
   )
   .settings(BuildSettings.buildSettings)
   .settings(BuildSettings.sbtAssemblySettings)
@@ -41,6 +41,7 @@ lazy val root = project.in(file("."))
       Dependencies.Libraries.snowplowTracker,
       Dependencies.Libraries.pureconfig,
       Dependencies.Libraries.igluCoreJson4s,
+      Dependencies.Libraries.kafka,
       // Scala (test only)
       Dependencies.Libraries.specs2,
       // Thrift (test only)

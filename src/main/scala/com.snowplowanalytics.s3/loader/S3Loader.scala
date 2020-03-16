@@ -15,15 +15,12 @@ package com.snowplowanalytics.s3.loader
 import java.util.Properties
 
 import cats.syntax.validated._
-
 import com.amazonaws.auth.AWSCredentialsProvider
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration
-
 import org.slf4j.LoggerFactory
-
 import com.snowplowanalytics.s3.loader.model.S3LoaderConfig
 import com.snowplowanalytics.s3.loader.serializers.{GZipSerializer, LzoSerializer}
-import com.snowplowanalytics.s3.loader.sinks.{KinesisSink, NsqSink}
+import com.snowplowanalytics.s3.loader.sinks.{KafkaSink, KinesisSink, NsqSink}
 
 object S3Loader {
 
@@ -43,6 +40,7 @@ object S3Loader {
     val badSink = config.sink match {
       case "kinesis" => new KinesisSink(credentials, kinesisSinkEndpoint, kinesisSinkRegion, kinesisSinkName, tracker)
       case "nsq" => new NsqSink(config)
+      case "kafka" => new KafkaSink(config)
     }
 
     val serializer = config.s3.format match {
@@ -72,8 +70,17 @@ object S3Loader {
           maxConnectionTime,
           tracker
         ).valid
+      // Read records from Kafka
+      case "kafka" =>
+        new KafkaSourceExecutor(config,
+          credentials,
+          badSink,
+          serializer,
+          maxConnectionTime,
+          tracker
+        ).valid
 
-      case _ => s"Source must be set to kinesis' or 'NSQ'. Provided: ${config.source}".invalid
+      case _ => s"Source must be set to one of 'kinesis', 'NSQ' or 'kafka'. Provided: ${config.source}".invalid
     }
 
     executor.fold(
@@ -89,7 +96,7 @@ object S3Loader {
         // This does not apply to NSQ because NSQ consumer is non-blocking and fall here
         // right after consumer.start()
         config.source match {
-          case "kinesis" => System.exit(1)
+          case "kinesis" | "kafka" => System.exit(1)
           // do anything
           case "nsq" =>
         }

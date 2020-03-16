@@ -24,6 +24,7 @@ import java.text.SimpleDateFormat
 // Scala
 import scala.util.Try
 
+import java.util.Properties
 package model {
 
   case class AWSConfig(accessKey: String, secretKey: String)
@@ -33,6 +34,24 @@ package model {
     port: Int,
     lookupPort: Int
   )
+  case class KafkaConfig(
+    brokers: String,
+    appName: String,
+    pollTime: Option[Long],
+    startFromBeginning: Boolean
+  ) {
+    val properties = new Properties()
+    properties.setProperty("bootstrap.servers", brokers)
+    properties.setProperty("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
+    properties.setProperty("value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer")
+
+    properties.setProperty("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+    properties.setProperty("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer")
+
+    properties.setProperty("enable.auto.commit", "false")
+
+    properties.setProperty("group.id", appName)
+  }
   case class KinesisConfig(
     initialPosition: String,
     initialTimestamp: Option[String],
@@ -91,6 +110,7 @@ package model {
     sink: String,
     aws: AWSConfig,
     nsq: NSQConfig,
+    kafka: KafkaConfig,
     kinesis: KinesisConfig,
     streams: StreamsConfig,
     s3: S3Config,
