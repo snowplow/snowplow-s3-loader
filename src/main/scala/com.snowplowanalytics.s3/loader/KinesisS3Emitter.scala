@@ -143,13 +143,20 @@ object KinesisS3Emitter {
     * Kinesis sequence range of records in the file.
     */
   def getBaseFilename(firstSeq: String, lastSeq: String, outputDirectory: Option[String], partition: Option[String], dateFormat: Option[String], filenamePrefix: Option[String], datetime: Option[LocalDateTime] = None): String = {
- val path = List(outputDirectory, partition, dateFormat, filenamePrefix)
+    val path = List(outputDirectory, partition, dateFormat)
       .flatMap(_.toList.filterNot(_.isEmpty))
       .mkString("/")
 
-    val filename = List(path, DateTimeFormatter.ISO_LOCAL_DATE.format(datetime.getOrElse(LocalDateTime.now)), firstSeq, lastSeq).filterNot(_.isEmpty).mkString("-")
+    val filename = List(
+        filenamePrefix.getOrElse(""),
+        DateTimeFormatter.ISO_LOCAL_DATE.format(datetime.getOrElse(LocalDateTime.now)),
+        firstSeq,
+        lastSeq
+      ).filterNot(_.isEmpty).mkString("-")
 
-    DynamicPath.normalize(filename)
+    val fullFilename = List(path, filename).filterNot(_.isEmpty).mkString("/")
+
+    DynamicPath.normalize(fullFilename)
   }
 
   /**
