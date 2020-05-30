@@ -39,7 +39,8 @@ package model {
     maxRecords: Long,
     region: String,
     appName: String,
-    customEndpoint: Option[String]
+    customEndpoint: Option[String],
+    dynamoDBCustomEndpoint: Option[String]
   ) {
     val timestampEither = initialTimestamp
       .toRight("An initial timestamp needs to be provided when choosing AT_TIMESTAMP")
@@ -69,6 +70,7 @@ package model {
     maxTimeout: Long,
     outputDirectory: Option[String],
     customEndpoint: Option[String],
+    pathStyleAccessEnabled: Boolean = false,
     dateFormat: Option[String] = None,
     filenamePrefix: Option[String] = None
   ) {

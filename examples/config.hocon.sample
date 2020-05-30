@@ -60,8 +60,9 @@ kinesis {
   appName = "{{appName}}"
 
   ## Optional endpoint url configuration to override aws kinesis endpoints,
-  ## this can be used to specify local endpoints when using localstack
+  ## this can be used to specify local endpoints when using localstack.
   # customEndpoint = {{kinesisEndpoint}}
+  # dynamoDBCustomEndpoint = {{kinesisEndpoint}}
 }
 
 streams {
@@ -111,6 +112,12 @@ s3 {
   ## Optional endpoint url configuration to override aws s3 endpoints,
   ## this can be used to specify local endpoints when using localstack
   # customEndpoint = {{kinesisEndpoint}}
+
+  ## Enable S3 client Path-Style Access.
+  ## This can be used when using a local environment which does not support Virtual-Hosted based access such as
+  ## localstack.
+  ## Type: boolean
+  # pathStyleAccessEnabled = {{pathStyleAccessEnabled}}
 }
 
 # Optional section for tracking endpoints
