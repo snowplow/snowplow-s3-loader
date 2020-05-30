@@ -70,6 +70,7 @@ package model {
     maxTimeout: Long,
     outputDirectory: Option[String],
     customEndpoint: Option[String],
+    pathStyleAccessEnabled: Boolean = false,
     dateFormat: Option[String] = None,
     filenamePrefix: Option[String] = None
   ) {

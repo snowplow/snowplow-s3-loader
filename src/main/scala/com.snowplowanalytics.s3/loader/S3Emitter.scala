@@ -77,6 +77,7 @@ class S3Emitter(
     .standard()
     .withCredentials(provider)
     .withEndpointConfiguration(new EndpointConfiguration(config.endpoint, config.region))
+    .withPathStyleAccessEnabled(config.pathStyleAccessEnabled)
     .build()
 
   /**
