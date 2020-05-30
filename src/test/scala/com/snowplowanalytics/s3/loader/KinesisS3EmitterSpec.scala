@@ -40,6 +40,12 @@ class KinesisS3EmitterSpec extends Specification {
       actual must beEqualTo(s"1970-01-01-$firstSeq-$lastSeq")
     }
 
+    "format file name with optional components but no filenamePrefix" in {
+      val actual = KinesisS3Emitter.getBaseFilename(firstSeq, lastSeq, Some(outputDirectory), Some(partition), Some(dateFormat), None, Some(datetime))
+
+      actual must beEqualTo(s"$outputDirectory/$partition/$dateFormat/1970-01-01-$firstSeq-$lastSeq")
+    }
+
     "partition records correctly according to schema key" in {
       val dataType11 =
         """
