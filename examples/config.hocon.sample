@@ -60,8 +60,9 @@ kinesis {
   appName = "{{appName}}"
 
   ## Optional endpoint url configuration to override aws kinesis endpoints,
-  ## this can be used to specify local endpoints when using localstack
+  ## this can be used to specify local endpoints when using localstack.
   # customEndpoint = {{kinesisEndpoint}}
+  # dynamoDBCustomEndpoint = {{kinesisEndpoint}}
 }
 
 streams {
