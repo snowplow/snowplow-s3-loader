@@ -24,6 +24,7 @@ lazy val root = project.in(file("."))
   .settings(
     libraryDependencies ++= Seq(
       // Java
+      Dependencies.Libraries.sts,
       Dependencies.Libraries.kinesisClient,
       Dependencies.Libraries.kinesisConnector,
       Dependencies.Libraries.slf4j,

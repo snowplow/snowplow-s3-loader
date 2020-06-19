@@ -49,6 +49,10 @@ object CredentialsLookup {
       new EnvironmentVariableCredentialsProvider()
     } else if (isEnv(a) || isEnv(s)) {
       throw new RuntimeException("access-key and secret-key must both be set to 'env', or neither")
+    } else if (isOIDC(a) && isOIDC(s)) {
+      new WebIdentityTokenCredentialsProvider()
+    } else if (isOIDC(a) || isOIDC(s)) {
+      throw new RuntimeException("access-key and secret-key must both be set to 'env', or neither")
     } else {
       new BasicAWSCredentialsProvider(
         new BasicAWSCredentials(a, s)
@@ -82,6 +86,15 @@ object CredentialsLookup {
    * @return true if key is iam, false otherwise
    */
   private def isEnv(key: String): Boolean = (key == "env")
+
+  /**
+   * Is the access/secret key set to the special value "oidc" i.e. get
+   * the credentials from WebToken provider 
+   *
+   * @param key The key to check
+   * @return true if key is oidc, false otherwise
+   */
+  private def isOIDC(key: String): Boolean = (key == "oidc")
 
   // Wrap BasicAWSCredential objects.
   class BasicAWSCredentialsProvider(basic: BasicAWSCredentials) extends

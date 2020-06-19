@@ -16,6 +16,7 @@ sink = "{{sink}}"
 # (see http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/DefaultAWSCredentialsProviderChain.html)
 # If both are set to 'iam', use AWS IAM Roles to provision credentials.
 # If both are set to 'env', use environment variables AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+# set both to 'oidc' if running in EKS cluster with a K8S ServiceAccount with associated IAM Role (see https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html )
 aws {
   accessKey = "iam"
   secretKey = "iam"
