@@ -38,7 +38,7 @@ object Dependencies {
     val json4s          = "3.2.11"
     val cats            = "1.6.1"
     val snowplowTracker = "0.5.0"
-    val pureconfig      = "0.8.0"
+    val pureconfig      = "0.14.0"
     val igluCore        = "0.5.0"
     // Scala (test only)
     val specs2          = "3.9.1"
