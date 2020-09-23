@@ -48,5 +48,3 @@ lazy val root = project.in(file("."))
     )
   )
   .enablePlugins(JavaAppPackaging, DockerPlugin)
-
-shellPrompt := { _ => "s3-loader> " }

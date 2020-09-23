@@ -15,8 +15,8 @@ import sbt._
 object Dependencies {
   val resolvers = Seq(
     Resolver.jcenterRepo,
-    "Snowplow Analytics Maven releases repo" at "http://maven.snplow.com/releases/",
-    "Twitter maven repo"                     at "https://maven.twttr.com/"
+    ("Snowplow Analytics Maven releases repo" at "http://maven.snplow.com/releases/").withAllowInsecureProtocol(true),
+    "Twitter maven repo" at "https://maven.twttr.com/"
   )
 
   object V {
@@ -25,7 +25,7 @@ object Dependencies {
     val kinesisClient    = "1.7.5"
     val kinesisConnector = "1.3.0"
     val hadoop           = "2.7.3"
-    val elephantbird     = "4.15"
+    val elephantbird     = "4.17"
     val hadoopLZO        = "0.4.20"
     val jodaTime         = "2.9.9"
     val config           = "1.3.1"
@@ -37,7 +37,7 @@ object Dependencies {
     val scopt           = "3.6.0"
     val json4s          = "3.2.11"
     val cats            = "1.6.1"
-    val snowplowTracker = "0.3.0"
+    val snowplowTracker = "0.5.0"
     val pureconfig      = "0.8.0"
     val igluCore        = "0.5.0"
     // Scala (test only)
@@ -58,7 +58,6 @@ object Dependencies {
       .exclude("org.slf4j", "slf4j-log4j12")
       .exclude("commons-beanutils", "commons-beanutils")
       .exclude("commons-beanutils", "commons-beanutils-core")
-      .exclude("commons-collections", "commons-collections")
       .exclude("commons-logging", "commons-logging")
       .exclude("org.apache.htrace", "htrace-core")
       .exclude("junit", "junit")

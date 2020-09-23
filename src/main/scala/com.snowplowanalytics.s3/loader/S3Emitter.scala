@@ -23,7 +23,7 @@ import java.io.ByteArrayInputStream
 
 // Scala
 import scala.util.control.NonFatal
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 // SLF4j
 import org.slf4j.LoggerFactory
@@ -131,7 +131,7 @@ class S3Emitter(
   * @param records List of failed records
   */
   def sendFailures(records: java.util.List[EmitterInput]): Unit = {
-    for (Validated.Invalid(record) <- records.toList) {
+    for (Validated.Invalid(record) <- records.asScala.toList) {
       log.warn(s"Record failed: ${record.line}")
       log.info("Sending failed record to Kinesis")
       val output = compact(render(

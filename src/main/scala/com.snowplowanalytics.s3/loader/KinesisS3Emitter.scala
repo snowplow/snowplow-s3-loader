@@ -29,7 +29,7 @@ import com.amazonaws.services.kinesis.connectors.UnmodifiableBuffer
 import com.amazonaws.services.kinesis.connectors.interfaces.IEmitter
 
 // Scala
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 // Tracker
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
@@ -92,7 +92,7 @@ class KinesisS3Emitter(
         emitRecords(partitionRecords, true, baseFileName)
       case (RowType.ReadingError, records) =>
         records // Should be handled later by serializer
-    }
+    }.asJava
   }
 
   /**

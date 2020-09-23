@@ -29,7 +29,7 @@ import com.snowplowanalytics.client.nsq.exceptions.NSQException
 
 // Scala
 import scala.collection.mutable.ListBuffer
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 // Tracker
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
@@ -122,7 +122,7 @@ class NsqSourceExecutor(
             }
 
             if (failures.nonEmpty) {
-              s3Emitter.sendFailures(failures)
+              s3Emitter.sendFailures(failures.asJava)
             }
 
             msgBuffer.clear()

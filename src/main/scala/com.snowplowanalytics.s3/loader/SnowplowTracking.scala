@@ -24,7 +24,7 @@ import org.json4s.JsonDSL._
 
 // Tracker
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
-import com.snowplowanalytics.snowplow.scalatracker.SelfDescribingJson
+import com.snowplowanalytics.iglu.core.{SelfDescribingData, SchemaKey}
 import com.snowplowanalytics.snowplow.scalatracker.emitters.AsyncEmitter
 
 // This project
@@ -38,6 +38,9 @@ object SnowplowTracking {
   private val HeartbeatInterval = 300000L
   private val StorageType = "AMAZON_S3"
 
+  implicit val ec: scala.concurrent.ExecutionContext =
+    scala.concurrent.ExecutionContext.global
+
   /**
    * Configure a Tracker based on the configuration HOCON
    *
@@ -48,9 +51,8 @@ object SnowplowTracking {
     val endpoint = config.collectorUri
     val port = config.collectorPort
     val appName = config.appId
-    // Not yet used
-    val method = config.method
-    val emitter = AsyncEmitter.createAndStart(endpoint, port)
+    val emitter =
+      AsyncEmitter.createAndStart(endpoint, Some(port), callback = None)
     new Tracker(List(emitter), generated.Settings.name, appName)
   }
 
@@ -80,6 +82,18 @@ object SnowplowTracking {
     heartbeatThread.start()
   }
 
+  private def sdd(key: String, data: JsonAST.JObject) =
+    SelfDescribingData[JValue](
+      SchemaKey
+        .fromUri(key)
+        .getOrElse(
+          throw new RuntimeException(
+            s"Invalid SchemaKey $key. Use com.snowplowanalytics.iglu.core.SchemaKey"
+          )
+        ),
+      data
+    )
+
   /**
    * If a tracker has been configured, send a storage_write_failed event
    *
@@ -96,14 +110,17 @@ object SnowplowTracking {
     initialFailureTime: Long,
     message: String): Unit = {
 
-    tracker.trackUnstructEvent(SelfDescribingJson(
-      "iglu:com.snowplowanalytics.monitoring.kinesis/storage_write_failed/jsonschema/1-0-0",
+    val key =
+      "iglu:com.snowplowanalytics.monitoring.kinesis/storage_write_failed/jsonschema/1-0-0"
+
+    val data = 
       ("lastRetryPeriod" -> lastRetryPeriod) ~
       ("storage" -> StorageType) ~
       ("failureCount" -> failureCount) ~
       ("initialFailureTime" -> initialFailureTime) ~
       ("message" -> message)
-    ))
+
+    tracker.trackSelfDescribingEvent(sdd(key, data))
   }
 
   /**
@@ -111,24 +128,24 @@ object SnowplowTracking {
    *
    * @param tracker a Tracker instance
    */
-  private def trackApplicationInitialization(tracker: Tracker): Unit = {
-    tracker.trackUnstructEvent(SelfDescribingJson(
-      "iglu:com.snowplowanalytics.monitoring.kinesis/app_initialized/jsonschema/1-0-0",
-      JObject(Nil)
-    ))
-  }
+  private def trackApplicationInitialization(tracker: Tracker): Unit = 
+    tracker.trackSelfDescribingEvent(
+      sdd(
+        "iglu:com.snowplowanalytics.monitoring.kinesis/app_initialized/jsonschema/1-0-0",
+        JObject(Nil)
+      ))
 
   /**
    * Send an application_shutdown unstructured event
    *
    * @param tracker a Tracker instance
    */
-  def trackApplicationShutdown(tracker: Tracker): Unit = {
-    tracker.trackUnstructEvent(SelfDescribingJson(
-      "iglu:com.snowplowanalytics.monitoring.kinesis/app_shutdown/jsonschema/1-0-0",
-      JObject(Nil)
-    ))
-  }
+  def trackApplicationShutdown(tracker: Tracker): Unit = 
+    tracker.trackSelfDescribingEvent(
+      sdd(
+        "iglu:com.snowplowanalytics.monitoring.kinesis/app_shutdown/jsonschema/1-0-0",
+        JObject(Nil)
+      ))
 
   /**
    * Send a heartbeat unstructured event
@@ -136,10 +153,11 @@ object SnowplowTracking {
    * @param tracker a Tracker instance
    * @param heartbeatInterval Time between heartbeats in milliseconds
    */
-  private def trackApplicationHeartbeat(tracker: Tracker, heartbeatInterval: Long): Unit = {
-    tracker.trackUnstructEvent(SelfDescribingJson(
-      "iglu:com.snowplowanalytics.monitoring.kinesis/app_heartbeat/jsonschema/1-0-0",
-      "interval" -> heartbeatInterval
-    ))
-  }
+  private def trackApplicationHeartbeat(tracker: Tracker, heartbeatInterval: Long): Unit = 
+    tracker.trackSelfDescribingEvent(
+      sdd(
+        "iglu:com.snowplowanalytics.monitoring.kinesis/app_heartbeat/jsonschema/1-0-0",
+        "interval" -> heartbeatInterval
+      ))
+
 }

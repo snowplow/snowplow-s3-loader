@@ -29,7 +29,7 @@ import cats.syntax.validated._
 
 // Scala
 import scala.sys.process._
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 // Specs2
 import org.specs2.mutable.Specification
@@ -67,9 +67,9 @@ class GZipSerializerSpec extends Specification {
 
       binaryInputs map {
         case Validated.Valid(e) =>
-          val rawResult = input.head.getBytes
+          val rawResult = input.asScala.head.getBytes
 
-          input = input.tail
+          input = input.asScala.tail.asJava
 
           rawResult must_== e
         case _ =>
