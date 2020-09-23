@@ -30,7 +30,7 @@ object Dependencies {
     val jodaTime         = "2.9.9"
     val config           = "1.3.1"
     val nsqClient        = "1.1.0-rc1"
-    val jacksonCbor      = "2.8.8"
+    val jacksonCbor      = "2.11.2"
     // Thrift (test only)
     val collectorPayload = "0.0.0"
     // Scala
