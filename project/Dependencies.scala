@@ -27,7 +27,7 @@ object Dependencies {
     val hadoop           = "2.7.3"
     val elephantbird     = "4.17"
     val hadoopLZO        = "0.4.20"
-    val jodaTime         = "2.9.9"
+    val jodaTime         = "2.10.6"
     val config           = "1.4.0"
     val nsqClient        = "1.3.0"
     val jacksonCbor      = "2.11.2"
