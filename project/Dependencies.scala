@@ -41,7 +41,7 @@ object Dependencies {
     val pureconfig      = "0.14.0"
     val igluCore        = "1.0.0"
     // Scala (test only)
-    val specs2          = "3.9.1"
+    val specs2          = "4.10.3"
   }
 
   object Libraries {
