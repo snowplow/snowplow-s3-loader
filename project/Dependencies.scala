@@ -21,7 +21,7 @@ object Dependencies {
 
   object V {
     // Java
-    val slf4j            = "1.7.30"
+    // val slf4j            = "1.7.30"
     val kinesisClient    = "1.14.0"
     val kinesisConnector = "1.3.0"
     val hadoop           = "3.3.0"
@@ -30,12 +30,14 @@ object Dependencies {
     val jodaTime         = "2.10.6"
     val config           = "1.4.0"
     val nsqClient        = "1.3.0"
-    val jacksonCbor      = "2.11.2"
+    val jacksonCbor      = "2.11.3"
+    val metrics          = "2.0.5"
+    val logback          = "1.2.3"
     // Thrift (test only)
     val collectorPayload = "0.0.0"
     // Scala
     val scopt           = "3.7.1"
-    val json4s          = "3.6.9"
+    val json4s          = "3.6.10"
     val cats            = "2.2.0"
     val snowplowTracker = "0.5.0"
     val pureconfig      = "0.14.0"
@@ -46,7 +48,7 @@ object Dependencies {
 
   object Libraries {
     // Java
-    val slf4j            = "org.slf4j"                 %  "slf4j-simple"              % V.slf4j
+    // val slf4j            = "org.slf4j"                 %  "slf4j-simple"              % V.slf4j
     val kinesisClient    = ("com.amazonaws"            %  "amazon-kinesis-client"     % V.kinesisClient)
       .exclude("com.fasterxml.jackson.dataformat", "jackson-dataformat-cbor")
     val kinesisConnector = ("com.amazonaws"            %  "amazon-kinesis-connectors" % V.kinesisConnector)
@@ -66,6 +68,8 @@ object Dependencies {
     val jodaTime         = "joda-time"                 %  "joda-time"                 % V.jodaTime
     val config           = "com.typesafe"              %  "config"                    % V.config
     val nsqClient        = "com.snowplowanalytics"     %  "nsq-java-client"           % V.nsqClient
+    val metrics          = "io.github.azagniotov"      % "dropwizard-metrics-cloudwatch" % V.metrics
+    val logback          = "ch.qos.logback"            % "logback-classic"            % V.logback % Runtime
     // Thrift (test only)
     val collectorPayload = "com.snowplowanalytics"     %  "collector-payload-1"       % V.collectorPayload % "test"
     // Scala
