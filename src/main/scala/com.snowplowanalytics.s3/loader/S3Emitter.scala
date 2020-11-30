@@ -139,7 +139,7 @@ class S3Emitter(
         ("errors" -> record.errors) ~
         ("failure_tstamp" -> getTimestamp(System.currentTimeMillis()))
       ))
-      badSink.store(output, Some("key"), false)
+      badSink.store(output, None, false)
     }
   }
 
