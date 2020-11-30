@@ -14,9 +14,8 @@ import sbt._
 
 object Dependencies {
   val resolvers = Seq(
-    Resolver.jcenterRepo,
     "Snowplow Analytics Maven releases repo" at "http://maven.snplow.com/releases/",
-    "Twitter maven repo"                     at "https://maven.twttr.com/"
+    "Snowplow Bintray Maven repo"            at "https://snowplow.bintray.com/snowplow-maven"
   )
 
   object V {
@@ -27,6 +26,7 @@ object Dependencies {
     val hadoop           = "2.7.3"
     val elephantbird     = "4.15"
     val hadoopLZO        = "0.4.20"
+    val apacheCommons    = "3.2.1"
     val jodaTime         = "2.9.9"
     val config           = "1.3.1"
     val nsqClient        = "1.1.0-rc1"
@@ -62,13 +62,15 @@ object Dependencies {
       .exclude("commons-logging", "commons-logging")
       .exclude("org.apache.htrace", "htrace-core")
       .exclude("junit", "junit")
-    val elephantbird     = "com.twitter.elephantbird"  %  "elephant-bird-core"        % V.elephantbird
-    val hadoopLZO        = "com.hadoop.gplcompression" %  "hadoop-lzo"                % V.hadoopLZO
-    val jodaTime         = "joda-time"                 %  "joda-time"                 % V.jodaTime
-    val config           = "com.typesafe"              %  "config"                    % V.config
-    val nsqClient        = "com.snowplowanalytics"     %  "nsq-java-client_2.10"      % V.nsqClient
+    val elephantbird     = ("com.twitter.elephantbird"   %  "elephant-bird-core"            % V.elephantbird)
+      .exclude("com.hadoop.gplcompression", "hadoop-lzo")
+    val hadoopLZO        = "com.snowplowanalytics"       %  "hadoop-lzo"                    % V.hadoopLZO
+    val apacheCommons    = "org.apache.directory.studio" % "org.apache.commons.collections" % V.apacheCommons
+    val jodaTime         = "joda-time"                   %  "joda-time"                     % V.jodaTime
+    val config           = "com.typesafe"                %  "config"                        % V.config
+    val nsqClient        = "com.snowplowanalytics"       %  "nsq-java-client_2.10"          % V.nsqClient
     // Thrift (test only)
-    val collectorPayload = "com.snowplowanalytics"     %  "collector-payload-1"       % V.collectorPayload % "test"
+    val collectorPayload = "com.snowplowanalytics"       %  "collector-payload-1"           % V.collectorPayload % "test"
     // Scala
     val scopt            = "com.github.scopt"          %% "scopt"                     % V.scopt
     val json4sJackson    = "org.json4s"                %% "json4s-jackson"            % V.json4s
@@ -77,6 +79,6 @@ object Dependencies {
     val pureconfig       = "com.github.pureconfig"     %% "pureconfig"                % V.pureconfig
     val igluCoreJson4s   = "com.snowplowanalytics"     %% "iglu-core-json4s"          % V.igluCore
     // Scala (test only)
-    val specs2           = "org.specs2"                %% "specs2-core"               % V.specs2           % "test"
+    val specs2           = "org.specs2"                  %% "specs2-core"                   % V.specs2           % "test"
   }
 }
