@@ -13,7 +13,7 @@
 package com.snowplowanalytics.s3.loader
 
 // Scala
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 import scala.util.{Success => TrySuccess}
 
@@ -27,9 +27,6 @@ import com.amazonaws.auth.AWSCredentialsProvider
 // AWS Kinesis connector libs
 import com.amazonaws.services.kinesis.connectors.UnmodifiableBuffer
 import com.amazonaws.services.kinesis.connectors.interfaces.IEmitter
-
-// Scala
-import scala.collection.JavaConversions._
 
 // Tracker
 import com.snowplowanalytics.snowplow.scalatracker.Tracker

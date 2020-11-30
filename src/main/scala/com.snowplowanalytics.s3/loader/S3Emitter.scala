@@ -23,7 +23,7 @@ import java.io.ByteArrayInputStream
 
 // Scala
 import scala.util.control.NonFatal
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 
 // SLF4j
 import org.slf4j.LoggerFactory

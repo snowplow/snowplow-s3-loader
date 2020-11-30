@@ -24,7 +24,7 @@ object BuildSettings {
   // Basic settings for our app
   lazy val basicSettings = Seq(
     organization          :=  "com.snowplowanalytics",
-    scalaVersion          :=  "2.11.11",
+    scalaVersion          :=  "2.13.2",
     scalacOptions         :=  compilerOptions,
     javacOptions          :=  javaCompilerOptions,
     resolvers             ++= Dependencies.resolvers
@@ -38,12 +38,12 @@ object BuildSettings {
     "-language:higherKinds",
     "-language:implicitConversions",
     "-unchecked",
-    "-Yno-adapted-args",
-    "-Ywarn-dead-code",
     "-Ywarn-numeric-widen",
-    "-Ywarn-unused-import",
-    "-Xfuture",
-    "-Xlint"
+    "-Wdead-code",
+    "-Werror",
+    "-Wunused:imports",
+    "-Xlint",
+    "-Xlint:adapted-args"
   )
 
   lazy val dockerSettings = Seq(
