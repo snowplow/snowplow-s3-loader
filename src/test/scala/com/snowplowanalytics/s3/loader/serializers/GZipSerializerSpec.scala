@@ -29,7 +29,7 @@ import cats.syntax.validated._
 
 // Scala
 import scala.sys.process._
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 
 // Specs2
 import org.specs2.mutable.Specification

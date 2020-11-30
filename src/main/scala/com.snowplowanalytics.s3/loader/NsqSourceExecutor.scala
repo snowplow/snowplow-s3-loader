@@ -29,7 +29,7 @@ import com.snowplowanalytics.client.nsq.exceptions.NSQException
 
 // Scala
 import scala.collection.mutable.ListBuffer
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 
 // Tracker
 import com.snowplowanalytics.snowplow.scalatracker.Tracker

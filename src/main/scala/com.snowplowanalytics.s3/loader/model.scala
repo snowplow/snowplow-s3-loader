@@ -43,12 +43,12 @@ package model {
   ) {
     val timestampEither = initialTimestamp
       .toRight("An initial timestamp needs to be provided when choosing AT_TIMESTAMP")
-      .right.flatMap { s =>
+      .flatMap { s =>
         val format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
         utils.fold(Try(format.parse(s)))(t => Left(t.getMessage), Right(_))
       }
     require(initialPosition != "AT_TIMESTAMP" || timestampEither.isRight, timestampEither.left.getOrElse(""))
-    val timestamp = timestampEither.right.toOption
+    val timestamp = timestampEither.toOption
 
     val endpoint = customEndpoint.getOrElse(region match {
       case "cn-north-1" => "kinesis.cn-north-1.amazonaws.com.cn"
