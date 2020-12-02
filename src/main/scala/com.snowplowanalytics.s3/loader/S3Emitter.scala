@@ -33,6 +33,7 @@ import com.snowplowanalytics.snowplow.scalatracker.Tracker
 
 // cats
 import cats.data.Validated
+import cats.Id
 
 // AWS libs
 import com.amazonaws.AmazonServiceException
@@ -68,7 +69,7 @@ class S3Emitter(
   provider: AWSCredentialsProvider,
   badSink: ISink,
   maxConnectionTime: Long,
-  tracker: Option[Tracker]
+  tracker: Option[Tracker[Id]]
 ) {
 
   // create Amazon S3 Client
@@ -131,7 +132,7 @@ class S3Emitter(
   * @param records List of failed records
   */
   def sendFailures(records: java.util.List[EmitterInput]): Unit = {
-    for (Validated.Invalid(record) <- records.toList) {
+    for (Validated.Invalid(record) <- records.asScala) {
       log.warn(s"Record failed: ${record.line}")
       log.info("Sending failed record to Kinesis")
       val output = compact(render(

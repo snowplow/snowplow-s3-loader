@@ -40,6 +40,9 @@ import scala.util.{Success, Failure}
 // Logging
 import org.slf4j.LoggerFactory
 
+// cats
+import cats.Id
+
 // Tracker
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
 
@@ -57,7 +60,7 @@ class KinesisSink(
   endpoint: String,
   region: String,
   name: String,
-  tracker: Option[Tracker]
+  tracker: Option[Tracker[Id]]
 ) extends ISink {
 
   private val log = LoggerFactory.getLogger(getClass)
