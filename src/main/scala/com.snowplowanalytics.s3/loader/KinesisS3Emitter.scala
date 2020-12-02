@@ -40,6 +40,7 @@ import com.snowplowanalytics.iglu.core.json4s.implicits._
 
 // cats
 import cats.data.Validated
+import cats.Id
 
 // This project
 import sinks._
@@ -58,7 +59,7 @@ class KinesisS3Emitter(
   badSink: ISink,
   serializer: ISerializer,
   maxConnectionTime: Long,
-  tracker: Option[Tracker]
+  tracker: Option[Tracker[Id]]
 ) extends IEmitter[EmitterInput] {
 
   val s3Emitter = new S3Emitter(s3Config, provider, badSink, maxConnectionTime, tracker)
@@ -89,7 +90,7 @@ class KinesisS3Emitter(
         emitRecords(partitionRecords, true, baseFileName)
       case (RowType.ReadingError, records) =>
         records // Should be handled later by serializer
-    }
+    }.asJava
   }
 
   /**

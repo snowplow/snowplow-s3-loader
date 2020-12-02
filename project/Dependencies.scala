@@ -37,7 +37,7 @@ object Dependencies {
     val scopt           = "3.6.0"
     val json4s          = "3.2.11"
     val cats            = "1.6.1"
-    val snowplowTracker = "0.3.0"
+    val snowplowTracker = "0.7.0"
     val pureconfig      = "0.8.0"
     val igluCore        = "0.5.0"
     // Scala (test only)
@@ -75,7 +75,7 @@ object Dependencies {
     val scopt            = "com.github.scopt"          %% "scopt"                     % V.scopt
     val json4sJackson    = "org.json4s"                %% "json4s-jackson"            % V.json4s
     val cats             = "org.typelevel"             %% "cats-core"                 % V.cats
-    val snowplowTracker  = "com.snowplowanalytics"     %% "snowplow-scala-tracker"    % V.snowplowTracker
+    val snowplowTracker  = "com.snowplowanalytics"     %% "snowplow-scala-tracker-emitter-id" % V.snowplowTracker
     val pureconfig       = "com.github.pureconfig"     %% "pureconfig"                % V.pureconfig
     val igluCoreJson4s   = "com.snowplowanalytics"     %% "iglu-core-json4s"          % V.igluCore
     // Scala (test only)

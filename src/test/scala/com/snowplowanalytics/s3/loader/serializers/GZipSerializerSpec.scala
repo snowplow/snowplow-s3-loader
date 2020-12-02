@@ -67,9 +67,9 @@ class GZipSerializerSpec extends Specification {
 
       binaryInputs map {
         case Validated.Valid(e) =>
-          val rawResult = input.head.getBytes
+          val rawResult = input.asScala.head.getBytes
 
-          input = input.tail
+          input = input.asScala.tail.asJava
 
           rawResult must_== e
         case _ =>
