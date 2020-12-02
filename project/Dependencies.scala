@@ -37,7 +37,7 @@ object Dependencies {
     // Scala
     val scopt           = "4.0.0"
     val json4s          = "3.2.11"
-    val cats            = "1.6.1"
+    val cats            = "2.3.0"
     val snowplowTracker = "0.7.0"
     val pureconfig      = "0.8.0"
     val igluCore        = "0.5.0"
