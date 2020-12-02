@@ -35,7 +35,7 @@ object Dependencies {
     // Thrift (test only)
     val collectorPayload = "0.0.0"
     // Scala
-    val scopt           = "3.6.0"
+    val scopt           = "4.0.0"
     val json4s          = "3.2.11"
     val cats            = "1.6.1"
     val snowplowTracker = "0.7.0"
