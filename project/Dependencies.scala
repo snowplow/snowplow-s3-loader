@@ -40,7 +40,7 @@ object Dependencies {
     val cats            = "2.3.0"
     val snowplowTracker = "0.7.0"
     val pureconfig      = "0.14.0"
-    val igluCore        = "0.5.0"
+    val igluCore        = "1.0.0"
     // Scala (test only)
     val specs2          = "3.9.1"
   }
