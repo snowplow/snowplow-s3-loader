@@ -36,7 +36,7 @@ object Dependencies {
     val collectorPayload = "0.0.0"
     // Scala
     val scopt           = "4.0.0"
-    val json4s          = "3.2.11"
+    val json4s          = "3.6.10"
     val cats            = "2.3.0"
     val snowplowTracker = "0.7.0"
     val pureconfig      = "0.8.0"
