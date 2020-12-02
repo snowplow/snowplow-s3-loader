@@ -1,0 +1,41 @@
+name: Test and publish
+
+on: push
+
+jobs:
+  test_and_publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+
+      - name: Install LZO
+        run: sudo apt-get install -y lzop liblzo2-dev
+
+      - name: Run tests
+        run: sbt test
+
+      - name: Docker login
+        if: startsWith(github.ref, 'refs/tags/')
+        run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Publish to Docker Hub
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          project_version=$(sbt version -Dsbt.log.noformat=true | perl -ne 'print "$1\n" if /info.*(\d+\.\d+\.\d+[^\r\n]*)/' | tail -n 1 | tr -d '\n')
+          if [[ "${{ github.ref }}" = "refs/tags/${project_version}" ]]
+          then
+            echo Publishing to Docker Hub
+            sbt docker:publish
+          else
+            echo "${{ github.ref }} does not match project version $project_version => not publishing"
+            exit 1
+          fi
