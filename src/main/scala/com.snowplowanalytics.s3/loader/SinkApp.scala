@@ -20,6 +20,8 @@ import com.typesafe.config.ConfigFactory
 
 // Pureconfig
 import pureconfig._
+import pureconfig.generic.ProductHint
+import pureconfig.generic.auto._
 
 import model._
 
@@ -47,7 +49,7 @@ object SinkApp {
     parser.parse(args, FileConfig(new File("."))) match {
       case Some(c) =>
         val config = ConfigFactory.parseFile(c.config).resolve()
-        loadConfig[S3LoaderConfig](config) match {
+        ConfigSource.fromConfig(config).load[S3LoaderConfig] match {
           case Right(config) =>
             S3Loader.run(config)
           case Left(e) =>
