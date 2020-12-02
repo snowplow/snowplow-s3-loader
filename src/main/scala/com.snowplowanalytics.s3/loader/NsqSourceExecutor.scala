@@ -36,6 +36,7 @@ import com.snowplowanalytics.snowplow.scalatracker.Tracker
 
 // cats
 import cats.syntax.validated._
+import cats.Id
 
 //AWS libs
 import com.amazonaws.auth.AWSCredentialsProvider
@@ -67,7 +68,7 @@ class NsqSourceExecutor(
   badSink: ISink,
   serializer: ISerializer,
   maxConnectionTime: Long,
-  tracker: Option[Tracker]
+  tracker: Option[Tracker[Id]]
 ) extends Runnable {
 
   lazy val log = LoggerFactory.getLogger(getClass())
@@ -122,7 +123,7 @@ class NsqSourceExecutor(
             }
 
             if (failures.nonEmpty) {
-              s3Emitter.sendFailures(failures)
+              s3Emitter.sendFailures(failures.asJava)
             }
 
             msgBuffer.clear()

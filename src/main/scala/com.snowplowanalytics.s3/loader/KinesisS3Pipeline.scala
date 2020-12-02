@@ -17,6 +17,9 @@ import com.amazonaws.services.kinesis.connectors.interfaces.{IBuffer, IEmitter, 
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration
 import com.amazonaws.services.kinesis.connectors.impl.{AllPassFilter, BasicMemoryBuffer}
 
+// cats
+import cats.Id
+
 // Tracker
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
 
@@ -29,7 +32,7 @@ import model._
  * S3Pipeline class sets up the Emitter/Buffer/Transformer/Filter
  * Comes from Kinesis Connectors
  */
-class KinesisS3Pipeline(s3Config: S3Config, badSink: ISink, serializer: ISerializer, maxConnectionTime: Long, tracker: Option[Tracker]) extends IKinesisConnectorPipeline[ValidatedRecord, EmitterInput] {
+class KinesisS3Pipeline(s3Config: S3Config, badSink: ISink, serializer: ISerializer, maxConnectionTime: Long, tracker: Option[Tracker[Id]]) extends IKinesisConnectorPipeline[ValidatedRecord, EmitterInput] {
 
   def getEmitter(configuration: KinesisConnectorConfiguration): IEmitter[EmitterInput]  =
     new KinesisS3Emitter(s3Config, configuration.AWS_CREDENTIALS_PROVIDER, badSink, serializer, maxConnectionTime, tracker)

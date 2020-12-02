@@ -18,14 +18,30 @@
  */
 package com.snowplowanalytics.s3.loader
 
-// json4s
-import org.json4s._
-import org.json4s.JsonDSL._
+// Scala
+import scala.concurrent.ExecutionContext.Implicits.global
+
+// circe
+import io.circe.Json
+
+// cats
+import cats.Id
+import cats.data.NonEmptyList
+
+// cats-effect
+import cats.effect.Clock
+
+// Java
+import java.util.concurrent.TimeUnit
+import java.util.UUID
+
+// Iglu
+import com.snowplowanalytics.iglu.core.{SchemaKey, SchemaVer, SelfDescribingData}
 
 // Tracker
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
-import com.snowplowanalytics.snowplow.scalatracker.SelfDescribingJson
-import com.snowplowanalytics.snowplow.scalatracker.emitters.AsyncEmitter
+import com.snowplowanalytics.snowplow.scalatracker.emitters.id.AsyncEmitter
+import com.snowplowanalytics.snowplow.scalatracker.UUIDProvider
 
 // This project
 import model._
@@ -44,14 +60,24 @@ object SnowplowTracking {
    * @param config The "monitoring" section of the HOCON
    * @return a new tracker instance
    */
-  def initializeTracker(config: SnowplowMonitoringConfig): Tracker = {
+  def initializeTracker(config: SnowplowMonitoringConfig): Tracker[Id] = {
+    implicit val clockProvider: Clock[Id] = new Clock[Id] {
+      final def realTime(unit: TimeUnit): Id[Long] =
+        unit.convert(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
+      final def monotonic(unit: TimeUnit): Id[Long] =
+        unit.convert(System.nanoTime(), TimeUnit.NANOSECONDS)
+    }
+
+    implicit val uuidProvider: UUIDProvider[Id] = new UUIDProvider[Id] {
+      override def generateUUID: Id[UUID] = UUID.randomUUID()
+    }
+
     val endpoint = config.collectorUri
     val port = config.collectorPort
     val appName = config.appId
     // Not yet used
-    val method = config.method
-    val emitter = AsyncEmitter.createAndStart(endpoint, port)
-    new Tracker(List(emitter), generated.Settings.name, appName)
+    val emitter = AsyncEmitter.createAndStart(endpoint, Some(port), false, None)
+    Tracker(NonEmptyList.one(emitter), generated.Settings.name, appName)
   }
 
   /**
@@ -59,7 +85,7 @@ object SnowplowTracking {
    *
    * @param tracker a Tracker instance
    */
-  def initializeSnowplowTracking(tracker: Tracker): Unit = {
+  def initializeSnowplowTracking(tracker: Tracker[Id]): Unit = {
     trackApplicationInitialization(tracker)
 
     Runtime.getRuntime.addShutdownHook(new Thread() {
@@ -90,56 +116,83 @@ object SnowplowTracking {
    * @param message What went wrong
    */
   def sendFailureEvent(
-    tracker: Tracker,
-    lastRetryPeriod: Long,
-    failureCount: Long,
-    initialFailureTime: Long,
-    message: String): Unit = {
-
-    tracker.trackUnstructEvent(SelfDescribingJson(
-      "iglu:com.snowplowanalytics.monitoring.kinesis/storage_write_failed/jsonschema/1-0-0",
-      ("lastRetryPeriod" -> lastRetryPeriod) ~
-      ("storage" -> StorageType) ~
-      ("failureCount" -> failureCount) ~
-      ("initialFailureTime" -> initialFailureTime) ~
-      ("message" -> message)
-    ))
-  }
+      tracker: Tracker[Id],
+      lastRetryPeriod: Long,
+      failureCount: Long,
+      initialFailureTime: Long,
+      message: String): Unit =
+    tracker.trackSelfDescribingEvent(
+      SelfDescribingData[Json](
+        SchemaKey(
+          "com.snowplowanalytics.monitoring.kinesis",
+          "storage_write_failed",
+          "jsonschema",
+          SchemaVer.Full(1, 0, 0)
+        ),
+        Json.obj(
+          ("lastRetryPeriod", Json.fromLong(lastRetryPeriod)),
+          ("storage" -> Json.fromString(StorageType)),
+          ("failureCount" -> Json.fromLong(failureCount)),
+          ("initialFailureTime" -> Json.fromLong(initialFailureTime)),
+          ("message" -> Json.fromString(message))
+        )
+      )
+    )
 
   /**
    * Send an application_initialized unstructured event
    *
    * @param tracker a Tracker instance
    */
-  private def trackApplicationInitialization(tracker: Tracker): Unit = {
-    tracker.trackUnstructEvent(SelfDescribingJson(
-      "iglu:com.snowplowanalytics.monitoring.kinesis/app_initialized/jsonschema/1-0-0",
-      JObject(Nil)
-    ))
-  }
+  private def trackApplicationInitialization(tracker: Tracker[Id]): Unit =
+    tracker.trackSelfDescribingEvent(
+      SelfDescribingData[Json](
+        SchemaKey(
+          "com.snowplowanalytics.monitoring.kinesis",
+          "app_initialized",
+          "jsonschema",
+          SchemaVer.Full(1, 0, 0)
+        ),
+        Json.Null
+      )
+    )
 
   /**
    * Send an application_shutdown unstructured event
    *
    * @param tracker a Tracker instance
    */
-  def trackApplicationShutdown(tracker: Tracker): Unit = {
-    tracker.trackUnstructEvent(SelfDescribingJson(
-      "iglu:com.snowplowanalytics.monitoring.kinesis/app_shutdown/jsonschema/1-0-0",
-      JObject(Nil)
-    ))
-  }
-
+  def trackApplicationShutdown(tracker: Tracker[Id]): Unit =
+    tracker.trackSelfDescribingEvent(
+      SelfDescribingData[Json](
+        SchemaKey(
+          "com.snowplowanalytics.monitoring.kinesis",
+          "app_shutdown",
+          "jsonschema",
+          SchemaVer.Full(1, 0, 0)
+        ),
+        Json.Null
+      )
+    )
+      
   /**
    * Send a heartbeat unstructured event
    *
    * @param tracker a Tracker instance
    * @param heartbeatInterval Time between heartbeats in milliseconds
    */
-  private def trackApplicationHeartbeat(tracker: Tracker, heartbeatInterval: Long): Unit = {
-    tracker.trackUnstructEvent(SelfDescribingJson(
-      "iglu:com.snowplowanalytics.monitoring.kinesis/app_heartbeat/jsonschema/1-0-0",
-      "interval" -> heartbeatInterval
-    ))
-  }
+  private def trackApplicationHeartbeat(tracker: Tracker[Id], heartbeatInterval: Long): Unit =
+    tracker.trackSelfDescribingEvent(
+      SelfDescribingData[Json](
+        SchemaKey(
+          "com.snowplowanalytics.monitoring.kinesis",
+          "app_heartbeat",
+          "jsonschema",
+          SchemaVer.Full(1, 0, 0)
+        ),
+        Json.obj(
+          ("interval" -> Json.fromLong(heartbeatInterval))
+        )
+      )
+    )
 }

@@ -33,6 +33,9 @@ import java.util.Date
 // Tracker
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
 
+// cats
+import cats.Id
+
 // This project
 import sinks._
 import serializers._
@@ -50,7 +53,7 @@ class KinesisSourceExecutor(
   badSink: ISink,
   serializer: ISerializer,
   maxConnectionTime: Long,
-  tracker: Option[Tracker]
+  tracker: Option[Tracker[Id]]
 ) extends KinesisConnectorExecutorBase[ValidatedRecord, EmitterInput] {
 
   val LOG = LoggerFactory.getLogger(getClass)
