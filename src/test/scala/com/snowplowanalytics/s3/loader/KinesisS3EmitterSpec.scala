@@ -126,5 +126,12 @@ class KinesisS3EmitterSpec extends Specification {
 
       res must beEqualTo(expected)
     }
+
+    "handle empty list of records to partition" in {
+      val records = List.empty[EmitterInput]
+      val expected = Map.empty[RowType, List[EmitterInput]]
+      val actual = KinesisS3Emitter.partitionByType(records)
+      actual ==== expected
+    }
   }
 }
