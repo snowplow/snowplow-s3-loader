@@ -82,13 +82,14 @@ class KinesisS3Emitter(
     val partitions = if (s3Config.partitionedBucket.isDefined) partitionByType(records).toList else List((RowType.Unpartitioned, records))
 
     partitions.flatMap {
-      case (RowType.Unpartitioned, partitionRecords) =>
+      case (RowType.Unpartitioned, partitionRecords) if partitionRecords.nonEmpty =>
         val baseFileName = getBaseFilename(buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber, s3Config.outputDirectory, None, s3Config.dateFormat, s3Config.filenamePrefix)
-        emitRecords(partitionRecords, false, baseFileName)
-      case (data: RowType.SelfDescribing, partitionRecords) =>
+        emitRecords(partitionRecords, s3Config.bucket, baseFileName)
+      case (data: RowType.SelfDescribing, partitionRecords) if partitionRecords.nonEmpty =>
         val baseFileName = getBaseFilename(buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber,  s3Config.outputDirectory, Some(data.partition), s3Config.dateFormat, s3Config.filenamePrefix)
-        emitRecords(partitionRecords, true, baseFileName)
-      case (RowType.ReadingError, records) =>
+        val bucket = s3Config.partitionedBucket.getOrElse(s3Config.bucket)
+        emitRecords(partitionRecords, bucket, baseFileName)
+      case _ =>
         records // Should be handled later by serializer
     }.asJava
   }
@@ -96,11 +97,11 @@ class KinesisS3Emitter(
   /**
    * Attempt to serialize record into a gz/lzo file and submit them to S3 via emitter
    * @param records buffered raw records
-   * @param partition whether to send rows into `s3.bucketJson` (true) or `s3.bucket` (false)
+   * @param bucket where data will be written
    * @param baseFilename final filename
    * @return list of records that could not be emitted
    */
-  private def emitRecords(records: List[EmitterInput], partition: Boolean, baseFilename: String): List[EmitterInput] = {
+  private def emitRecords(records: List[EmitterInput], bucket: String, baseFilename: String): List[EmitterInput] = {
     val serializationResults = serializer.serialize(records, baseFilename)
     val (successes, failures) = serializationResults.results.partition(_.isValid)
     val successSize = successes.size
@@ -111,7 +112,7 @@ class KinesisS3Emitter(
 
     if (successSize > 0) {
       serializationResults.namedStreams.foreach { stream =>
-        s3Emitter.attemptEmit(stream, partition, connectionAttemptStartTime)
+        s3Emitter.attemptEmit(stream, bucket, connectionAttemptStartTime)
       }
     }
 
@@ -141,7 +142,7 @@ object KinesisS3Emitter {
     * Kinesis sequence range of records in the file.
     */
   def getBaseFilename(firstSeq: String, lastSeq: String, outputDirectory: Option[String], partition: Option[String], dateFormat: Option[String], filenamePrefix: Option[String], datetime: Option[LocalDateTime] = None): String = {
- val path = List(outputDirectory, partition, dateFormat, filenamePrefix)
+    val path = List(outputDirectory, partition, dateFormat, filenamePrefix)
       .flatMap(_.toList.filterNot(_.isEmpty))
       .mkString("/")
 
@@ -167,5 +168,4 @@ object KinesisS3Emitter {
         }
       case _ => RowType.ReadingError
     }
-  
 }

@@ -148,10 +148,10 @@ class S3Emitter(
   * Keep attempting to send the data to S3 until it succeeds
   *
   * @param namedStream stream of rows with filename
-  * @param partition whether to send rows into `s3.bucketJson` (true) or `s3.bucket` (false)
+  * @param bucket where data will be written
   * @return success status of sending to S3
   */
-  def attemptEmit(namedStream: NamedStream, partition: Boolean, connectionAttemptStartTime: Long): Boolean = {
+  def attemptEmit(namedStream: NamedStream, bucket: String, connectionAttemptStartTime: Long): Boolean = {
 
     var attemptCount: Long = 1
 
@@ -178,7 +178,6 @@ class S3Emitter(
 
         val objMeta = new ObjectMetadata()
         objMeta.setContentLength(outputStream.size.toLong)
-        val bucket = if (partition) config.partitionedBucket.getOrElse(config.bucket) else config.bucket
         client.putObject(bucket, s3Key, inputStream, objMeta)
 
         return true
