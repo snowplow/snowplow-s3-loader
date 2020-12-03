@@ -81,7 +81,9 @@ class KinesisS3Emitter(
     val records = buffer.getRecords.asScala.toList
     val partitions = if (s3Config.partitionedBucket.isDefined) partitionByType(records).toList else List((RowType.Unpartitioned, records))
 
-    partitions.flatMap {
+    s3Emitter.log.info(s"There are ${partitions.size} partitions to emit. Partitions: ${partitions}")
+
+    val res = partitions.flatMap {
       case (RowType.Unpartitioned, partitionRecords) =>
         val baseFileName = getBaseFilename(buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber, s3Config.outputDirectory, None, s3Config.dateFormat, s3Config.filenamePrefix)
         emitRecords(partitionRecords, false, baseFileName)
@@ -91,6 +93,10 @@ class KinesisS3Emitter(
       case (RowType.ReadingError, records) =>
         records // Should be handled later by serializer
     }.asJava
+
+    s3Emitter.log.info(s"Records not emitted : $res")
+
+    res
   }
 
   /**
@@ -101,19 +107,25 @@ class KinesisS3Emitter(
    * @return list of records that could not be emitted
    */
   private def emitRecords(records: List[EmitterInput], partition: Boolean, baseFilename: String): List[EmitterInput] = {
+    s3Emitter.log.info(s"Emitting records $records")
     val serializationResults = serializer.serialize(records, baseFilename)
+    s3Emitter.log.info(s"Records serialized")
     val (successes, failures) = serializationResults.results.partition(_.isValid)
     val successSize = successes.size
 
-    s3Emitter.log.warn(s"Successfully serialized $successSize records out of ${successSize + failures.size}")
+    s3Emitter.log.warn(s"Successfully serialized $successSize records and ${failures.size} failures")
 
     val connectionAttemptStartTime = System.currentTimeMillis()
 
     if (successSize > 0) {
+      s3Emitter.log.info(s"There are $successSize successes : $successes")
       serializationResults.namedStreams.foreach { stream =>
-        s3Emitter.attemptEmit(stream, partition, connectionAttemptStartTime)
+      s3Emitter.log.info(s"Emit stream ${stream.filename}")
+      s3Emitter.attemptEmit(stream, partition, connectionAttemptStartTime)
+      s3Emitter.log.info(s"Stream ${stream.filename} emitted")
       }
     }
+    s3Emitter.log.info(s"All streams emitted")
 
     failures
   }
@@ -121,8 +133,10 @@ class KinesisS3Emitter(
   /**
    * Closes the client when the KinesisConnectorRecordProcessor is shut down
    */
-  override def shutdown(): Unit =
+  override def shutdown(): Unit = {
+    s3Emitter.log.info(s"Shutting down client")
     s3Emitter.client.shutdown()
+  }
 
   /**
    * Sends records which fail deserialization or compression
@@ -130,8 +144,10 @@ class KinesisS3Emitter(
    *
    * @param records List of failed records to send to Kinesis
    */
-  override def fail(records: java.util.List[EmitterInput]): Unit =
+  override def fail(records: java.util.List[EmitterInput]): Unit = {
+    s3Emitter.log.info(s"Shutting down client")
     s3Emitter.sendFailures(records)
+  }
 }
 
 object KinesisS3Emitter {

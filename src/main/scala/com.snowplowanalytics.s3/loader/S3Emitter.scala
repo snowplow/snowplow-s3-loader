@@ -93,6 +93,7 @@ class S3Emitter(
   * @param sleepTime Length of time between tries
   */
   private def sleep(sleepTime: Long): Unit = {
+    log.info("Sleeping")
     try {
       Thread.sleep(sleepTime)
     } catch {
@@ -132,6 +133,7 @@ class S3Emitter(
   * @param records List of failed records
   */
   def sendFailures(records: java.util.List[EmitterInput]): Unit = {
+    log.info(s"Sending failures $records")
     for (Validated.Invalid(record) <- records.asScala) {
       log.warn(s"Record failed: ${record.line}")
       log.info("Sending failed record to Kinesis")
@@ -152,6 +154,7 @@ class S3Emitter(
   * @return success status of sending to S3
   */
   def attemptEmit(namedStream: NamedStream, partition: Boolean, connectionAttemptStartTime: Long): Boolean = {
+    log.info(s"Attempt to emit in ${namedStream.filename}")
 
     var attemptCount: Long = 1
 
