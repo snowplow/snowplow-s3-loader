@@ -84,13 +84,13 @@ class KinesisS3Emitter(
     s3Emitter.log.info(s"There are ${partitions.size} partitions to emit. Partitions: ${partitions}")
 
     val res = partitions.flatMap {
-      case (RowType.Unpartitioned, partitionRecords) =>
+      case (RowType.Unpartitioned, partitionRecords) if partitionRecords.nonEmpty =>
         val baseFileName = getBaseFilename(buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber, s3Config.outputDirectory, None, s3Config.dateFormat, s3Config.filenamePrefix)
         emitRecords(partitionRecords, false, baseFileName)
       case (data: RowType.SelfDescribing, partitionRecords) =>
         val baseFileName = getBaseFilename(buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber,  s3Config.outputDirectory, Some(data.partition), s3Config.dateFormat, s3Config.filenamePrefix)
         emitRecords(partitionRecords, true, baseFileName)
-      case (RowType.ReadingError, records) =>
+      case _ =>
         records // Should be handled later by serializer
     }.asJava
 
@@ -157,7 +157,7 @@ object KinesisS3Emitter {
     * Kinesis sequence range of records in the file.
     */
   def getBaseFilename(firstSeq: String, lastSeq: String, outputDirectory: Option[String], partition: Option[String], dateFormat: Option[String], filenamePrefix: Option[String], datetime: Option[LocalDateTime] = None): String = {
- val path = List(outputDirectory, partition, dateFormat, filenamePrefix)
+    val path = List(outputDirectory, partition, dateFormat, filenamePrefix)
       .flatMap(_.toList.filterNot(_.isEmpty))
       .mkString("/")
 
