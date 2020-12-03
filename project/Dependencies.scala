@@ -14,7 +14,6 @@ import sbt._
 
 object Dependencies {
   val resolvers = Seq(
-    //Resolver.jcenterRepo,
     "Snowplow Analytics Maven releases repo" at "http://maven.snplow.com/releases/",
     "Snowplow Bintray Maven repo"            at "https://snowplow.bintray.com/snowplow-maven"
   )
