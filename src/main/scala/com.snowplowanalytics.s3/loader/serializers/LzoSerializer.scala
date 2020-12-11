@@ -14,10 +14,7 @@ package com.snowplowanalytics.s3.loader
 package serializers
 
 // Java libs
-import java.io.{
-  DataOutputStream,
-  ByteArrayOutputStream
-}
+import java.io.{ByteArrayOutputStream, DataOutputStream}
 
 // Java lzo
 import org.apache.hadoop.conf.Configuration
@@ -57,9 +54,7 @@ object LzoSerializer extends ISerializer {
 
     rawBlockWriter.close()
 
-    val namedStreams = List(
-      NamedStream(s"$baseFilename.lzo", outputStream),
-      NamedStream(s"$baseFilename.lzo.index", indexOutputStream))
+    val namedStreams = List(NamedStream(s"$baseFilename.lzo", outputStream), NamedStream(s"$baseFilename.lzo.index", indexOutputStream))
 
     SerializationResult(namedStreams, results)
   }

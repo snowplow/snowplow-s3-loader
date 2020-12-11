@@ -41,7 +41,8 @@ object S3Loader {
     val credentials = CredentialsLookup.getCredentialsProvider(config.aws.accessKey, config.aws.secretKey)
 
     val badSink = config.sink match {
-      case "kinesis" => new KinesisSink(credentials, kinesisSinkEndpoint, kinesisSinkRegion, kinesisSinkName, tracker, config.kinesis.disableCloudWatch)
+      case "kinesis" =>
+        new KinesisSink(credentials, kinesisSinkEndpoint, kinesisSinkRegion, kinesisSinkName, tracker, config.kinesis.disableCloudWatch)
       case "nsq" => new NsqSink(config)
     }
 
@@ -55,24 +56,18 @@ object S3Loader {
       // Read records from Kinesis
       case "kinesis" =>
         new KinesisSourceExecutor(convertConfig(config, credentials),
-          config.kinesis.initialPosition,
-          config.kinesis.timestamp,
-          config.s3,
-          badSink,
-          serializer,
-          maxConnectionTime,
-          tracker,
-          config.kinesis.disableCloudWatch
+                                  config.kinesis.initialPosition,
+                                  config.kinesis.timestamp,
+                                  config.s3,
+                                  badSink,
+                                  serializer,
+                                  maxConnectionTime,
+                                  tracker,
+                                  config.kinesis.disableCloudWatch
         ).valid
       // Read records from NSQ
       case "nsq" =>
-        new NsqSourceExecutor(config,
-          credentials,
-          badSink,
-          serializer,
-          maxConnectionTime,
-          tracker
-        ).valid
+        new NsqSourceExecutor(config, credentials, badSink, serializer, maxConnectionTime, tracker).valid
 
       case _ => s"Source must be set to kinesis' or 'NSQ'. Provided: ${config.source}".invalid
     }
@@ -80,8 +75,8 @@ object S3Loader {
     executor.fold(
       err => throw new IllegalArgumentException(err),
       exec => {
-        tracker foreach {
-          t => SnowplowTracking.initializeSnowplowTracking(t)
+        tracker foreach { t =>
+          SnowplowTracking.initializeSnowplowTracking(t)
         }
         exec.run()
 

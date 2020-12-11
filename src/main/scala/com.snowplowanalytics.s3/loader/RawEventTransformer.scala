@@ -19,7 +19,7 @@ import com.amazonaws.services.kinesis.model.Record
 import com.amazonaws.services.kinesis.connectors.interfaces.ITransformer
 
 // Thrift libs
-import org.apache.thrift.{TSerializer, TDeserializer}
+import org.apache.thrift.{TDeserializer, TSerializer}
 
 // SLF4j
 import org.slf4j.LoggerFactory

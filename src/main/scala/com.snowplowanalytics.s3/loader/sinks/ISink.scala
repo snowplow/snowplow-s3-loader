@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright (c) 2014-2020 Snowplow Analytics Ltd.
  * All rights reserved.
  *
@@ -22,5 +22,9 @@ package com.snowplowanalytics.s3.loader.sinks
  * Shared interface for all sinks
  */
 trait ISink {
-  def store(output: String, key: Option[String], good: Boolean): Unit
+  def store(
+    output: String,
+    key: Option[String],
+    good: Boolean
+  ): Unit
 }

@@ -56,7 +56,11 @@ package model {
       case _ => s"https://kinesis.$region.amazonaws.com"
     })
   }
-  case class BufferConfig(byteLimit: Long, recordLimit: Long, timeLimit: Long)
+  case class BufferConfig(
+    byteLimit: Long,
+    recordLimit: Long,
+    timeLimit: Long
+  )
   case class StreamsConfig(
     inStreamName: String,
     outStreamName: String,

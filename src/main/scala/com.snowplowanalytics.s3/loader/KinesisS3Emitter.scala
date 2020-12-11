@@ -83,10 +83,22 @@ class KinesisS3Emitter(
 
     partitions.flatMap {
       case (RowType.Unpartitioned, partitionRecords) if partitionRecords.nonEmpty =>
-        val baseFileName = getBaseFilename(buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber, s3Config.outputDirectory, None, s3Config.dateFormat, s3Config.filenamePrefix)
+        val baseFileName = getBaseFilename(buffer.getFirstSequenceNumber,
+                                           buffer.getLastSequenceNumber,
+                                           s3Config.outputDirectory,
+                                           None,
+                                           s3Config.dateFormat,
+                                           s3Config.filenamePrefix
+        )
         emitRecords(partitionRecords, s3Config.bucket, baseFileName)
       case (data: RowType.SelfDescribing, partitionRecords) if partitionRecords.nonEmpty =>
-        val baseFileName = getBaseFilename(buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber,  s3Config.outputDirectory, Some(data.partition), s3Config.dateFormat, s3Config.filenamePrefix)
+        val baseFileName = getBaseFilename(buffer.getFirstSequenceNumber,
+                                           buffer.getLastSequenceNumber,
+                                           s3Config.outputDirectory,
+                                           Some(data.partition),
+                                           s3Config.dateFormat,
+                                           s3Config.filenamePrefix
+        )
         val bucket = s3Config.partitionedBucket.getOrElse(s3Config.bucket)
         emitRecords(partitionRecords, bucket, baseFileName)
       case _ =>
@@ -101,7 +113,11 @@ class KinesisS3Emitter(
    * @param baseFilename final filename
    * @return list of records that could not be emitted
    */
-  private def emitRecords(records: List[EmitterInput], bucket: String, baseFilename: String): List[EmitterInput] = {
+  private def emitRecords(
+    records: List[EmitterInput],
+    bucket: String,
+    baseFilename: String
+  ): List[EmitterInput] = {
     val serializationResults = serializer.serialize(records, baseFilename)
     val (successes, failures) = serializationResults.results.partition(_.isValid)
     val successSize = successes.size
@@ -110,11 +126,10 @@ class KinesisS3Emitter(
 
     val connectionAttemptStartTime = System.currentTimeMillis()
 
-    if (successSize > 0) {
+    if (successSize > 0)
       serializationResults.namedStreams.foreach { stream =>
         s3Emitter.attemptEmit(stream, bucket, connectionAttemptStartTime)
       }
-    }
 
     failures
   }
@@ -136,26 +151,36 @@ class KinesisS3Emitter(
 }
 
 object KinesisS3Emitter {
-  
+
   /**
-    * Determines the filename in S3, which is the corresponding
-    * Kinesis sequence range of records in the file.
-    */
-  def getBaseFilename(firstSeq: String, lastSeq: String, outputDirectory: Option[String], partition: Option[String], dateFormat: Option[String], filenamePrefix: Option[String], datetime: Option[LocalDateTime] = None): String = {
+   * Determines the filename in S3, which is the corresponding
+   * Kinesis sequence range of records in the file.
+   */
+  def getBaseFilename(
+    firstSeq: String,
+    lastSeq: String,
+    outputDirectory: Option[String],
+    partition: Option[String],
+    dateFormat: Option[String],
+    filenamePrefix: Option[String],
+    datetime: Option[LocalDateTime] = None
+  ): String = {
     val path = List(outputDirectory, partition, dateFormat, filenamePrefix)
       .flatMap(_.toList.filterNot(_.isEmpty))
       .mkString("/")
 
-    val filename = List(path, DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(datetime.getOrElse(LocalDateTime.now)), firstSeq, lastSeq).filterNot(_.isEmpty).mkString("-")
+    val filename = List(path, DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(datetime.getOrElse(LocalDateTime.now)), firstSeq, lastSeq)
+      .filterNot(_.isEmpty)
+      .mkString("-")
 
     DynamicPath.normalize(filename)
   }
 
   /**
-    * Assume records are self describing data and group them according
-    * to their schema key. Put records which are not self describing data
-    * to under "old bad row type".
-    */
+   * Assume records are self describing data and group them according
+   * to their schema key. Put records which are not self describing data
+   * to under "old bad row type".
+   */
   private[loader] def partitionByType(records: List[EmitterInput]): Map[RowType, List[EmitterInput]] =
     records.groupBy {
       case Validated.Valid(byteRecord) =>

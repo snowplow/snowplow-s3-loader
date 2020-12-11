@@ -15,7 +15,6 @@ package com.snowplowanalytics.s3.loader
 import org.joda.time.DateTime
 import org.specs2.mutable.Specification
 
-
 class DynamicPathSpec extends Specification {
 
   "DynamicPathSpec" should {

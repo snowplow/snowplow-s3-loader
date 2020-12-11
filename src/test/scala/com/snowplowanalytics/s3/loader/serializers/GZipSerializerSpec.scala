@@ -13,14 +13,8 @@
 package com.snowplowanalytics.s3.loader.serializers
 
 // Java
-import java.io.{
-  File,
-  FileOutputStream
-}
-import java.nio.file.{
-  FileSystems,
-  Files
-}
+import java.io.{File, FileOutputStream}
+import java.nio.file.{FileSystems, Files}
 import java.nio.charset.Charset
 
 // cats
