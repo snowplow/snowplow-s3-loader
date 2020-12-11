@@ -106,7 +106,7 @@ class KinesisS3Emitter(
     val (successes, failures) = serializationResults.results.partition(_.isValid)
     val successSize = successes.size
 
-    s3Emitter.log.warn(s"Successfully serialized $successSize records out of ${successSize + failures.size}")
+    s3Emitter.log.debug(s"Successfully serialized $successSize records out of ${successSize + failures.size}")
 
     val connectionAttemptStartTime = System.currentTimeMillis()
 
