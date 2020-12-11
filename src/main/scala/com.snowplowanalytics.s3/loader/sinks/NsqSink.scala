@@ -27,13 +27,13 @@ import model._
 
 /**
  * NSQ sink
- * 
+ *
  * @param config Configuration for NSQ
  */
 class NsqSink(config: S3LoaderConfig) extends ISink {
-  
+
   private val producer = new NSQProducer().addAddress(config.nsq.host, config.nsq.port).start()
-    
+
   /**
    * Write a record to the NSQ stream
    *
@@ -41,7 +41,10 @@ class NsqSink(config: S3LoaderConfig) extends ISink {
    * @param key Unused parameter which exists to extend ISink
    * @param good Unused parameter which exists to extend ISink
    */
-  override def store(output: String, key: Option[String], good: Boolean): Unit =
+  override def store(
+    output: String,
+    key: Option[String],
+    good: Boolean
+  ): Unit =
     producer.produce(config.streams.outStreamName, output.getBytes())
 }
-

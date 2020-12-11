@@ -58,7 +58,11 @@ package model {
 
     val disableCW = disableCloudWatch.getOrElse(false)
   }
-  case class BufferConfig(byteLimit: Long, recordLimit: Long, timeLimit: Long)
+  case class BufferConfig(
+    byteLimit: Long,
+    recordLimit: Long,
+    timeLimit: Long
+  )
   case class StreamsConfig(
     inStreamName: String,
     outStreamName: String,

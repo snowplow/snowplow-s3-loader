@@ -19,19 +19,20 @@ import scala.util.Try
 import java.nio.file.Paths
 
 /**
-  * Object to handle S3 dynamic path generation
-  */
+ * Object to handle S3 dynamic path generation
+ */
 object DynamicPath {
+
   /**
-    * Function to decorate the directory pattern with time components from a given DateTime, it returns a string with
-    * the final file path decorated with DateTime Values as per the directory pattern supplied
-    *
-    * @param fileName          A string which may contain date patterns enclosed in {curly braces}.
-    *                          These patterns conform to the DateTime Formatter symbols as described here -
-    *                          https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html
-    * @param decoratorDateTime The DateTime to be used for decorating the directory patterns with actual values
-    */
-  def decorateDirectoryWithTime(fileName: String, decoratorDateTime: DateTime): String =  {
+   * Function to decorate the directory pattern with time components from a given DateTime, it returns a string with
+   * the final file path decorated with DateTime Values as per the directory pattern supplied
+   *
+   * @param fileName          A string which may contain date patterns enclosed in {curly braces}.
+   *                          These patterns conform to the DateTime Formatter symbols as described here -
+   *                          https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html
+   * @param decoratorDateTime The DateTime to be used for decorating the directory patterns with actual values
+   */
+  def decorateDirectoryWithTime(fileName: String, decoratorDateTime: DateTime): String = {
     val detectBracesExpression = "\\{(.*?)\\}".r
     val replacements = detectBracesExpression
       .findAllMatchIn(fileName)
@@ -41,8 +42,8 @@ object DynamicPath {
       }
       .toList
 
-    val directoryWithBraces = replacements.foldLeft(fileName) {
-      (dir, replacement) => dir.replace(replacement._1, replacement._2)
+    val directoryWithBraces = replacements.foldLeft(fileName) { (dir, replacement) =>
+      dir.replace(replacement._1, replacement._2)
     }
 
     // Remove braces from the final pure directory path
@@ -53,4 +54,3 @@ object DynamicPath {
 
   def normalize(pathStr: String): String = Paths.get(pathStr).normalize.toString
 }
-

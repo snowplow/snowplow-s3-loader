@@ -18,13 +18,18 @@ sealed trait RowType extends Product with Serializable
 object RowType {
 
   /**
-    * Old-school TSV/raw line that is not partitioned
-    * Depending on partitioning setting should be either sank or sent to bad stream
-    */
+   * Old-school TSV/raw line that is not partitioned
+   * Depending on partitioning setting should be either sank or sent to bad stream
+   */
   case object Unpartitioned extends RowType
 
   /** JSON line with self-describing payload that can be partitioned */
-  case class SelfDescribing(vendor: String, name: String, format: String, model: Int) extends RowType {
+  case class SelfDescribing(
+    vendor: String,
+    name: String,
+    format: String,
+    model: Int
+  ) extends RowType {
     def partition: String = s"$vendor.$name/$format-$model"
   }
 

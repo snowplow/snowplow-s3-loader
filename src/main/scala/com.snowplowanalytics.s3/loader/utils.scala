@@ -21,8 +21,9 @@ package com.snowplowanalytics.s3.loader
 import scala.util.{Failure, Success, Try}
 
 object utils {
-    // to rm once 2.12 as well as the right projections
-    def fold[A, B](t: Try[A])(ft: Throwable => B, fa: A => B): B = t match {
+  // to rm once 2.12 as well as the right projections
+  def fold[A, B](t: Try[A])(ft: Throwable => B, fa: A => B): B =
+    t match {
       case Success(a) => fa(a)
       case Failure(t) => ft(t)
     }
