@@ -26,6 +26,7 @@ import com.amazonaws.services.kinesis.connectors.{
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.KinesisClientLibConfiguration
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.Worker
 import com.amazonaws.services.kinesis.metrics.interfaces.IMetricsFactory
+import com.amazonaws.services.kinesis.metrics.impl.NullMetricsFactory
 
 // Java
 import java.util.Date
@@ -53,12 +54,16 @@ class KinesisSourceExecutor(
   badSink: ISink,
   serializer: ISerializer,
   maxConnectionTime: Long,
-  tracker: Option[Tracker[Id]]
+  tracker: Option[Tracker[Id]],
+  disableCloudWatch: Boolean
 ) extends KinesisConnectorExecutorBase[ValidatedRecord, EmitterInput] {
 
   val LOG = LoggerFactory.getLogger(getClass)
 
-  initialize(config, null)
+  if(disableCloudWatch)
+    initialize(config, new NullMetricsFactory())
+  else
+    initialize(config, null)
 
   def getKCLConfig(initialPosition: String, timestamp: Option[Date], kcc: KinesisConnectorConfiguration): KinesisClientLibConfiguration = {
       val cfg = new KinesisClientLibConfiguration(
