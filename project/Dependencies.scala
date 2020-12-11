@@ -14,7 +14,7 @@ import sbt._
 
 object Dependencies {
   val resolvers = Seq(
-    "Snowplow Analytics Maven releases repo" at "http://maven.snplow.com/releases/",
+    ("Snowplow Analytics Maven releases repo" at "http://maven.snplow.com/releases/").withAllowInsecureProtocol(true),
     "Snowplow Bintray Maven repo"            at "https://snowplow.bintray.com/snowplow-maven"
   )
 
