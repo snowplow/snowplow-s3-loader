@@ -19,6 +19,9 @@ import com.typesafe.sbt.packager.Keys._
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.Docker
 import com.typesafe.sbt.packager.docker._
 
+// Scoverage plugin
+import scoverage.ScoverageKeys._
+
 // Scalafmt plugin
 import org.scalafmt.sbt.ScalafmtPlugin.autoImport._
 
@@ -99,6 +102,14 @@ object BuildSettings {
     }
   )
 
+  lazy val scoverageSettings = Seq(
+    coverageMinimum := 50,
+    coverageFailOnMinimum := true,
+    coverageHighlighting := false,
+    (test in Test) := {
+      (coverageReport dependsOn (test in Test)).value
+    }
+  )
   lazy val formattingSettings = Seq(
     scalafmtConfig    := file(".scalafmt.conf"),
     scalafmtOnCompile := false

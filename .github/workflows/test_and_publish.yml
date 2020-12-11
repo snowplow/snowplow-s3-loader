@@ -18,7 +18,10 @@ jobs:
         run: sudo apt-get install -y lzop liblzo2-dev
 
       - name: Run tests
-        run: sbt test
+        run: sbt coverage test
+
+      - name: Aggregate coverage data
+        run: sbt coverageAggregate
 
       - name: Check formatting
         run: sbt scalafmtCheck
