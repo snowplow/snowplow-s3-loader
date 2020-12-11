@@ -31,13 +31,13 @@ class KinesisS3EmitterSpec extends Specification {
     "format file name with optional components" in {
       val actual = KinesisS3Emitter.getBaseFilename(firstSeq, lastSeq, Some(outputDirectory), Some(partition), Some(dateFormat), Some(filenamePrefix), Some(datetime))
 
-      actual must beEqualTo(s"$outputDirectory/$partition/$dateFormat/$filenamePrefix-1970-01-01-$firstSeq-$lastSeq")
+      actual must beEqualTo(s"$outputDirectory/$partition/$dateFormat/$filenamePrefix-1970-01-01T00:00:00-$firstSeq-$lastSeq")
     }
 
     "format file name without optional components" in {
       val actual = KinesisS3Emitter.getBaseFilename(firstSeq, lastSeq, None, None, None, None, Some(datetime))
 
-      actual must beEqualTo(s"1970-01-01-$firstSeq-$lastSeq")
+      actual must beEqualTo(s"1970-01-01T00:00:00-$firstSeq-$lastSeq")
     }
 
     "partition records correctly according to schema key" in {

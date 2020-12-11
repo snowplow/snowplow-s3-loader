@@ -146,7 +146,7 @@ object KinesisS3Emitter {
       .flatMap(_.toList.filterNot(_.isEmpty))
       .mkString("/")
 
-    val filename = List(path, DateTimeFormatter.ISO_LOCAL_DATE.format(datetime.getOrElse(LocalDateTime.now)), firstSeq, lastSeq).filterNot(_.isEmpty).mkString("-")
+    val filename = List(path, DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(datetime.getOrElse(LocalDateTime.now)), firstSeq, lastSeq).filterNot(_.isEmpty).mkString("-")
 
     DynamicPath.normalize(filename)
   }
