@@ -20,6 +20,9 @@ jobs:
       - name: Run tests
         run: sbt test
 
+      - name: Check formatting
+        run: sbt scalafmtCheck
+
       - name: Docker login
         if: startsWith(github.ref, 'refs/tags/')
         run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD

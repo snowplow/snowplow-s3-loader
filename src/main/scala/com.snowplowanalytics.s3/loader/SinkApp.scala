@@ -38,7 +38,9 @@ object SinkApp {
 
     val parser = new scopt.OptionParser[FileConfig](generated.Settings.name) {
       head(generated.Settings.name, generated.Settings.version)
-      opt[File]("config").required().valueName("<filename>")
+      opt[File]("config")
+        .required()
+        .valueName("<filename>")
         .action((f: File, c: FileConfig) => c.copy(f))
         .validate(f =>
           if (f.exists) success

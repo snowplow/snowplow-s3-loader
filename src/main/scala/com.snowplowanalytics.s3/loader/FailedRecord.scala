@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright (c) 2014-2020 Snowplow Analytics Ltd.
  * All rights reserved.
  *
@@ -20,9 +20,8 @@
 package com.snowplowanalytics.s3.loader
 
 /**
-  * Case class to contain a Failed Record:
-  * - The list of errors
-  * - The original line, Base64 Encoded
-  */
+ * Case class to contain a Failed Record:
+ * - The list of errors
+ * - The original line, Base64 Encoded
+ */
 case class FailedRecord(errors: List[String], line: String)
-

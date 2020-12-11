@@ -19,6 +19,9 @@ import com.typesafe.sbt.packager.Keys._
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.Docker
 import com.typesafe.sbt.packager.docker._
 
+// Scalafmt plugin
+import org.scalafmt.sbt.ScalafmtPlugin.autoImport._
+
 object BuildSettings {
 
   // Basic settings for our app
@@ -94,5 +97,10 @@ object BuildSettings {
         val oldStrategy = (assemblyMergeStrategy in assembly).value
         oldStrategy(x)
     }
+  )
+
+  lazy val formattingSettings = Seq(
+    scalafmtConfig    := file(".scalafmt.conf"),
+    scalafmtOnCompile := false
   )
 }

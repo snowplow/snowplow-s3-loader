@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright (c) 2014-2020 Snowplow Analytics Ltd.
  * All rights reserved.
  *
@@ -34,27 +34,25 @@ object CredentialsLookup {
    * @param s Secret key
    * @return An AWSCredentialsProvider
    */
-  def getCredentialsProvider(a: String, s: String): AWSCredentialsProvider = {
-    if (isDefault(a) && isDefault(s)) {
+  def getCredentialsProvider(a: String, s: String): AWSCredentialsProvider =
+    if (isDefault(a) && isDefault(s))
       new DefaultAWSCredentialsProviderChain()
-    } else if (isDefault(a) || isDefault(s)) {
+    else if (isDefault(a) || isDefault(s))
       throw new RuntimeException(
         "access-key and secret-key must both be set to 'default', or neither"
       )
-    } else if (isIam(a) && isIam(s)) {
+    else if (isIam(a) && isIam(s))
       InstanceProfileCredentialsProvider.getInstance()
-    } else if (isIam(a) || isIam(s)) {
+    else if (isIam(a) || isIam(s))
       throw new RuntimeException("access-key and secret-key must both be set to 'iam', or neither")
-    } else if (isEnv(a) && isEnv(s)) {
+    else if (isEnv(a) && isEnv(s))
       new EnvironmentVariableCredentialsProvider()
-    } else if (isEnv(a) || isEnv(s)) {
+    else if (isEnv(a) || isEnv(s))
       throw new RuntimeException("access-key and secret-key must both be set to 'env', or neither")
-    } else {
+    else
       new BasicAWSCredentialsProvider(
         new BasicAWSCredentials(a, s)
       )
-    }
-  }
 
   /**
    * Is the access/secret key set to the special value "default" i.e. use
@@ -63,7 +61,7 @@ object CredentialsLookup {
    * @param key The key to check
    * @return true if key is default, false otherwise
    */
-  private def isDefault(key: String): Boolean = (key == "default")
+  private def isDefault(key: String): Boolean = key == "default"
 
   /**
    * Is the access/secret key set to the special value "iam" i.e. use
@@ -72,7 +70,7 @@ object CredentialsLookup {
    * @param key The key to check
    * @return true if key is iam, false otherwise
    */
-  private def isIam(key: String): Boolean = (key == "iam")
+  private def isIam(key: String): Boolean = key == "iam"
 
   /**
    * Is the access/secret key set to the special value "env" i.e. get
@@ -81,11 +79,10 @@ object CredentialsLookup {
    * @param key The key to check
    * @return true if key is iam, false otherwise
    */
-  private def isEnv(key: String): Boolean = (key == "env")
+  private def isEnv(key: String): Boolean = key == "env"
 
   // Wrap BasicAWSCredential objects.
-  class BasicAWSCredentialsProvider(basic: BasicAWSCredentials) extends
-      AWSCredentialsProvider{
+  class BasicAWSCredentialsProvider(basic: BasicAWSCredentials) extends AWSCredentialsProvider {
     @Override def getCredentials: AWSCredentials = basic
     @Override def refresh = {}
   }

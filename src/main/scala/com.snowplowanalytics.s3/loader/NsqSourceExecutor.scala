@@ -87,13 +87,13 @@ class NsqSourceExecutor(
 
     DateFormat.print(currentTimeObject) + "-" +
       TimeFormat.print(startTimeObject) + "-" +
-      TimeFormat.print(endTimeObject)   + "-" +
+      TimeFormat.print(endTimeObject) + "-" +
       math.abs(util.Random.nextInt)
   }
 
   override def run: Unit = {
 
-    val nsqCallback = new  NSQMessageCallback {
+    val nsqCallback = new NSQMessageCallback {
       //start time of filling the buffer
       var bufferStartTime = System.currentTimeMillis()
       val nsqBufferSize = config.streams.buffer.recordLimit
@@ -112,7 +112,7 @@ class NsqSourceExecutor(
 
             log.info(s"Successfully serialized ${successes.size} records out of ${successes.size + failures.size}")
 
-            if (successes.nonEmpty) {
+            if (successes.nonEmpty)
               serializationResults.namedStreams.foreach { stream =>
                 val connectionAttemptStartTime = System.currentTimeMillis()
                 s3Emitter.attemptEmit(stream, config.s3.bucket, connectionAttemptStartTime) match {
@@ -120,11 +120,9 @@ class NsqSourceExecutor(
                   case true => log.info(s"Successfully sent ${successes.size} records")
                 }
               }
-            }
 
-            if (failures.nonEmpty) {
+            if (failures.nonEmpty)
               s3Emitter.sendFailures(failures.asJava)
-            }
 
             msgBuffer.clear()
             //make buffer start time of the next buffer the buffer finish time of the current buffer
@@ -142,12 +140,7 @@ class NsqSourceExecutor(
     val lookup = new DefaultNSQLookup
     // use NSQLookupd
     lookup.addLookupAddress(config.nsq.host, config.nsq.lookupPort)
-    val consumer = new NSQConsumer(lookup,
-                                   config.streams.inStreamName,
-                                   config.nsq.channelName,
-                                   nsqCallback,
-                                   new NSQConfig(),
-                                   errorCallback)
+    val consumer = new NSQConsumer(lookup, config.streams.inStreamName, config.nsq.channelName, nsqCallback, new NSQConfig(), errorCallback)
     consumer.start()
   }
 }

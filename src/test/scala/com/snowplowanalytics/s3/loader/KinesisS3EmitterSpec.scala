@@ -27,9 +27,16 @@ class KinesisS3EmitterSpec extends Specification {
     val dateFormat = "{YYYY}/{MM}/{dd}/{HH}"
     val filenamePrefix = "fileNamePrefix"
     val datetime = LocalDateTime.of(1970, 1, 1, 0, 0)
-  
+
     "format file name with optional components" in {
-      val actual = KinesisS3Emitter.getBaseFilename(firstSeq, lastSeq, Some(outputDirectory), Some(partition), Some(dateFormat), Some(filenamePrefix), Some(datetime))
+      val actual = KinesisS3Emitter.getBaseFilename(firstSeq,
+                                                    lastSeq,
+                                                    Some(outputDirectory),
+                                                    Some(partition),
+                                                    Some(dateFormat),
+                                                    Some(filenamePrefix),
+                                                    Some(datetime)
+      )
 
       actual must beEqualTo(s"$outputDirectory/$partition/$dateFormat/$filenamePrefix-1970-01-01-000000-$firstSeq-$lastSeq")
     }

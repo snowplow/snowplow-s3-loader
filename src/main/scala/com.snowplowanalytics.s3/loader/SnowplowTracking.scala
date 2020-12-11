@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright (c) 2014-2020 Snowplow Analytics Ltd.
  * All rights reserved.
  *
@@ -89,18 +89,16 @@ object SnowplowTracking {
     trackApplicationInitialization(tracker)
 
     Runtime.getRuntime.addShutdownHook(new Thread() {
-      override def run(): Unit = {
+      override def run(): Unit =
         trackApplicationShutdown(tracker)
-      }
     })
 
     val heartbeatThread = new Thread {
-      override def run(): Unit = {
+      override def run(): Unit =
         while (true) {
           trackApplicationHeartbeat(tracker, HeartbeatInterval)
           Thread.sleep(HeartbeatInterval)
         }
-      }
     }
 
     heartbeatThread.start()
@@ -116,11 +114,12 @@ object SnowplowTracking {
    * @param message What went wrong
    */
   def sendFailureEvent(
-      tracker: Tracker[Id],
-      lastRetryPeriod: Long,
-      failureCount: Long,
-      initialFailureTime: Long,
-      message: String): Unit =
+    tracker: Tracker[Id],
+    lastRetryPeriod: Long,
+    failureCount: Long,
+    initialFailureTime: Long,
+    message: String
+  ): Unit =
     tracker.trackSelfDescribingEvent(
       SelfDescribingData[Json](
         SchemaKey(
@@ -174,7 +173,7 @@ object SnowplowTracking {
         Json.Null
       )
     )
-      
+
   /**
    * Send a heartbeat unstructured event
    *

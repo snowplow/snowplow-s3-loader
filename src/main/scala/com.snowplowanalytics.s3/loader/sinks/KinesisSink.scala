@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright (c) 2014-2020 Snowplow Analytics Ltd.
  * All rights reserved.
  *
@@ -36,7 +36,7 @@ import com.amazonaws.metrics.RequestMetricCollector
 // Concurrent libraries
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.{Success, Failure}
+import scala.util.{Failure, Success}
 
 // Logging
 import org.slf4j.LoggerFactory
@@ -68,19 +68,20 @@ class KinesisSink(
   private val log = LoggerFactory.getLogger(getClass)
 
   // Explicitly create a client so we can configure the end point
-  val client = if(disableCloudWatch)
-    AmazonKinesisClientBuilder
-      .standard()
-      .withCredentials(provider)
-      .withEndpointConfiguration(new EndpointConfiguration(endpoint, region))
-      .withMetricsCollector(RequestMetricCollector.NONE)
-      .build()
-  else
-    AmazonKinesisClientBuilder
-      .standard()
-      .withCredentials(provider)
-      .withEndpointConfiguration(new EndpointConfiguration(endpoint, region))
-      .build()
+  val client =
+    if (disableCloudWatch)
+      AmazonKinesisClientBuilder
+        .standard()
+        .withCredentials(provider)
+        .withEndpointConfiguration(new EndpointConfiguration(endpoint, region))
+        .withMetricsCollector(RequestMetricCollector.NONE)
+        .build()
+    else
+      AmazonKinesisClientBuilder
+        .standard()
+        .withCredentials(provider)
+        .withEndpointConfiguration(new EndpointConfiguration(endpoint, region))
+        .build()
 
   require(streamExists(name), s"Kinesis stream $name doesn't exist")
 
@@ -91,32 +92,37 @@ class KinesisSink(
    * @return Whether the stream both exists and is active
    */
   private def streamExists(name: String): Boolean = {
-    val exists = try {
-      val describeStreamResult = client.describeStream(name)
-      describeStreamResult.getStreamDescription.getStreamStatus == "ACTIVE"
-    } catch {
-      case rnfe: ResourceNotFoundException => false
-    }
+    val exists =
+      try {
+        val describeStreamResult = client.describeStream(name)
+        describeStreamResult.getStreamDescription.getStreamStatus == "ACTIVE"
+      } catch {
+        case rnfe: ResourceNotFoundException => false
+      }
 
-    if (exists) {
+    if (exists)
       log.info(s"Stream $name exists and is active")
-    } else {
+    else
       log.info(s"Stream $name doesn't exist or is not active")
-    }
 
     exists
   }
 
-  private def put(name: String, data: ByteBuffer, key: String): Future[PutRecordResult] = Future {
-    val putRecordRequest = {
-      val p = new PutRecordRequest()
-      p.setStreamName(name)
-      p.setData(data)
-      p.setPartitionKey(key)
-      p
+  private def put(
+    name: String,
+    data: ByteBuffer,
+    key: String
+  ): Future[PutRecordResult] =
+    Future {
+      val putRecordRequest = {
+        val p = new PutRecordRequest()
+        p.setStreamName(name)
+        p.setData(data)
+        p.setPartitionKey(key)
+        p
+      }
+      client.putRecord(putRecordRequest)
     }
-    client.putRecord(putRecordRequest)
-  }
 
   /**
    * Write a record to the Kinesis stream
@@ -126,16 +132,18 @@ class KinesisSink(
    *            record is assigned. Defaults to a random string.
    * @param good Unused parameter which exists to extend ISink
    */
-  def store(output: String, key: Option[String], good: Boolean): Unit =
+  def store(
+    output: String,
+    key: Option[String],
+    good: Boolean
+  ): Unit =
     put(name, ByteBuffer.wrap(output.getBytes(UTF_8)), key.getOrElse(Random.nextInt.toString)) onComplete {
-      case Success(result) => {
+      case Success(result) =>
         log.info("Writing successful")
         log.info(s"  + ShardId: ${result.getShardId}")
         log.info(s"  + SequenceNumber: ${result.getSequenceNumber}")
-      }
-      case Failure(f) => {
+      case Failure(f) =>
         log.error("Writing failed")
         log.error("  + " + f.getMessage)
-      }
     }
 }

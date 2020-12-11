@@ -30,11 +30,14 @@ object GZipSerializer extends ISerializer {
 
     // Populate the output stream with records
     val results = records.map {
-      case Validated.Valid(r) => serializeRecord(r, gzipOutputStream,
-        (g: GZIPOutputStream) => {
-          g.write(r)
-          g.write("\n".getBytes)
-        })
+      case Validated.Valid(r) =>
+        serializeRecord(r,
+                        gzipOutputStream,
+                        (g: GZIPOutputStream) => {
+                          g.write(r)
+                          g.write("\n".getBytes)
+                        }
+        )
       case f => f
     }
 
@@ -45,4 +48,3 @@ object GZipSerializer extends ISerializer {
     SerializationResult(namedStreams, results)
   }
 }
-

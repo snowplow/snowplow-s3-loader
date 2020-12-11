@@ -13,21 +13,13 @@
 package com.snowplowanalytics.s3.loader.serializers
 
 // Java
-import java.io.{
-  File,
-  FileInputStream,
-  FileOutputStream,
-  BufferedInputStream
-}
+import java.io.{BufferedInputStream, File, FileInputStream, FileOutputStream}
 
 // Elephant Bird
 import com.twitter.elephantbird.mapreduce.io.RawBlockReader
 
 // Apache Thrift
-import org.apache.thrift.{
-  TSerializer,
-  TDeserializer
-}
+import org.apache.thrift.{TDeserializer, TSerializer}
 
 // cats
 import cats.syntax.validated._
@@ -60,9 +52,7 @@ class LzoSerializerSpec extends Specification {
 
       cleanup()
 
-      val inputEvents = List(
-        new CollectorPayload("A", "B", 1000, "a", "b").valid,
-        new CollectorPayload("X", "Y", 2000, "x", "y").valid)
+      val inputEvents = List(new CollectorPayload("A", "B", 1000, "a", "b").valid, new CollectorPayload("X", "Y", 2000, "x", "y").valid)
 
       val binaryInputs = inputEvents.map(e => e.map(x => serializer.serialize(x)))
 
@@ -79,13 +69,12 @@ class LzoSerializerSpec extends Specification {
 
       cleanup()
 
-      inputEvents map { e => {
-          val rawResult = reader.readNext()
-          val target = new CollectorPayload
-          deserializer.deserialize(target, rawResult)
+      inputEvents map { e =>
+        val rawResult = reader.readNext()
+        val target = new CollectorPayload
+        deserializer.deserialize(target, rawResult)
 
-          target.valid must_== e
-        }
+        target.valid must_== e
       }
     }
   }
