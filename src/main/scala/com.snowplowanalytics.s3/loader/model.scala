@@ -39,7 +39,8 @@ package model {
     maxRecords: Long,
     region: String,
     appName: String,
-    customEndpoint: Option[String]
+    customEndpoint: Option[String],
+    disableCloudWatch: Option[Boolean]
   ) {
     val timestampEither = initialTimestamp
       .toRight("An initial timestamp needs to be provided when choosing AT_TIMESTAMP")

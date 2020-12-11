@@ -31,6 +31,7 @@ import com.amazonaws.auth.AWSCredentialsProvider
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
 import com.amazonaws.services.kinesis.AmazonKinesisClientBuilder
 import com.amazonaws.services.kinesis.model._
+import com.amazonaws.metrics.RequestMetricCollector
 
 // Concurrent libraries
 import scala.concurrent.Future
@@ -60,17 +61,28 @@ class KinesisSink(
   endpoint: String,
   region: String,
   name: String,
-  tracker: Option[Tracker[Id]]
+  tracker: Option[Tracker[Id]],
+  disableCloudWatch: Option[Boolean]
 ) extends ISink {
 
   private val log = LoggerFactory.getLogger(getClass)
 
   // Explicitly create a client so we can configure the end point
-  val client = AmazonKinesisClientBuilder
-    .standard()
-    .withCredentials(provider)
-    .withEndpointConfiguration(new EndpointConfiguration(endpoint, region))
-    .build()
+  val client =  disableCloudWatch match {
+    case Some(true) =>
+      AmazonKinesisClientBuilder
+        .standard()
+        .withCredentials(provider)
+        .withEndpointConfiguration(new EndpointConfiguration(endpoint, region))
+        .withMetricsCollector(RequestMetricCollector.NONE)
+        .build()
+    case _ =>
+      AmazonKinesisClientBuilder
+        .standard()
+        .withCredentials(provider)
+        .withEndpointConfiguration(new EndpointConfiguration(endpoint, region))
+        .build()
+  }
 
   require(streamExists(name), s"Kinesis stream $name doesn't exist")
 

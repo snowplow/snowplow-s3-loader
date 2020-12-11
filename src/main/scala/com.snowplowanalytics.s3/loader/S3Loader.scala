@@ -41,7 +41,7 @@ object S3Loader {
     val credentials = CredentialsLookup.getCredentialsProvider(config.aws.accessKey, config.aws.secretKey)
 
     val badSink = config.sink match {
-      case "kinesis" => new KinesisSink(credentials, kinesisSinkEndpoint, kinesisSinkRegion, kinesisSinkName, tracker)
+      case "kinesis" => new KinesisSink(credentials, kinesisSinkEndpoint, kinesisSinkRegion, kinesisSinkName, tracker, config.kinesis.disableCloudWatch)
       case "nsq" => new NsqSink(config)
     }
 
@@ -61,7 +61,8 @@ object S3Loader {
           badSink,
           serializer,
           maxConnectionTime,
-          tracker
+          tracker,
+          config.kinesis.disableCloudWatch
         ).valid
       // Read records from NSQ
       case "nsq" =>
