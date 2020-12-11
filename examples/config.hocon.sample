@@ -62,6 +62,9 @@ kinesis {
   ## Optional endpoint url configuration to override aws kinesis endpoints,
   ## this can be used to specify local endpoints when using localstack
   # customEndpoint = {{kinesisEndpoint}}
+
+  # Optional override to disable CloudWatch metrics for KCL
+  # disableCloudWatch = true
 }
 
 streams {
