@@ -21,7 +21,7 @@ object Dependencies {
 
   object V {
     // Java
-    // val slf4j            = "1.7.30"
+    val slf4j            = "1.7.26"
     val kinesisClient    = "1.14.0"
     val kinesisConnector = "1.3.0"
     val hadoop           = "3.3.0"
@@ -39,7 +39,7 @@ object Dependencies {
     val scopt           = "3.7.1"
     val json4s          = "3.6.10"
     val cats            = "2.2.0"
-    val snowplowTracker = "0.5.0"
+    val snowplowTracker = "0.6.1"
     val pureconfig      = "0.14.0"
     val igluCore        = "1.0.0"
     // Scala (test only)
@@ -48,7 +48,8 @@ object Dependencies {
 
   object Libraries {
     // Java
-    // val slf4j            = "org.slf4j"                 %  "slf4j-simple"              % V.slf4j
+    val slf4j                = "org.slf4j"                        %  "slf4j-simple"            % V.slf4j
+    val log4jOverSlf4j       = "org.slf4j"                        %  "log4j-over-slf4j"        % V.slf4j
     val kinesisClient    = ("com.amazonaws"            %  "amazon-kinesis-client"     % V.kinesisClient)
       .exclude("com.fasterxml.jackson.dataformat", "jackson-dataformat-cbor")
     val kinesisConnector = ("com.amazonaws"            %  "amazon-kinesis-connectors" % V.kinesisConnector)
@@ -76,7 +77,8 @@ object Dependencies {
     val scopt            = "com.github.scopt"          %% "scopt"                     % V.scopt
     val json4sJackson    = "org.json4s"                %% "json4s-jackson"            % V.json4s
     val cats             = "org.typelevel"             %% "cats-core"                 % V.cats
-    val snowplowTracker  = "com.snowplowanalytics"     %% "snowplow-scala-tracker"    % V.snowplowTracker
+    val snowplowTrackerCore      = "com.snowplowanalytics" %% "snowplow-scala-tracker-core"       % V.snowplowTracker
+    val snowplowTrackerEmitterId = "com.snowplowanalytics" %% "snowplow-scala-tracker-emitter-id" % V.snowplowTracker
     val pureconfig       = "com.github.pureconfig"     %% "pureconfig"                % V.pureconfig
     val igluCoreJson4s   = "com.snowplowanalytics"     %% "iglu-core-json4s"          % V.igluCore
     // Scala (test only)

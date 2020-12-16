@@ -61,7 +61,7 @@ class KinesisS3Emitter(
   badSink: ISink,
   serializer: ISerializer,
   maxConnectionTime: Long,
-  tracker: Option[Tracker]
+  tracker: Option[Tracker[cats.effect.IO]]
 ) extends IEmitter[EmitterInput] {
 
   val s3Emitter = new S3Emitter(s3Config, provider, badSink, maxConnectionTime, tracker)

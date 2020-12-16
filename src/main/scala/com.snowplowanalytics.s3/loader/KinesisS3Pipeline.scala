@@ -29,7 +29,7 @@ import model._
  * S3Pipeline class sets up the Emitter/Buffer/Transformer/Filter
  * Comes from Kinesis Connectors
  */
-class KinesisS3Pipeline(s3Config: S3Config, badSink: ISink, serializer: ISerializer, maxConnectionTime: Long, tracker: Option[Tracker]) extends IKinesisConnectorPipeline[ValidatedRecord, EmitterInput] {
+class KinesisS3Pipeline(s3Config: S3Config, badSink: ISink, serializer: ISerializer, maxConnectionTime: Long, tracker: Option[Tracker[cats.effect.IO]]) extends IKinesisConnectorPipeline[ValidatedRecord, EmitterInput] {
 
   def getEmitter(configuration: KinesisConnectorConfiguration): IEmitter[EmitterInput]  =
     new KinesisS3Emitter(s3Config, configuration.AWS_CREDENTIALS_PROVIDER, badSink, serializer, maxConnectionTime, tracker)
@@ -44,4 +44,3 @@ class KinesisS3Pipeline(s3Config: S3Config, badSink: ISink, serializer: ISeriali
     new AllPassFilter[ValidatedRecord]()
 
 }
-

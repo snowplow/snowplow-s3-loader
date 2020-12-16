@@ -50,7 +50,7 @@ class KinesisSourceExecutor(
   badSink: ISink,
   serializer: ISerializer,
   maxConnectionTime: Long,
-  tracker: Option[Tracker]
+  tracker: Option[Tracker[cats.effect.IO]]
 ) extends KinesisConnectorExecutorBase[ValidatedRecord, EmitterInput] {
 
   val LOG = LoggerFactory.getLogger(getClass)

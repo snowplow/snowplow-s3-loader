@@ -24,9 +24,10 @@ lazy val root = project.in(file("."))
   .settings(
     libraryDependencies ++= Seq(
       // Java
+      Dependencies.Libraries.slf4j,
+      Dependencies.Libraries.log4jOverSlf4j,
       Dependencies.Libraries.kinesisClient,
       Dependencies.Libraries.kinesisConnector,
-      // Dependencies.Libraries.slf4j,
       Dependencies.Libraries.hadoop,
       Dependencies.Libraries.elephantbird,
       Dependencies.Libraries.hadoopLZO,
@@ -40,7 +41,8 @@ lazy val root = project.in(file("."))
       Dependencies.Libraries.config,
       Dependencies.Libraries.cats,
       Dependencies.Libraries.json4sJackson,
-      Dependencies.Libraries.snowplowTracker,
+      Dependencies.Libraries.snowplowTrackerCore,
+      Dependencies.Libraries.snowplowTrackerEmitterId,
       Dependencies.Libraries.pureconfig,
       Dependencies.Libraries.igluCoreJson4s,
       // Scala (test only)

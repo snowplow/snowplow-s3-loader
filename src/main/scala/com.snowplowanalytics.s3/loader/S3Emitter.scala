@@ -68,7 +68,7 @@ class S3Emitter(
   provider: AWSCredentialsProvider,
   badSink: ISink,
   maxConnectionTime: Long,
-  tracker: Option[Tracker]
+  tracker: Option[Tracker[cats.effect.IO]]
 ) {
 
   // create Amazon S3 Client
@@ -106,7 +106,7 @@ class S3Emitter(
   */
   private def forceShutdown(): Unit = {
     log.error(s"Shutting down application as unable to connect to S3 for over $maxConnectionTime ms")
-    tracker foreach {
+    tracker.foreach {
       t =>
         SnowplowTracking.trackApplicationShutdown(t)
         sleep(5000)

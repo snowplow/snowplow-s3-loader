@@ -85,14 +85,10 @@ object BuildSettings {
   import sbtassembly.AssemblyPlugin.autoImport._
   lazy val sbtAssemblySettings = Seq(
     assemblyJarName in assembly := { s"${name.value}-${version.value}.jar" },
+    test in assembly := {},
     assemblyMergeStrategy in assembly := {
-      case PathList("javax", "servlet", xs @ _*)         => MergeStrategy.first
-      case PathList("org", "objectweb", "asm", xs @ _*)  => MergeStrategy.first
-      case PathList(ps @ _*) if ps.last endsWith ".html" => MergeStrategy.first
-      case "application.conf"                            => MergeStrategy.concat
-      case x =>
-        val oldStrategy = (assemblyMergeStrategy in assembly).value
-        oldStrategy(x)
+      case PathList("META-INF", xs @ _*) => MergeStrategy.discard   
+      case x                             => MergeStrategy.first 
     }
   )
 }

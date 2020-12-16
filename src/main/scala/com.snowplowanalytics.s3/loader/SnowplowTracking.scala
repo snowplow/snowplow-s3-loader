@@ -18,17 +18,23 @@
  */
 package com.snowplowanalytics.s3.loader
 
-// json4s
-import org.json4s._
-import org.json4s.JsonDSL._
+import io.circe.Json
 
 // Tracker
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
 import com.snowplowanalytics.iglu.core.{SelfDescribingData, SchemaKey}
-import com.snowplowanalytics.snowplow.scalatracker.emitters.AsyncEmitter
+import com.snowplowanalytics.snowplow.scalatracker.emitters.id.AsyncEmitter
 
 // This project
 import model._
+import cats.data.NonEmptyList
+import cats.effect.Timer
+import cats.effect.IO
+import cats.Id
+import scala.concurrent.ExecutionContext
+import com.snowplowanalytics.snowplow.scalatracker.Emitter
+import com.snowplowanalytics.snowplow.scalatracker.UUIDProvider
+import java.{util => ju}
 
 /**
  * Functionality for sending Snowplow events for monitoring purposes
@@ -38,8 +44,10 @@ object SnowplowTracking {
   private val HeartbeatInterval = 300000L
   private val StorageType = "AMAZON_S3"
 
-  implicit val ec: scala.concurrent.ExecutionContext =
-    scala.concurrent.ExecutionContext.global
+  implicit val ec: ExecutionContext = ExecutionContext.global
+  implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
+  implicit val up: UUIDProvider[IO] = new UUIDProvider[IO]{ def generateUUID: IO[ju.UUID] = IO(ju.UUID.randomUUID) }
+  
 
   /**
    * Configure a Tracker based on the configuration HOCON
@@ -47,13 +55,16 @@ object SnowplowTracking {
    * @param config The "monitoring" section of the HOCON
    * @return a new tracker instance
    */
-  def initializeTracker(config: SnowplowMonitoringConfig): Tracker = {
+  def initializeTracker(config: SnowplowMonitoringConfig): Tracker[IO] = {
     val endpoint = config.collectorUri
     val port = config.collectorPort
     val appName = config.appId
-    val emitter =
-      AsyncEmitter.createAndStart(endpoint, Some(port), callback = None)
-    new Tracker(List(emitter), generated.Settings.name, appName)
+    val emitter: Emitter[Id] = AsyncEmitter.createAndStart(endpoint, Some(port), callback = None)
+    val em: Emitter[IO] = new Emitter[IO]{
+      def send(event: Emitter.EmitterPayload): IO[Unit] = IO(emitter.send(event))
+    }
+
+    Tracker(NonEmptyList.of(em), generated.Settings.name, appName)
   }
 
   /**
@@ -61,7 +72,7 @@ object SnowplowTracking {
    *
    * @param tracker a Tracker instance
    */
-  def initializeSnowplowTracking(tracker: Tracker): Unit = {
+  def initializeSnowplowTracking(tracker: Tracker[cats.effect.IO]): Unit = {
     trackApplicationInitialization(tracker)
 
     Runtime.getRuntime.addShutdownHook(new Thread() {
@@ -82,8 +93,8 @@ object SnowplowTracking {
     heartbeatThread.start()
   }
 
-  private def sdd(key: String, data: JsonAST.JObject) =
-    SelfDescribingData[JValue](
+  private def sdd(key: String, data: Json) =
+    SelfDescribingData[Json](
       SchemaKey
         .fromUri(key)
         .getOrElse(
@@ -104,7 +115,7 @@ object SnowplowTracking {
    * @param message What went wrong
    */
   def sendFailureEvent(
-    tracker: Tracker,
+    tracker: Tracker[cats.effect.IO],
     lastRetryPeriod: Long,
     failureCount: Long,
     initialFailureTime: Long,
@@ -114,13 +125,15 @@ object SnowplowTracking {
       "iglu:com.snowplowanalytics.monitoring.kinesis/storage_write_failed/jsonschema/1-0-0"
 
     val data = 
-      ("lastRetryPeriod" -> lastRetryPeriod) ~
-      ("storage" -> StorageType) ~
-      ("failureCount" -> failureCount) ~
-      ("initialFailureTime" -> initialFailureTime) ~
-      ("message" -> message)
+    Json.obj(
+      ("lastRetryPeriod", Json.fromLong(lastRetryPeriod)),
+      ("storage", Json.fromString(StorageType)),
+      ("failureCount", Json.fromLong(failureCount)),
+      ("initialFailureTime", Json.fromLong(initialFailureTime)),
+      ("message" -> Json.fromString(message))
+    )
 
-    tracker.trackSelfDescribingEvent(sdd(key, data))
+    tracker.trackSelfDescribingEvent(sdd(key, data)).unsafeRunSync()
   }
 
   /**
@@ -128,24 +141,24 @@ object SnowplowTracking {
    *
    * @param tracker a Tracker instance
    */
-  private def trackApplicationInitialization(tracker: Tracker): Unit = 
+  private def trackApplicationInitialization(tracker: Tracker[cats.effect.IO]): Unit = 
     tracker.trackSelfDescribingEvent(
       sdd(
         "iglu:com.snowplowanalytics.monitoring.kinesis/app_initialized/jsonschema/1-0-0",
-        JObject(Nil)
-      ))
+        Json.obj()
+      )).unsafeRunSync()
 
   /**
    * Send an application_shutdown unstructured event
    *
    * @param tracker a Tracker instance
    */
-  def trackApplicationShutdown(tracker: Tracker): Unit = 
+  def trackApplicationShutdown(tracker: Tracker[cats.effect.IO]): Unit = 
     tracker.trackSelfDescribingEvent(
       sdd(
         "iglu:com.snowplowanalytics.monitoring.kinesis/app_shutdown/jsonschema/1-0-0",
-        JObject(Nil)
-      ))
+        Json.obj()
+      )).unsafeRunSync()
 
   /**
    * Send a heartbeat unstructured event
@@ -153,11 +166,11 @@ object SnowplowTracking {
    * @param tracker a Tracker instance
    * @param heartbeatInterval Time between heartbeats in milliseconds
    */
-  private def trackApplicationHeartbeat(tracker: Tracker, heartbeatInterval: Long): Unit = 
+  private def trackApplicationHeartbeat(tracker: Tracker[cats.effect.IO], heartbeatInterval: Long): Unit = 
     tracker.trackSelfDescribingEvent(
       sdd(
         "iglu:com.snowplowanalytics.monitoring.kinesis/app_heartbeat/jsonschema/1-0-0",
-        "interval" -> heartbeatInterval
-      ))
+        Json.obj(("interval", Json.fromLong(heartbeatInterval)))
+      )).unsafeRunSync()
 
 }

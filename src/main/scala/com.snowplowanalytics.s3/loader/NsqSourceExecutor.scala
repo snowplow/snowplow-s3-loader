@@ -67,7 +67,7 @@ class NsqSourceExecutor(
   badSink: ISink,
   serializer: ISerializer,
   maxConnectionTime: Long,
-  tracker: Option[Tracker]
+  tracker: Option[Tracker[cats.effect.IO]]
 ) extends Runnable {
 
   lazy val log = LoggerFactory.getLogger(getClass())
