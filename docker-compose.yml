@@ -1,0 +1,61 @@
+version: '3'
+services:
+  nsqlookupd:
+    image: nsqio/nsq
+    command: /nsqlookupd
+    ports:
+      - "4160:4160"
+      - "4161:4161"
+  nsqd:
+    image: nsqio/nsq
+    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160
+    depends_on:
+      - nsqlookupd
+    ports:
+      - "4150:4150"
+      - "4151:4151"
+  nsqadmin:
+    image: nsqio/nsq
+    command: /nsqadmin --lookupd-http-address=nsqlookupd:4161
+    depends_on:
+      - nsqlookupd
+      - nsqd
+    ports:
+      - "4171:4171"
+  nsq_to_file_sink-topic:
+    image: nsqio/nsq
+    command: /nsq_to_file --topic=sinkTopic --output-dir=/tmp/s3-loader/out/sinkTopic --lookupd-http-address=nsqlookupd:4161
+    depends_on:
+      - nsqlookupd
+      - nsqd
+    volumes:
+      - .:/tmp/s3-loader    
+  nsq_to_file_good-stream:
+    image: nsqio/nsq
+    command: /nsq_to_file --topic=good-stream --output-dir=/tmp/s3-loader/out/good-stream --lookupd-http-address=nsqlookupd:4161
+    depends_on:
+      - nsqlookupd
+      - nsqd
+    volumes:
+      - .:/tmp/s3-loader
+  s3loader:
+    image: snowplow/snowplow-s3-loader:latest
+    command: --config /tmp/s3-loader/s3loader-config.hocon
+    depends_on:
+      - nsqd
+    volumes:
+      - .:/tmp/s3-loader
+    environment:
+      - AWS_ACCESS_KEY_ID=
+      - AWS_SECRET_KEY=
+    restart: always
+  collector:
+    image: snowplow/scala-stream-collector-nsq:latest
+    command: --config /tmp/s3-loader/collector-config.hocon
+    depends_on:
+      - nsqd
+    volumes:
+      - .:/tmp/s3-loader
+    environment:
+      - AWS_ACCESS_KEY_ID=
+      - AWS_SECRET_KEY=

@@ -1,0 +1,125 @@
+# Default configuration for s3-loader
+
+# Sources currently supported are:
+# 'kinesis' for reading records from a Kinesis stream
+# 'nsq' for reading records from a NSQ topic
+source = "nsq"
+
+# Sink is used for sending events which processing failed.
+# Sinks currently supported are:
+# 'kinesis' for writing records to a Kinesis stream
+# 'nsq' for writing records to a NSQ topic
+sink = "nsq"
+
+# The following are used to authenticate for the Amazon Kinesis sink.
+# If both are set to 'default', the default provider chain is used
+# (see http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/DefaultAWSCredentialsProviderChain.html)
+# If both are set to 'iam', use AWS IAM Roles to provision credentials.
+# If both are set to 'env', use environment variables AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+aws {
+  accessKey = "default"
+  secretKey = "default"
+}
+
+# Config for NSQ
+nsq {
+  # Channel name for NSQ source
+  # If more than one application reading from the same NSQ topic at the same time,
+  # all of them must have unique channel name for getting all the data from the same topic
+  channelName = "forS3Loader"
+    
+  # Host name for NSQ tools
+  host = nsqlookupd
+
+  # HTTP port for nsqd
+  port = 4151
+
+  # HTTP port for nsqlookupd
+  lookupPort = 4161
+}
+
+kinesis {
+  # LATEST: most recent data.
+  # TRIM_HORIZON: oldest available data.
+  # "AT_TIMESTAMP": Start from the record at or after the specified timestamp
+  # Note: This only affects the first run of this application on a stream.
+  initialPosition = "{{kinesisInitialPosition}}"
+
+  # Need to be specified when initialPosition is "AT_TIMESTAMP".
+  # Timestamp format need to be in "yyyy-MM-ddTHH:mm:ssZ".
+  # Ex: "2017-05-17T10:00:00Z"
+  # Note: Time need to specified in UTC.
+  initialTimestamp = "{{timestamp}}"
+
+  # Maximum number of records to read per GetRecords call     
+  maxRecords = 1000
+
+  region = "{{kinesisRegion}}"
+
+  # "appName" is used for a DynamoDB table to maintain stream state.
+  appName = "{{appName}}"
+
+  ## Optional endpoint url configuration to override aws kinesis endpoints,
+  ## this can be used to specify local endpoints when using localstack
+  # customEndpoint = {{kinesisEndpoint}}
+}
+
+
+streams {
+  # Input stream name
+  inStreamName = "sourceTopic"
+
+  # Stream for events for which the storage process fails
+  outStreamName = "sinkTopic"
+
+  # Events are accumulated in a buffer before being sent to S3.
+  # The buffer is emptied whenever:
+  # - the combined size of the stored records exceeds byteLimit or
+  # - the number of stored records exceeds recordLimit or
+  # - the time in milliseconds since it was last emptied exceeds timeLimit
+  buffer {
+    recordLimit = 10
+    byteLimit = 1000 # Not supported by NSQ; will be ignored
+    timeLimit = 1000 # Not supported by NSQ; will be ignored
+  }
+}
+
+s3 {
+  region = "eu-central-1"
+  bucket = "luke-snowplow-test"
+  # optional bucket where to store partitioned data
+  partitionedBucket = "{{s3bucket}}/partitioned"
+
+  # optional date format prefix for directory pattern
+  # eg: {YYYY}/{MM}/{dd}/{HH}
+  dateFormat = "{{s3DateFormat}}"
+
+  # optional directory structure to use while storing data on s3 (followed by dateFormat config)
+  # eg: outputDirectory = "enriched/good/"
+  outputDirectory = "{{s3OutputDirectory}}"
+
+  # optional filename prefix
+  # eg: output
+  filenamePrefix = "{{s3DFilenamePrefix}}"
+
+  # Format is one of lzo or gzip
+  # Note, that you can use gzip only for enriched data stream.
+  format = "lzo"
+
+  # Maximum Timeout that the application is allowed to fail for (in milliseconds)
+  maxTimeout = 1000
+
+  ## Optional endpoint url configuration to override aws s3 endpoints,
+  ## this can be used to specify local endpoints when using localstack
+  # customEndpoint = "http://localstack:4572"
+}
+
+# Optional section for tracking endpoints
+monitoring {
+  snowplow{
+    collectorUri = collector
+    collectorPort = 8080
+    appId = "s3-loader-luke-test"
+    method = "method-name-foo-test"
+  }
+}
