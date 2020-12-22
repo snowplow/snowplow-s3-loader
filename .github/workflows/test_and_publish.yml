@@ -20,22 +20,13 @@ jobs:
       - name: Run tests
         run: sbt coverage test
 
-      - name: Aggregate coverage data
-        run: sbt coverageAggregate
-
       - name: Check formatting
         run: sbt scalafmtCheck
-
-      - name: Docker login
-        if: startsWith(github.ref, 'refs/tags/')
-        run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Publish to Docker Hub
         if: startsWith(github.ref, 'refs/tags/')
         run: |
+          docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
           project_version=$(sbt version -Dsbt.log.noformat=true | perl -ne 'print "$1\n" if /info.*(\d+\.\d+\.\d+[^\r\n]*)/' | tail -n 1 | tr -d '\n')
           if [[ "${{ github.ref }}" = "refs/tags/${project_version}" ]]
           then
@@ -45,3 +36,13 @@ jobs:
             echo "${{ github.ref }} does not match project version $project_version => not publishing"
             exit 1
           fi
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Submit coveralls data
+        run: |
+          sbt coverageAggregate
+          sbt coveralls
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
