@@ -20,6 +20,9 @@ package com.snowplowanalytics.s3.loader
 
 //Java
 import java.io.ByteArrayInputStream
+import java.time.{ Instant, ZonedDateTime, ZoneOffset }
+import java.time.format.DateTimeFormatter
+
 
 // Scala
 import scala.util.control.NonFatal
@@ -44,10 +47,6 @@ import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.amazonaws.services.s3.model.ObjectMetadata
 import com.amazonaws.auth.AWSCredentialsProvider
-
-// Joda-Time
-import org.joda.time.{DateTime, DateTimeZone}
-import org.joda.time.format.DateTimeFormat
 
 // This project
 import sinks._
@@ -84,7 +83,7 @@ class S3Emitter(
    * 10 seconds = 10 * 1000 = 10000
    */
   private val BackoffPeriod = 10000L
-  private val TstampFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(DateTimeZone.UTC)
+  private val TstampFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(ZoneOffset.UTC)
 
   /**
    * Period between retrying sending events to S3
@@ -114,12 +113,12 @@ class S3Emitter(
   /**
    * Returns an ISO valid timestamp
    *
-   * @param tstamp The Timestamp to convert
+   * @param tstamp The Timestamp to convert (milliseconds)
    * @return the formatted Timestamp
    */
   private def getTimestamp(tstamp: Long): String = {
-    val dt = new DateTime(tstamp)
-    TstampFormat.print(dt)
+    val dateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(tstamp), ZoneOffset.UTC)
+    TstampFormat.format(dateTime)
   }
 
   /**
@@ -163,7 +162,8 @@ class S3Emitter(
       sleep(BackoffPeriod)
 
     }
-    val connectionAttemptStartDateTime = new DateTime(connectionAttemptStartTime)
+    val connectionAttemptStartDateTime =
+      ZonedDateTime.ofInstant(Instant.ofEpochMilli(connectionAttemptStartTime), ZoneOffset.UTC)
     while (true) {
       if (attemptCount > 1 && System.currentTimeMillis() - connectionAttemptStartTime > maxConnectionTime)
         forceShutdown()

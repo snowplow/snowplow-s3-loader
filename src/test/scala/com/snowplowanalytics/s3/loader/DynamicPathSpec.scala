@@ -12,14 +12,14 @@
  */
 package com.snowplowanalytics.s3.loader
 
-import org.joda.time.DateTime
+import java.time.{Instant, ZoneOffset, ZonedDateTime}
 import org.specs2.mutable.Specification
 
 class DynamicPathSpec extends Specification {
 
   "DynamicPathSpec" should {
     val file = "bar.gz"
-    val time = new DateTime(100000)
+    val time = ZonedDateTime.ofInstant(Instant.ofEpochMilli(100000L), ZoneOffset.UTC)
 
     "correctly decorate Time formats with one time pattern" in {
       val path = s"something/{YYYY}/$file"
