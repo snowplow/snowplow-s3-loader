@@ -38,7 +38,6 @@ lazy val root = project.in(file("."))
       Dependencies.Libraries.jacksonCbor,
       // Scala
       Dependencies.Libraries.decline,
-      Dependencies.Libraries.config,
       Dependencies.Libraries.snowplowTracker,
       Dependencies.Libraries.pureconfig,
       // Scala (test only)
