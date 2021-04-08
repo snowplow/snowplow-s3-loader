@@ -35,8 +35,7 @@ object Dependencies {
     // Thrift (test only)
     val collectorPayload = "0.0.0"
     // Scala
-    val scopt           = "4.0.0"
-    val cats            = "2.3.0"
+    val decline         = "2.0.0"
     val snowplowTracker = "0.7.0"
     val pureconfig      = "0.14.0"
     val igluCore        = "1.0.0"
@@ -71,8 +70,7 @@ object Dependencies {
     // Thrift (test only)
     val collectorPayload = "com.snowplowanalytics"       %  "collector-payload-1"           % V.collectorPayload % "test"
     // Scala
-    val scopt            = "com.github.scopt"          %% "scopt"                     % V.scopt
-    val cats             = "org.typelevel"             %% "cats-core"                 % V.cats
+    val decline          = "com.monovore"              %% "decline"                   % V.decline
     val snowplowTracker  = "com.snowplowanalytics"     %% "snowplow-scala-tracker-emitter-id" % V.snowplowTracker
     val pureconfig       = "com.github.pureconfig"     %% "pureconfig"                % V.pureconfig
     // Scala (test only)
