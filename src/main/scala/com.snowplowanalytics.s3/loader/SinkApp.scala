@@ -13,10 +13,15 @@
 package com.snowplowanalytics.s3.loader
 
 // Java
-import java.io.File
+import java.nio.file.Path
 
 // Config
 import com.typesafe.config.ConfigFactory
+
+// Decline
+import com.monovore.decline._
+
+import cats.syntax.show._
 
 // Pureconfig
 import pureconfig._
@@ -26,31 +31,20 @@ import pureconfig.generic.auto._
 import model._
 
 /**
- * The entrypoint class for the Kinesis-S3 Sink applciation.
+ * The entrypoint class for the Kinesis-S3 Sink application.
  */
 object SinkApp {
 
-  private case class FileConfig(config: File)
-
   implicit def hint[T]: ProductHint[T] = ProductHint[T](ConfigFieldMapping(CamelCase, CamelCase))
+
+  val config = Opts.option[Path]("config", "Path to configuration HOCON file", "c", "filename")
+  val parser = Command(s"${generated.Settings.name}-${generated.Settings.version}", "Streaming sink app for S3")(config)
 
   def main(args: Array[String]): Unit = {
 
-    val parser = new scopt.OptionParser[FileConfig](generated.Settings.name) {
-      head(generated.Settings.name, generated.Settings.version)
-      opt[File]("config")
-        .required()
-        .valueName("<filename>")
-        .action((f: File, c: FileConfig) => c.copy(f))
-        .validate(f =>
-          if (f.exists) success
-          else failure(s"Configuration file $f does not exist")
-        )
-    }
-
-    parser.parse(args, FileConfig(new File("."))) match {
-      case Some(c) =>
-        val config = ConfigFactory.parseFile(c.config).resolve()
+    parser.parse(args.toList) match {
+      case Right(c) =>
+        val config = ConfigFactory.parseFile(c.toFile).resolve()
         ConfigSource.fromConfig(config).load[S3LoaderConfig] match {
           case Right(config) =>
             S3Loader.run(config)
@@ -58,8 +52,8 @@ object SinkApp {
             System.err.println(s"Configuration error: $e")
             System.exit(1)
         }
-      case None =>
-        System.err.println(s"No config provided")
+      case Left(error) =>
+        System.err.println(error.show)
         System.exit(1)
     }
   }
