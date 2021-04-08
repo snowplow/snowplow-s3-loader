@@ -14,8 +14,6 @@ package com.snowplowanalytics.s3.loader
 
 // Scala
 import scala.jdk.CollectionConverters._
-import scala.util.Try
-import scala.util.{Success => TrySuccess}
 
 // Java libs
 import java.time.format.DateTimeFormatter
@@ -31,16 +29,15 @@ import com.amazonaws.services.kinesis.connectors.interfaces.IEmitter
 // Tracker
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
 
-// Json4s
-import org.json4s.jackson.JsonMethods.parse
-
 // Iglu Core
 import com.snowplowanalytics.iglu.core._
-import com.snowplowanalytics.iglu.core.json4s.implicits._
+import com.snowplowanalytics.iglu.core.circe.implicits._
 
 // cats
-import cats.data.Validated
 import cats.Id
+import cats.data.Validated
+
+import io.circe.parser.parse
 
 // This project
 import sinks._
@@ -186,8 +183,8 @@ object KinesisS3Emitter {
     records.groupBy {
       case Validated.Valid(byteRecord) =>
         val strRecord = new String(byteRecord, "UTF-8")
-        Try(parse(strRecord)) match {
-          case TrySuccess(json) =>
+        parse(strRecord) match {
+          case Right(json) =>
             val schemaKey = SchemaKey.extract(json)
             schemaKey.fold(_ => RowType.Unpartitioned, k => RowType.SelfDescribing(k.vendor, k.name, k.format, k.version.model))
           case _ => RowType.Unpartitioned

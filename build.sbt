@@ -41,10 +41,8 @@ lazy val root = project.in(file("."))
       Dependencies.Libraries.scopt,
       Dependencies.Libraries.config,
       Dependencies.Libraries.cats,
-      Dependencies.Libraries.json4sJackson,
       Dependencies.Libraries.snowplowTracker,
       Dependencies.Libraries.pureconfig,
-      Dependencies.Libraries.igluCoreJson4s,
       // Scala (test only)
       Dependencies.Libraries.specs2,
       // Thrift (test only)

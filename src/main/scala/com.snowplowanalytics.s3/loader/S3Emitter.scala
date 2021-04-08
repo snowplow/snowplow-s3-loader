@@ -31,6 +31,9 @@ import org.slf4j.LoggerFactory
 // Tracker
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
 
+import io.circe._
+import io.circe.syntax._
+
 // cats
 import cats.data.Validated
 import cats.Id
@@ -41,10 +44,6 @@ import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.amazonaws.services.s3.model.ObjectMetadata
 import com.amazonaws.auth.AWSCredentialsProvider
-
-// json4s
-import org.json4s.jackson.JsonMethods._
-import org.json4s.JsonDSL._
 
 // Joda-Time
 import org.joda.time.{DateTime, DateTimeZone}
@@ -132,14 +131,13 @@ class S3Emitter(
     for (Validated.Invalid(record) <- records.asScala) {
       log.warn(s"Record failed: ${record.line}")
       log.info("Sending failed record to Kinesis")
-      val output = compact(
-        render(
-          ("line" -> record.line) ~
-            ("errors" -> record.errors) ~
-            ("failure_tstamp" -> getTimestamp(System.currentTimeMillis()))
+      val output = Json.obj(
+          "line" -> record.line.asJson,
+          "errors" -> record.errors.asJson,
+          "failure_tstamp" -> getTimestamp(System.currentTimeMillis()).asJson
         )
-      )
-      badSink.store(output, None, false)
+
+      badSink.store(output.noSpaces, None, false)
     }
 
   /**

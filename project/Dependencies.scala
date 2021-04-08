@@ -36,7 +36,6 @@ object Dependencies {
     val collectorPayload = "0.0.0"
     // Scala
     val scopt           = "4.0.0"
-    val json4s          = "3.6.10"
     val cats            = "2.3.0"
     val snowplowTracker = "0.7.0"
     val pureconfig      = "0.14.0"
@@ -51,12 +50,8 @@ object Dependencies {
     val log4jOverSlf4j   = "org.slf4j"                 %  "log4j-over-slf4j"          % V.slf4j
     val log4jCore        = "org.apache.logging.log4j"  %  "log4j-core"                % V.log4j
     val log4jApi         = "org.apache.logging.log4j"  %  "log4j-api"                 % V.log4j
-    val kinesisClient    = ("com.amazonaws"            %  "amazon-kinesis-client"     % V.kinesisClient)
-      .exclude("com.fasterxml.jackson.dataformat", "jackson-dataformat-cbor")
-    val kinesisConnector = ("com.amazonaws"            %  "amazon-kinesis-connectors" % V.kinesisConnector)
-      .exclude("com.fasterxml.jackson.dataformat", "jackson-dataformat-cbor")
-    // the kcl's version of jackson-dataformat-cbor is conflicting with json4s' jackson-core library.
-    // jackson-dataformat-cbor is excluded from kcl and compatible version is added as an dependency.
+    val kinesisClient    = "com.amazonaws"             %  "amazon-kinesis-client"     % V.kinesisClient
+    val kinesisConnector = "com.amazonaws"             %  "amazon-kinesis-connectors" % V.kinesisConnector
     val jacksonCbor      = "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor" % V.jacksonCbor
     val hadoop           = ("org.apache.hadoop"        %  "hadoop-common"             % V.hadoop)
       .exclude("org.slf4j", "slf4j-log4j12")
@@ -77,11 +72,9 @@ object Dependencies {
     val collectorPayload = "com.snowplowanalytics"       %  "collector-payload-1"           % V.collectorPayload % "test"
     // Scala
     val scopt            = "com.github.scopt"          %% "scopt"                     % V.scopt
-    val json4sJackson    = "org.json4s"                %% "json4s-jackson"            % V.json4s
     val cats             = "org.typelevel"             %% "cats-core"                 % V.cats
     val snowplowTracker  = "com.snowplowanalytics"     %% "snowplow-scala-tracker-emitter-id" % V.snowplowTracker
     val pureconfig       = "com.github.pureconfig"     %% "pureconfig"                % V.pureconfig
-    val igluCoreJson4s   = "com.snowplowanalytics"     %% "iglu-core-json4s"          % V.igluCore
     // Scala (test only)
     val specs2           = "org.specs2"                  %% "specs2-core"                   % V.specs2           % "test"
   }
