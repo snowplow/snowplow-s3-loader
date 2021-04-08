@@ -56,7 +56,7 @@ object BuildSettings {
     Docker / maintainer := "Snowplow Analytics Ltd. <support@snowplowanalytics.com>",
     Docker / daemonUser := "snowplow",
     Docker / packageName := "snowplow/snowplow-s3-loader",
-    dockerBaseImage := "snowplow-docker-registry.bintray.io/snowplow/base-debian:0.1.0",
+    dockerBaseImage := "snowplow/base-debian:0.2.2",
     dockerUpdateLatest := true,
     dockerCommands := {
       val installLzo = Seq(Cmd("RUN", "mkdir -p /var/lib/apt/lists/partial && apt-get update && apt-get install -y lzop && apt-get purge -y"))
