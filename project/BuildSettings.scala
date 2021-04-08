@@ -53,9 +53,9 @@ object BuildSettings {
   )
 
   lazy val dockerSettings = Seq(
-    maintainer in Docker := "Snowplow Analytics Ltd. <support@snowplowanalytics.com>",
-    daemonUser in Docker := "snowplow",
-    packageName in Docker := "snowplow/snowplow-s3-loader",
+    Docker / maintainer := "Snowplow Analytics Ltd. <support@snowplowanalytics.com>",
+    Docker / daemonUser := "snowplow",
+    Docker / packageName := "snowplow/snowplow-s3-loader",
     dockerBaseImage := "snowplow-docker-registry.bintray.io/snowplow/base-debian:0.1.0",
     dockerUpdateLatest := true,
     dockerCommands := {
@@ -72,8 +72,8 @@ object BuildSettings {
 
   // Makes our SBT app settings available from within the app
   lazy val scalifySettings = Seq(
-    sourceGenerators in Compile += Def.task {
-      val file = (sourceManaged in Compile).value / "settings.scala"
+    Compile / sourceGenerators += Def.task {
+      val file = (Compile / sourceManaged).value / "settings.scala"
       IO.write(file, """package com.snowplowanalytics.s3.loader.generated
         |object Settings {
         |  val organization = "%s"
@@ -90,14 +90,14 @@ object BuildSettings {
   // sbt-assembly settings for building a fat jar
   import sbtassembly.AssemblyPlugin.autoImport._
   lazy val sbtAssemblySettings = Seq(
-    assemblyJarName in assembly := { s"${name.value}-${version.value}.jar" },
-    assemblyMergeStrategy in assembly := {
+    assembly / assemblyJarName := { s"${name.value}-${version.value}.jar" },
+    assembly / assemblyMergeStrategy := {
       case PathList("javax", "servlet", xs @ _*)         => MergeStrategy.first
       case PathList("org", "objectweb", "asm", xs @ _*)  => MergeStrategy.first
       case PathList(ps @ _*) if ps.last endsWith ".html" => MergeStrategy.first
       case "application.conf"                            => MergeStrategy.concat
       case x =>
-        val oldStrategy = (assemblyMergeStrategy in assembly).value
+        val oldStrategy = (assembly / assemblyMergeStrategy).value
         oldStrategy(x)
     }
   )
@@ -106,8 +106,8 @@ object BuildSettings {
     coverageMinimum := 50,
     coverageFailOnMinimum := true,
     coverageHighlighting := false,
-    (test in Test) := {
-      (coverageReport dependsOn (test in Test)).value
+    (Test / test) := {
+      (coverageReport dependsOn (Test / test)).value
     }
   )
   lazy val formattingSettings = Seq(
