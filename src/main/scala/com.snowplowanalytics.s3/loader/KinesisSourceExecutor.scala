@@ -15,7 +15,10 @@ package com.snowplowanalytics.s3.loader
 // Logging
 import org.slf4j.LoggerFactory
 
+import java.time.Duration
+
 // AWS Kinesis Connector libs
+import com.amazonaws.services.kinesis.clientlibrary.lib.worker.SimpleRecordsFetcherFactory
 import com.amazonaws.services.kinesis.connectors.{
   KinesisConnectorConfiguration,
   KinesisConnectorExecutorBase,
@@ -23,6 +26,7 @@ import com.amazonaws.services.kinesis.connectors.{
 }
 
 // AWS Client Library
+import com.amazonaws.ClientConfiguration
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.KinesisClientLibConfiguration
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.Worker
 import com.amazonaws.services.kinesis.metrics.interfaces.IMetricsFactory
@@ -70,24 +74,42 @@ class KinesisSourceExecutor(
     timestamp: Option[Date],
     kcc: KinesisConnectorConfiguration
   ): KinesisClientLibConfiguration = {
-    val cfg = new KinesisClientLibConfiguration(kcc.APP_NAME, kcc.KINESIS_INPUT_STREAM, kcc.AWS_CREDENTIALS_PROVIDER, kcc.WORKER_ID)
-      .withKinesisEndpoint(kcc.KINESIS_ENDPOINT)
-      .withFailoverTimeMillis(kcc.FAILOVER_TIME)
-      .withMaxRecords(kcc.MAX_RECORDS)
-      .withIdleTimeBetweenReadsInMillis(kcc.IDLE_TIME_BETWEEN_READS)
-      .withCallProcessRecordsEvenForEmptyRecordList(KinesisConnectorConfiguration.DEFAULT_CALL_PROCESS_RECORDS_EVEN_FOR_EMPTY_LIST)
-      .withCleanupLeasesUponShardCompletion(kcc.CLEANUP_TERMINATED_SHARDS_BEFORE_EXPIRY)
-      .withParentShardPollIntervalMillis(kcc.PARENT_SHARD_POLL_INTERVAL)
-      .withShardSyncIntervalMillis(kcc.SHARD_SYNC_INTERVAL)
-      .withTaskBackoffTimeMillis(kcc.BACKOFF_INTERVAL)
-      .withMetricsBufferTimeMillis(kcc.CLOUDWATCH_BUFFER_TIME)
-      .withMetricsMaxQueueSize(kcc.CLOUDWATCH_MAX_QUEUE_SIZE)
-      .withUserAgent(
-        kcc.APP_NAME + ","
-          + kcc.CONNECTOR_DESTINATION + ","
-          + KinesisConnectorConfiguration.KINESIS_CONNECTOR_USER_AGENT
-      )
-      .withRegionName(kcc.REGION_NAME)
+
+    val cfg = new KinesisClientLibConfiguration(kcc.APP_NAME,
+      kcc.KINESIS_INPUT_STREAM,
+      kcc.KINESIS_ENDPOINT,
+      kcc.DYNAMODB_ENDPOINT,
+      kcc.INITIAL_POSITION_IN_STREAM,
+      kcc.AWS_CREDENTIALS_PROVIDER,
+      kcc.AWS_CREDENTIALS_PROVIDER,
+      kcc.AWS_CREDENTIALS_PROVIDER,
+      kcc.FAILOVER_TIME,
+      kcc.WORKER_ID,
+      kcc.MAX_RECORDS,
+      kcc.IDLE_TIME_BETWEEN_READS,
+      kcc.CALL_PROCESS_RECORDS_EVEN_FOR_EMPTY_LIST,
+      kcc.PARENT_SHARD_POLL_INTERVAL,
+      kcc.SHARD_SYNC_INTERVAL,
+      kcc.CLEANUP_TERMINATED_SHARDS_BEFORE_EXPIRY,
+      new ClientConfiguration,
+      new ClientConfiguration,
+      new ClientConfiguration,
+      KinesisClientLibConfiguration.DEFAULT_TASK_BACKOFF_TIME_MILLIS,  // taskBackoffTimeMillis
+      KinesisClientLibConfiguration.DEFAULT_METRICS_BUFFER_TIME_MILLIS, // metricsBufferTimeMillis
+      KinesisClientLibConfiguration.DEFAULT_METRICS_MAX_QUEUE_SIZE, // metricsMaxQueueSize
+      KinesisClientLibConfiguration.DEFAULT_VALIDATE_SEQUENCE_NUMBER_BEFORE_CHECKPOINTING, // validateSequenceNumberBeforeCheckpointing
+      kcc.REGION_NAME,
+      KinesisClientLibConfiguration.DEFAULT_SHUTDOWN_GRACE_MILLIS, // shutdownGraceMillis
+      KinesisClientLibConfiguration.DEFAULT_DDB_BILLING_MODE, // billingMode
+      new SimpleRecordsFetcherFactory, // recordsFetcherFactory
+      Duration.ofMinutes(1).toMillis,
+      Duration.ofMinutes(5).toMillis,
+      Duration.ofMinutes(30).toMillis
+    ).withUserAgent(
+      kcc.APP_NAME + ","
+        + kcc.CONNECTOR_DESTINATION + ","
+        + KinesisConnectorConfiguration.KINESIS_CONNECTOR_USER_AGENT
+    ).withCallProcessRecordsEvenForEmptyRecordList(KinesisConnectorConfiguration.DEFAULT_CALL_PROCESS_RECORDS_EVEN_FOR_EMPTY_LIST)
 
     timestamp
       .filter(_ => initialPosition == "AT_TIMESTAMP")
@@ -115,11 +137,13 @@ class KinesisSourceExecutor(
       )
 
     // If a metrics factory was specified, use it.
-    worker =
-      if (metricFactory != null)
-        new Worker(getKinesisConnectorRecordProcessorFactory(), kinesisClientLibConfiguration, metricFactory)
-      else
-        new Worker(getKinesisConnectorRecordProcessorFactory(), kinesisClientLibConfiguration)
+    worker = {
+      val init = (new Worker.Builder)
+        .recordProcessorFactory(getKinesisConnectorRecordProcessorFactory())
+        .config(kinesisClientLibConfiguration)
+      val builder = if (metricFactory != null) init.metricsFactory(metricFactory) else init
+      builder.build()
+    }
     LOG.info(getClass.getSimpleName + " worker created")
   }
 
