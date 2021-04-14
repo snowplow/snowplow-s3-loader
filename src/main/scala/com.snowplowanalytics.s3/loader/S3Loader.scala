@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory
 
 import com.snowplowanalytics.s3.loader.model.S3LoaderConfig
 import com.snowplowanalytics.s3.loader.serializers.{GZipSerializer, LzoSerializer}
-import com.snowplowanalytics.s3.loader.sinks.{KinesisSink, NsqSink}
+import com.snowplowanalytics.s3.loader.sinks.KinesisSink
 
 object S3Loader {
 
@@ -43,7 +43,6 @@ object S3Loader {
     val badSink = config.sink match {
       case "kinesis" =>
         new KinesisSink(credentials, kinesisSinkEndpoint, kinesisSinkRegion, kinesisSinkName, tracker, config.kinesis.disableCW)
-      case "nsq" => new NsqSink(config)
     }
 
     val serializer = config.s3.format match {
@@ -65,10 +64,6 @@ object S3Loader {
                                   tracker,
                                   config.kinesis.disableCW
         ).valid
-      // Read records from NSQ
-      case "nsq" =>
-        new NsqSourceExecutor(config, credentials, badSink, serializer, maxConnectionTime, tracker).valid
-
       case _ => s"Source must be set to kinesis' or 'NSQ'. Provided: ${config.source}".invalid
     }
 
@@ -79,16 +74,6 @@ object S3Loader {
           SnowplowTracking.initializeSnowplowTracking(t)
         }
         exec.run()
-
-        // If the stream cannot be found, the KCL's "cw-metrics-publisher" thread will prevent the
-        // application from exiting naturally so we explicitly call System.exit.
-        // This does not apply to NSQ because NSQ consumer is non-blocking and fall here
-        // right after consumer.start()
-        config.source match {
-          case "kinesis" => System.exit(1)
-          // do anything
-          case "nsq" =>
-        }
       }
     )
   }

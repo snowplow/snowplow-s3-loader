@@ -28,7 +28,6 @@ object Dependencies {
     val elephantbird     = "4.15"
     val hadoopLZO        = "0.4.20"
     val apacheCommons    = "3.2.1"
-    val nsqClient        = "1.1.0-rc1"
     val jackson          = "2.9.10.8"
     val jacksonCbor      = "2.9.10"
     // Thrift (test only)
@@ -64,7 +63,6 @@ object Dependencies {
       .exclude("com.hadoop.gplcompression", "hadoop-lzo")
     val hadoopLZO        = "com.snowplowanalytics"       %  "hadoop-lzo"                    % V.hadoopLZO
     val apacheCommons    = "org.apache.directory.studio" % "org.apache.commons.collections" % V.apacheCommons
-    val nsqClient        = "com.snowplowanalytics"       %  "nsq-java-client_2.10"          % V.nsqClient
     // Thrift (test only)
     val collectorPayload = "com.snowplowanalytics"       %  "collector-payload-1"           % V.collectorPayload % "test"
     // Scala
