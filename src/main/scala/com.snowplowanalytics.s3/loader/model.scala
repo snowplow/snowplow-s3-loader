@@ -27,12 +27,6 @@ import scala.util.Try
 package model {
 
   case class AWSConfig(accessKey: String, secretKey: String)
-  case class NSQConfig(
-    channelName: String,
-    host: String,
-    port: Int,
-    lookupPort: Int
-  )
   case class KinesisConfig(
     initialPosition: String,
     initialTimestamp: Option[String],
@@ -97,7 +91,6 @@ package model {
     source: String,
     sink: String,
     aws: AWSConfig,
-    nsq: NSQConfig,
     kinesis: KinesisConfig,
     streams: StreamsConfig,
     s3: S3Config,
