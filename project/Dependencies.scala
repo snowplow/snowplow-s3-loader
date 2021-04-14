@@ -34,6 +34,7 @@ object Dependencies {
     val collectorPayload = "0.0.0"
     // Scala
     val decline         = "2.0.0"
+    val circe           = "0.13.0"
     val snowplowTracker = "0.7.0"
     val pureconfig      = "0.14.1"
     val igluCore        = "1.0.0"
@@ -43,15 +44,15 @@ object Dependencies {
 
   object Libraries {
     // Java
-    val slf4j            = "org.slf4j"                 %  "slf4j-simple"              % V.slf4j
-    val log4jOverSlf4j   = "org.slf4j"                 %  "log4j-over-slf4j"          % V.slf4j
-    val log4jCore        = "org.apache.logging.log4j"  %  "log4j-core"                % V.log4j
-    val log4jApi         = "org.apache.logging.log4j"  %  "log4j-api"                 % V.log4j
-    val kinesisClient    = "com.amazonaws"             %  "amazon-kinesis-client"     % V.kinesisClient
-    val kinesisConnector = "com.amazonaws"             %  "amazon-kinesis-connectors" % V.kinesisConnector
-    val jacksonCbor      = "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor" % V.jacksonCbor
-    val jackson          = "com.fasterxml.jackson.core" % "jackson-databind"          % V.jackson
-    val hadoop           = ("org.apache.hadoop"        %  "hadoop-common"             % V.hadoop)
+    val slf4j            = "org.slf4j"                        %  "slf4j-simple"              % V.slf4j
+    val log4jOverSlf4j   = "org.slf4j"                        %  "log4j-over-slf4j"          % V.slf4j
+    val log4jCore        = "org.apache.logging.log4j"         %  "log4j-core"                % V.log4j
+    val log4jApi         = "org.apache.logging.log4j"         %  "log4j-api"                 % V.log4j
+    val kinesisClient    = "com.amazonaws"                    %  "amazon-kinesis-client"     % V.kinesisClient
+    val kinesisConnector = "com.amazonaws"                    %  "amazon-kinesis-connectors" % V.kinesisConnector
+    val jacksonCbor      = "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor"    % V.jacksonCbor
+    val jackson          = "com.fasterxml.jackson.core"       % "jackson-databind"           % V.jackson
+    val hadoop           = ("org.apache.hadoop"               %  "hadoop-common"             % V.hadoop)
       .exclude("org.slf4j", "slf4j-log4j12")
       .exclude("commons-beanutils", "commons-beanutils")
       .exclude("commons-beanutils", "commons-beanutils-core")
@@ -59,17 +60,18 @@ object Dependencies {
       .exclude("commons-logging", "commons-logging")
       .exclude("org.apache.htrace", "htrace-core")
       .exclude("junit", "junit")
-    val elephantbird     = ("com.twitter.elephantbird"   %  "elephant-bird-core"            % V.elephantbird)
+    val elephantbird     = ("com.twitter.elephantbird"        %  "elephant-bird-core"                % V.elephantbird)
       .exclude("com.hadoop.gplcompression", "hadoop-lzo")
-    val hadoopLZO        = "com.snowplowanalytics"       %  "hadoop-lzo"                    % V.hadoopLZO
-    val apacheCommons    = "org.apache.directory.studio" % "org.apache.commons.collections" % V.apacheCommons
-    // Thrift (test only)
-    val collectorPayload = "com.snowplowanalytics"       %  "collector-payload-1"           % V.collectorPayload % "test"
-    // Scala
-    val decline          = "com.monovore"              %% "decline"                   % V.decline
-    val snowplowTracker  = "com.snowplowanalytics"     %% "snowplow-scala-tracker-emitter-id" % V.snowplowTracker
-    val pureconfig       = "com.github.pureconfig"     %% "pureconfig"                % V.pureconfig
-    // Scala (test only)
-    val specs2           = "org.specs2"                  %% "specs2-core"                   % V.specs2           % "test"
+    val hadoopLZO        = "com.snowplowanalytics"            %  "hadoop-lzo"                        % V.hadoopLZO
+    val apacheCommons    = "org.apache.directory.studio"      % "org.apache.commons.collections"     % V.apacheCommons
+
+    val decline          = "com.monovore"                     %% "decline"                           % V.decline
+    val circe            = "io.circe"                         %% "circe-generic"                     % V.circe
+    val snowplowTracker  = "com.snowplowanalytics"            %% "snowplow-scala-tracker-emitter-id" % V.snowplowTracker
+    val pureconfig       = "com.github.pureconfig"            %% "pureconfig"                        % V.pureconfig
+    val pureconfigCirce  = "com.github.pureconfig"            %% "pureconfig-circe"                  % V.pureconfig
+
+    val specs2           = "org.specs2"                       %% "specs2-core"                       % V.specs2           % Test
+    val collectorPayload = "com.snowplowanalytics"            %  "collector-payload-1"               % V.collectorPayload % Test
   }
 }

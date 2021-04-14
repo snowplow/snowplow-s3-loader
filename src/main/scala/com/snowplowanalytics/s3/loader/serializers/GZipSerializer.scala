@@ -24,7 +24,7 @@ import java.util.zip.GZIPOutputStream
  * Object to handle ZIP compression of raw events
  */
 object GZipSerializer extends ISerializer {
-  def serialize(records: List[EmitterInput], baseFilename: String): SerializationResult = {
+  def serialize(records: List[EmitterInput], baseFilename: String): ISerializer.Result = {
     val outputStream = new ByteArrayOutputStream()
     val gzipOutputStream = new GZIPOutputStream(outputStream, 64 * 1024)
 
@@ -43,8 +43,8 @@ object GZipSerializer extends ISerializer {
 
     gzipOutputStream.close()
 
-    val namedStreams = List(NamedStream(s"$baseFilename.gz", outputStream))
+    val namedStreams = List(ISerializer.NamedStream(s"$baseFilename.gz", outputStream))
 
-    SerializationResult(namedStreams, results)
+    ISerializer.Result(namedStreams, results)
   }
 }

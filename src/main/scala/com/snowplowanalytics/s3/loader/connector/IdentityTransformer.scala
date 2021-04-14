@@ -10,37 +10,27 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.snowplowanalytics.s3.loader
+package com.snowplowanalytics.s3.loader.connector
 
-// AWS libs
 import com.amazonaws.services.kinesis.model.Record
+import com.snowplowanalytics.s3.loader.{EmitterInput, ValidatedRecord}
 
-// AWS Kinesis Connector libs
 import com.amazonaws.services.kinesis.connectors.interfaces.ITransformer
 
-// Thrift libs
-import org.apache.thrift.{TDeserializer, TSerializer}
-
-// SLF4j
 import org.slf4j.LoggerFactory
 
-// Scalaz
 import cats.syntax.validated._
 
-/**
- * Thrift serializer/deserializer class
- */
-class RawEventTransformer extends ITransformer[ValidatedRecord, EmitterInput] {
+/** No-op serializer */
+class IdentityTransformer extends ITransformer[ValidatedRecord, EmitterInput] {
 
   val log = LoggerFactory.getLogger(getClass)
 
-  lazy val serializer = new TSerializer()
-  lazy val deserializer = new TDeserializer()
-
-  override def toClass(record: Record): ValidatedRecord = {
+  def toClass(record: Record): ValidatedRecord = {
     log.debug(s"Converting record: [$record] to EmitterInput before adding it to the buffer")
     record.getData.array.valid
   }
 
-  override def fromClass(record: ValidatedRecord) = record
+  def fromClass(record: ValidatedRecord): ValidatedRecord =
+    record
 }
