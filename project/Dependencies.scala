@@ -29,7 +29,8 @@ object Dependencies {
     val hadoopLZO        = "0.4.20"
     val apacheCommons    = "3.2.1"
     val nsqClient        = "1.1.0-rc1"
-    val jacksonCbor      = "2.8.8"
+    val jackson          = "2.9.10.8"
+    val jacksonCbor      = "2.9.10"
     // Thrift (test only)
     val collectorPayload = "0.0.0"
     // Scala
@@ -50,6 +51,7 @@ object Dependencies {
     val kinesisClient    = "com.amazonaws"             %  "amazon-kinesis-client"     % V.kinesisClient
     val kinesisConnector = "com.amazonaws"             %  "amazon-kinesis-connectors" % V.kinesisConnector
     val jacksonCbor      = "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor" % V.jacksonCbor
+    val jackson          = "com.fasterxml.jackson.core" % "jackson-databind"          % V.jackson
     val hadoop           = ("org.apache.hadoop"        %  "hadoop-common"             % V.hadoop)
       .exclude("org.slf4j", "slf4j-log4j12")
       .exclude("commons-beanutils", "commons-beanutils")

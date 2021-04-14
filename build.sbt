@@ -35,6 +35,7 @@ lazy val root = project.in(file("."))
       Dependencies.Libraries.hadoopLZO,
       Dependencies.Libraries.apacheCommons,
       Dependencies.Libraries.nsqClient,
+      Dependencies.Libraries.jackson,
       Dependencies.Libraries.jacksonCbor,
       // Scala
       Dependencies.Libraries.decline,
