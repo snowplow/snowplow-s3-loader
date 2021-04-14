@@ -2,13 +2,11 @@
 
 # Sources currently supported are:
 # 'kinesis' for reading records from a Kinesis stream
-# 'nsq' for reading records from a NSQ topic
 source = "{{source}}"
 
 # Sink is used for sending events which processing failed.
 # Sinks currently supported are:
 # 'kinesis' for writing records to a Kinesis stream
-# 'nsq' for writing records to a NSQ topic
 sink = "{{sink}}"
 
 # The following are used to authenticate for the Amazon Kinesis sink.
@@ -19,23 +17,6 @@ sink = "{{sink}}"
 aws {
   accessKey = "iam"
   secretKey = "iam"
-}
-
-# Config for NSQ
-nsq {
-  # Channel name for NSQ source
-  # If more than one application reading from the same NSQ topic at the same time,
-  # all of them must have unique channel name for getting all the data from the same topic
-  channelName = "{{nsqSourceChannelName}}"
-    
-  # Host name for NSQ tools
-  host = "{{nsqHost}}"
-
-  # HTTP port for nsqd
-  port = {{nsqdPort}}
-
-  # HTTP port for nsqlookupd
-  lookupPort = {{nsqlookupdPort}}
 }
 
 kinesis {

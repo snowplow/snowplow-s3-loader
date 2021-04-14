@@ -16,7 +16,7 @@ lazy val root = project.in(file("."))
   .settings(
     name        := "snowplow-s3-loader",
     version     := "1.0.0",
-    description := "Load the contents of a Kinesis stream or NSQ topic to S3"
+    description := "Load the contents of a Kinesis stream topic to S3"
   )
   .settings(BuildSettings.buildSettings)
   .settings(BuildSettings.sbtAssemblySettings)
@@ -34,7 +34,6 @@ lazy val root = project.in(file("."))
       Dependencies.Libraries.elephantbird,
       Dependencies.Libraries.hadoopLZO,
       Dependencies.Libraries.apacheCommons,
-      Dependencies.Libraries.nsqClient,
       Dependencies.Libraries.jackson,
       Dependencies.Libraries.jacksonCbor,
       // Scala

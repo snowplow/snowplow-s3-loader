@@ -6,7 +6,7 @@
 
 ## Overview
 
-The Snowplow S3 Loader consumes records from an [Amazon Kinesis][kinesis] stream or [NSQ][nsq] topic, and writes them to S3.
+The Snowplow S3 Loader consumes records from an [Amazon Kinesis][kinesis] stream and writes them to S3.
 
 There are 2 file formats supported:
  * LZO
@@ -98,7 +98,6 @@ limitations under the License.
 [license]: http://www.apache.org/licenses/LICENSE-2.0
 
 [kinesis]: http://aws.amazon.com/kinesis/
-[nsq]: http://nsq.io/
 [snowplow]: http://snowplowanalytics.com
 [hadoop-lzo]: https://github.com/twitter/hadoop-lzo
 [protobufs]: https://github.com/google/protobuf/
