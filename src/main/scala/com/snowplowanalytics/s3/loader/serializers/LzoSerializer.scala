@@ -36,7 +36,7 @@ object LzoSerializer extends ISerializer {
   conf.set("io.compression.codecs", classOf[LzopCodec].getName)
   lzoCodec.setConf(conf)
 
-  def serialize(records: List[EmitterInput], baseFilename: String): SerializationResult = {
+  def serialize(records: List[EmitterInput], baseFilename: String): ISerializer.Result = {
 
     val indexOutputStream = new ByteArrayOutputStream()
     val outputStream = new ByteArrayOutputStream()
@@ -54,8 +54,8 @@ object LzoSerializer extends ISerializer {
 
     rawBlockWriter.close()
 
-    val namedStreams = List(NamedStream(s"$baseFilename.lzo", outputStream), NamedStream(s"$baseFilename.lzo.index", indexOutputStream))
+    val namedStreams = List(ISerializer.NamedStream(s"$baseFilename.lzo", outputStream), ISerializer.NamedStream(s"$baseFilename.lzo.index", indexOutputStream))
 
-    SerializationResult(namedStreams, results)
+    ISerializer.Result(namedStreams, results)
   }
 }

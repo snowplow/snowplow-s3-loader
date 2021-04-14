@@ -15,37 +15,23 @@ package com.snowplowanalytics.s3.loader
 // Java
 import java.nio.file.Path
 
-// Config
-import com.typesafe.config.ConfigFactory
-
 // Decline
 import com.monovore.decline._
 
 import cats.syntax.show._
 
-// Pureconfig
-import pureconfig._
-import pureconfig.generic.ProductHint
-import pureconfig.generic.auto._
-
-import model._
-
 /**
  * The entrypoint class for the Kinesis-S3 Sink application.
  */
-object SinkApp {
-
-  implicit def hint[T]: ProductHint[T] = ProductHint[T](ConfigFieldMapping(CamelCase, CamelCase))
+object Main {
 
   val config = Opts.option[Path]("config", "Path to configuration HOCON file", "c", "filename")
   val parser = Command(s"${generated.Settings.name}-${generated.Settings.version}", "Streaming sink app for S3")(config)
 
-  def main(args: Array[String]): Unit = {
-
+  def main(args: Array[String]): Unit =
     parser.parse(args.toList) match {
       case Right(c) =>
-        val config = ConfigFactory.parseFile(c.toFile).resolve()
-        ConfigSource.fromConfig(config).load[S3LoaderConfig] match {
+        Config.load(c) match {
           case Right(config) =>
             S3Loader.run(config)
           case Left(e) =>
@@ -56,5 +42,4 @@ object SinkApp {
         System.err.println(error.show)
         System.exit(1)
     }
-  }
 }

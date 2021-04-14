@@ -44,7 +44,7 @@ import com.snowplowanalytics.snowplow.scalatracker.emitters.id.AsyncEmitter
 import com.snowplowanalytics.snowplow.scalatracker.UUIDProvider
 
 // This project
-import model._
+import com.snowplowanalytics.s3.loader.Config._
 
 /**
  * Functionality for sending Snowplow events for monitoring purposes
@@ -60,7 +60,7 @@ object SnowplowTracking {
    * @param config The "monitoring" section of the HOCON
    * @return a new tracker instance
    */
-  def initializeTracker(config: SnowplowMonitoringConfig): Tracker[Id] = {
+  def initializeTracker(config: SnowplowMonitoring): Tracker[Id] = {
     implicit val clockProvider: Clock[Id] = new Clock[Id] {
       final def realTime(unit: TimeUnit): Id[Long] =
         unit.convert(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
@@ -116,7 +116,7 @@ object SnowplowTracking {
   def sendFailureEvent(
     tracker: Tracker[Id],
     lastRetryPeriod: Long,
-    failureCount: Long,
+    failureCount: Int,
     initialFailureTime: Long,
     message: String
   ): Unit =
@@ -131,7 +131,7 @@ object SnowplowTracking {
         Json.obj(
           ("lastRetryPeriod", Json.fromLong(lastRetryPeriod)),
           ("storage" -> Json.fromString(StorageType)),
-          ("failureCount" -> Json.fromLong(failureCount)),
+          ("failureCount" -> Json.fromInt(failureCount)),
           ("initialFailureTime" -> Json.fromLong(initialFailureTime)),
           ("message" -> Json.fromString(message))
         )

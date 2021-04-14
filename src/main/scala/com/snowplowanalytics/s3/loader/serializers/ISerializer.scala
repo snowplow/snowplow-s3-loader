@@ -28,19 +28,13 @@ import org.slf4j.LoggerFactory
 // Apache commons
 import org.apache.commons.codec.binary.Base64
 
-/** Pair of (file)name and its lazy content */
-case class NamedStream(filename: String, stream: ByteArrayOutputStream)
-
-/** Final list of created [[NamedStream]]s and rows being written */
-case class SerializationResult(namedStreams: List[NamedStream], results: List[EmitterInput])
-
 /**
  * Shared interface for all serializers
  */
 trait ISerializer {
-  def serialize(records: List[EmitterInput], baseFilename: String): SerializationResult
+  def serialize(records: List[EmitterInput], baseFilename: String): ISerializer.Result
 
-  val log = LoggerFactory.getLogger(getClass)
+  val logger = LoggerFactory.getLogger(getClass)
 
   def serializeRecord[T](
     record: RawRecord,
@@ -55,7 +49,16 @@ trait ISerializer {
         val base64Record = new String(Base64.encodeBase64(record), "UTF-8")
         FailedRecord(List(s"Error writing raw event to output stream: [$e]"), base64Record).invalid
       case NonFatal(e) =>
-        log.warn("Error writing raw event to output stream", e)
+        logger.warn("Error writing raw event to output stream", e)
         FailedRecord(List(s"Error writing raw event to output stream: [$e]"), "").invalid
     }
+}
+
+object ISerializer {
+
+  /** Pair of (file)name and its lazy content */
+  case class NamedStream(filename: String, stream: ByteArrayOutputStream)
+
+  /** Final list of created [[NamedStream]]s and rows being written */
+  case class Result(namedStreams: List[NamedStream], results: List[EmitterInput])
 }

@@ -10,13 +10,15 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.snowplowanalytics.s3.loader
-
-import java.time.LocalDateTime
+package com.snowplowanalytics.s3.loader.connector
 
 import cats.syntax.validated._
 
+import com.snowplowanalytics.s3.loader.{EmitterInput, FailedRecord, RowType}
+import com.snowplowanalytics.s3.loader.Config.{Format, S3}
+
 import org.specs2.mutable.Specification
+
 
 class KinesisS3EmitterSpec extends Specification {
   "KinesisS3Emitter" should {
@@ -26,25 +28,19 @@ class KinesisS3EmitterSpec extends Specification {
     val outputDirectory = "outputDirectory"
     val dateFormat = "{YYYY}/{MM}/{dd}/{HH}"
     val filenamePrefix = "fileNamePrefix"
-    val datetime = LocalDateTime.of(1970, 1, 1, 0, 0)
 
     "format file name with optional components" in {
-      val actual = KinesisS3Emitter.getBaseFilename(firstSeq,
-                                                    lastSeq,
-                                                    Some(outputDirectory),
-                                                    Some(partition),
-                                                    Some(dateFormat),
-                                                    Some(filenamePrefix),
-                                                    Some(datetime)
-      )
+      val s3Config = S3("eu-central-1", "no-bucket", None, Format.Gzip, 0L, Some(outputDirectory), None, Some(dateFormat), Some(filenamePrefix))
+      val actual = KinesisS3Emitter.getBaseFilename(s3Config, firstSeq, lastSeq)(Some(partition))
 
-      actual must beEqualTo(s"$outputDirectory/$partition/$dateFormat/$filenamePrefix-1970-01-01-000000-$firstSeq-$lastSeq")
+      actual.replaceAll("\\d{4}-\\d{2}-\\d{2}-\\d{6}", "2021-04-30-000000") must beEqualTo(s"$outputDirectory/$partition/$dateFormat/$filenamePrefix-2021-04-30-000000-$firstSeq-$lastSeq")
     }
 
     "format file name without optional components" in {
-      val actual = KinesisS3Emitter.getBaseFilename(firstSeq, lastSeq, None, None, None, None, Some(datetime))
+      val s3Config = S3("eu-central-1", "no-bucket", None, Format.Gzip, 0L, None, None, None, None)
+      val actual = KinesisS3Emitter.getBaseFilename(s3Config, firstSeq, lastSeq)(None)
 
-      actual must beEqualTo(s"1970-01-01-000000-$firstSeq-$lastSeq")
+      actual.replaceAll("\\d{4}-\\d{2}-\\d{2}-\\d{6}", "2021-04-30-000000") must beEqualTo(s"2021-04-30-000000-$firstSeq-$lastSeq")
     }
 
     "partition records correctly according to schema key" in {

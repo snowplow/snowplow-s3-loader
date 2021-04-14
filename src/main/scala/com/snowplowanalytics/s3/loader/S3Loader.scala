@@ -14,68 +14,71 @@ package com.snowplowanalytics.s3.loader
 
 import java.util.Properties
 
-import cats.syntax.validated._
-
 import com.amazonaws.auth.AWSCredentialsProvider
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
+import com.amazonaws.metrics.RequestMetricCollector
+import com.amazonaws.services.kinesis.AmazonKinesisClientBuilder
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration
 
 import org.slf4j.LoggerFactory
 
-import com.snowplowanalytics.s3.loader.model.S3LoaderConfig
+import com.snowplowanalytics.s3.loader.Config.{Format, Sink, Source}
+import com.snowplowanalytics.s3.loader.connector.KinesisSourceExecutor
 import com.snowplowanalytics.s3.loader.serializers.{GZipSerializer, LzoSerializer}
-import com.snowplowanalytics.s3.loader.sinks.KinesisSink
 
 object S3Loader {
 
-  val log = LoggerFactory.getLogger(getClass)
+  val logger = LoggerFactory.getLogger(getClass)
 
-  def run(config: S3LoaderConfig): Unit = {
+  def run(config: Config): Unit = {
     val tracker = config.monitoring.map(e => SnowplowTracking.initializeTracker(e.snowplow))
-    val maxConnectionTime = config.s3.maxTimeout
 
-    // TODO: make the conf file more like the Elasticsearch equivalent
-    val kinesisSinkRegion = config.kinesis.region
-    val kinesisSinkEndpoint = config.kinesis.endpoint
-    val kinesisSinkName = config.streams.outStreamName
+    val provider = CredentialsLookup.getCredentialsProvider(config.aws.accessKey, config.aws.secretKey)
 
-    val credentials = CredentialsLookup.getCredentialsProvider(config.aws.accessKey, config.aws.secretKey)
-
+    // A sink for records that could not be emitted to S3
     val badSink = config.sink match {
-      case "kinesis" =>
-        new KinesisSink(credentials, kinesisSinkEndpoint, kinesisSinkRegion, kinesisSinkName, tracker, config.kinesis.disableCW)
+      case Sink.Kinesis =>
+        val endpoint = new EndpointConfiguration(config.kinesis.endpoint, config.kinesis.region)
+        val client =
+          if (config.kinesis.disableCW)
+            AmazonKinesisClientBuilder
+              .standard()
+              .withCredentials(provider)
+              .withEndpointConfiguration(endpoint)
+              .withMetricsCollector(RequestMetricCollector.NONE)
+              .build()
+          else
+            AmazonKinesisClientBuilder
+              .standard()
+              .withCredentials(provider)
+              .withEndpointConfiguration(endpoint)
+              .build()
+
+        new KinesisSink(client, config.streams.outStreamName)
     }
 
     val serializer = config.s3.format match {
-      case "lzo" => LzoSerializer
-      case "gzip" => GZipSerializer
-      case _ => throw new IllegalArgumentException("Invalid serializer. Check s3.format key in configuration file")
+      case Format.Lzo => LzoSerializer
+      case Format.Gzip => GZipSerializer
     }
 
     val executor = config.source match {
-      // Read records from Kinesis
-      case "kinesis" =>
-        new KinesisSourceExecutor(convertConfig(config, credentials),
-                                  config.kinesis.initialPosition,
-                                  config.kinesis.timestamp,
-                                  config.s3,
-                                  badSink,
-                                  serializer,
-                                  maxConnectionTime,
-                                  tracker,
-                                  config.kinesis.disableCW
-        ).valid
-      case _ => s"Source must be set to kinesis' or 'NSQ'. Provided: ${config.source}".invalid
+      case Source.Kinesis =>
+        new KinesisSourceExecutor(convertConfig(config, provider),
+          config.kinesis.initialPosition,
+          config.s3,
+          badSink,
+          serializer,
+          config.s3.maxTimeout,
+          tracker,
+          config.kinesis.disableCW
+        )
     }
 
-    executor.fold(
-      err => throw new IllegalArgumentException(err),
-      exec => {
-        tracker foreach { t =>
-          SnowplowTracking.initializeSnowplowTracking(t)
-        }
-        exec.run()
-      }
-    )
+    tracker.foreach { t =>
+      SnowplowTracking.initializeSnowplowTracking(t)
+    }
+    executor.run()
   }
 
   /**
@@ -85,13 +88,13 @@ object S3Loader {
    * @param conf The configuration HOCON
    * @return A KinesisConnectorConfiguration
    */
-  def convertConfig(conf: S3LoaderConfig, credentials: AWSCredentialsProvider): KinesisConnectorConfiguration = {
+  def convertConfig(conf: Config, credentials: AWSCredentialsProvider): KinesisConnectorConfiguration = {
     val props = new Properties()
 
     props.setProperty(KinesisConnectorConfiguration.PROP_KINESIS_INPUT_STREAM, conf.streams.inStreamName)
     props.setProperty(KinesisConnectorConfiguration.PROP_KINESIS_ENDPOINT, conf.kinesis.endpoint)
     props.setProperty(KinesisConnectorConfiguration.PROP_APP_NAME, conf.kinesis.appName)
-    props.setProperty(KinesisConnectorConfiguration.PROP_INITIAL_POSITION_IN_STREAM, conf.kinesis.initialPosition)
+    props.setProperty(KinesisConnectorConfiguration.PROP_INITIAL_POSITION_IN_STREAM, conf.kinesis.initialPosition.toKCL.toString)
 
     props.setProperty(KinesisConnectorConfiguration.PROP_S3_ENDPOINT, conf.s3.endpoint)
     props.setProperty(KinesisConnectorConfiguration.PROP_S3_BUCKET, conf.s3.bucket)
@@ -110,7 +113,7 @@ object S3Loader {
 
     props.setProperty(KinesisConnectorConfiguration.PROP_MAX_RECORDS, conf.kinesis.maxRecords.toString)
 
-    log.info(s"Initializing sink with KinesisConnectorConfiguration: $props")
+    logger.info(s"Initializing sink with KinesisConnectorConfiguration: $props")
 
     new KinesisConnectorConfiguration(props, credentials)
   }
