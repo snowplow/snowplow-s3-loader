@@ -24,7 +24,7 @@ object Dependencies {
     val log4j            = "2.14.0"
     val kinesisClient    = "1.14.2"
     val kinesisConnector = "1.3.0"
-    val hadoop           = "2.7.3"
+    val hadoop           = "2.7.7"
     val elephantbird     = "4.15"
     val hadoopLZO        = "0.4.20"
     val apacheCommons    = "3.2.1"

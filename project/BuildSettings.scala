@@ -94,6 +94,8 @@ object BuildSettings {
     assembly / assemblyMergeStrategy := {
       case PathList("javax", "servlet", xs @ _*)         => MergeStrategy.first
       case PathList("org", "objectweb", "asm", xs @ _*)  => MergeStrategy.first
+      case PathList("org", "objectweb", "asm", xs @ _*)  => MergeStrategy.first
+      case PathList("org", "apache", "log4j", _*)        => MergeStrategy.last  // handled by log4j-over-slf4j
       case PathList(ps @ _*) if ps.last endsWith ".html" => MergeStrategy.first
       case "application.conf"                            => MergeStrategy.concat
       case x =>
