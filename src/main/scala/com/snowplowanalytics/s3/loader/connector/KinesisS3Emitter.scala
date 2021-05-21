@@ -26,24 +26,18 @@ import com.amazonaws.services.s3.model.{ObjectMetadata, PutObjectRequest}
 import com.amazonaws.services.kinesis.connectors.UnmodifiableBuffer
 import com.amazonaws.services.kinesis.connectors.interfaces.IEmitter
 
-import cats.Id
 import cats.data.Validated
 import cats.implicits._
 
 import io.circe.Json
-import io.circe.parser.parse
 import io.circe.syntax._
 
-import com.snowplowanalytics.iglu.core._
-import com.snowplowanalytics.iglu.core.circe.implicits._
-
-import com.snowplowanalytics.snowplow.scalatracker.Tracker
-
-// This project
-import com.snowplowanalytics.s3.loader.{KinesisSink, DynamicPath, EmitterInput, RowType, SnowplowTracking}
+import com.snowplowanalytics.s3.loader.{DynamicPath, EmitterInput, KinesisSink}
+import com.snowplowanalytics.s3.loader.monitoring.{Monitoring, SnowplowTracking}
 import com.snowplowanalytics.s3.loader.Config.{Output, Purpose, S3Output}
 import com.snowplowanalytics.s3.loader.serializers.ISerializer
 import com.snowplowanalytics.s3.loader.connector.KinesisS3Emitter._
+import com.snowplowanalytics.s3.loader.processing.{Common, RowType}
 
 /**
  * Emitter for flushing Kinesis event data to S3.
@@ -51,7 +45,7 @@ import com.snowplowanalytics.s3.loader.connector.KinesisS3Emitter._
  * Once the buffer is full, the emit function is called.
  */
 class KinesisS3Emitter(client: AmazonS3,
-                       tracker: Option[Tracker[Id]],
+                       monitoring: Monitoring,
                        purpose: Purpose,
                        output: Output,
                        badSink: KinesisSink,
@@ -72,22 +66,18 @@ class KinesisS3Emitter(client: AmazonS3,
     logger.info(s"Flushing buffer with ${buffer.getRecords.size} records.")
 
     val records = buffer.getRecords.asScala.toList
-
-    val partitions = purpose match {
-      case Purpose.SelfDescribingJson =>
-        partitionByType(records).toList
-      case _ =>
-        List((RowType.Unpartitioned, records))
-    }
+    val partitionedBatch = Common.partition(purpose, monitoring.isStatsDEnabled, records)
 
     val getBase: Option[String] => String =
       getBaseFilename(output.s3, buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber)
+    val afterEmit: () => Unit =
+      () => monitoring.report(partitionedBatch.meta)
 
-    partitions.flatMap {
+    partitionedBatch.data.flatMap {
       case (RowType.Unpartitioned, partitionRecords) if partitionRecords.nonEmpty =>
-        emitRecords(partitionRecords, output.s3.path, getBase(None))
+        emitRecords(partitionRecords, output.s3.path, afterEmit, getBase(None))
       case (data: RowType.SelfDescribing, partitionRecords) if partitionRecords.nonEmpty =>
-        emitRecords(partitionRecords, output.s3.path, getBase(Some(data.partition)))
+        emitRecords(partitionRecords, output.s3.path, afterEmit, getBase(Some(data.partition)))
       case _ =>
         records // ReadingError or empty partition - should be handled later by serializer
     }.asJava
@@ -125,12 +115,13 @@ class KinesisS3Emitter(client: AmazonS3,
    * @param bucket where data will be written
    * @param stream stream of rows with filename
    * @param now connection attempt start time
+   * @param callback a procedure to execute after successful emit, e.g. reporting
    * @return success status of sending to S3
    */
-  def attemptEmit(bucket: String, stream: ISerializer.NamedStream, now: Long): Unit = {
+  def attemptEmit(bucket: String, stream: ISerializer.NamedStream, now: Long, callback: () => Unit): Unit = {
     def logAndSleep(attempt: Int, e: Throwable): Unit = {
       logger.error(s"An exception during putting ${stream.filename} object to S3, attempt $attempt", e)
-      tracker.foreach { t =>
+      monitoring.viaSnowplow { t =>
         SnowplowTracking.sendFailureEvent(t, BackoffPeriod, attempt, now, e.toString)
       }
       sleep(BackoffPeriod)
@@ -143,7 +134,7 @@ class KinesisS3Emitter(client: AmazonS3,
       else {
         val request = getRequest(bucket, stream, now)
         Either.catchNonFatal(client.putObject(request)) match {
-          case Right(_) => ()
+          case Right(_) => callback()
           case Left(error) =>
             logAndSleep(attempt, error)
             go(attempt + 1)
@@ -160,7 +151,7 @@ class KinesisS3Emitter(client: AmazonS3,
    * @param baseFilename final filename
    * @return list of records that could not be emitted
    */
-  def emitRecords(records: List[EmitterInput], bucket: String, baseFilename: String): List[EmitterInput] = {
+  def emitRecords(records: List[EmitterInput], bucket: String, callback: () => Unit, baseFilename: String): List[EmitterInput] = {
     val serializationResults = serializer.serialize(records, baseFilename)
     val (successes, failures) = serializationResults.results.partition(_.isValid)
     val successSize = successes.size
@@ -169,7 +160,7 @@ class KinesisS3Emitter(client: AmazonS3,
 
     if (successSize > 0)
       serializationResults.namedStreams.foreach { stream =>
-        attemptEmit(output.s3.bucketName, stream, System.currentTimeMillis())
+        attemptEmit(output.s3.bucketName, stream, System.currentTimeMillis(), callback)
       }
 
     failures
@@ -182,7 +173,7 @@ class KinesisS3Emitter(client: AmazonS3,
    */
   private def forceShutdown(): Unit = {
     logger.error(s"Shutting down application as unable to connect to S3")
-    tracker.foreach { t =>
+    monitoring.viaSnowplow { t =>
       SnowplowTracking.trackApplicationShutdown(t)
       sleep(5000)
     }
@@ -241,24 +232,6 @@ object KinesisS3Emitter {
 
     DynamicPath.normalize(fullPath)
   }
-
-  /**
-   * Assume records are self describing data and group them according
-   * to their schema key. Put records which are not self describing data
-   * to under "old bad row type".
-   */
-  private[loader] def partitionByType(records: List[EmitterInput]): Map[RowType, List[EmitterInput]] =
-    records.groupBy {
-      case Validated.Valid(byteRecord) =>
-        val strRecord = new String(byteRecord, "UTF-8")
-        parse(strRecord) match {
-          case Right(json) =>
-            val schemaKey = SchemaKey.extract(json)
-            schemaKey.fold(_ => RowType.Unpartitioned, k => RowType.SelfDescribing(k.vendor, k.name, k.format, k.version.model))
-          case _ => RowType.Unpartitioned
-        }
-      case _ => RowType.ReadingError
-    }
 
   /**
    * Returns an ISO valid timestamp

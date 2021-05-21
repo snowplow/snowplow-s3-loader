@@ -4,6 +4,7 @@
 
   # Options are: RAW, ENRICHED_EVENTS, JSON
   # RAW simply sinks data 1:1
+  # ENRICHED_EVENTS work with monitoring.statsd to report metrics (identical to RAW otherwise)
   # SELF_DESCRIBING partitions self-describing data (such as JSON) by its schema
   "purpose": "RAW",
 

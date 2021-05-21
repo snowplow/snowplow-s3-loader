@@ -16,9 +16,11 @@
  * See the Apache License Version 2.0 for the specific language
  * governing permissions and limitations there under.
  */
-package com.snowplowanalytics.s3.loader
+package com.snowplowanalytics.s3.loader.monitoring
 
 // Scala
+import com.snowplowanalytics.s3.loader.generated
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 // circe
@@ -32,16 +34,15 @@ import cats.data.NonEmptyList
 import cats.effect.Clock
 
 // Java
-import java.util.concurrent.TimeUnit
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 // Iglu
 import com.snowplowanalytics.iglu.core.{SchemaKey, SchemaVer, SelfDescribingData}
 
 // Tracker
-import com.snowplowanalytics.snowplow.scalatracker.Tracker
+import com.snowplowanalytics.snowplow.scalatracker.{Tracker, UUIDProvider}
 import com.snowplowanalytics.snowplow.scalatracker.emitters.id.AsyncEmitter
-import com.snowplowanalytics.snowplow.scalatracker.UUIDProvider
 
 // This project
 import com.snowplowanalytics.s3.loader.Config._
