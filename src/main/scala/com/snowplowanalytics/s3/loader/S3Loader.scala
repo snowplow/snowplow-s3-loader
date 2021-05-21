@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory
 
 import com.snowplowanalytics.s3.loader.Config.Compression
 import com.snowplowanalytics.s3.loader.connector.KinesisSourceExecutor
+import com.snowplowanalytics.s3.loader.monitoring.Monitoring
 import com.snowplowanalytics.s3.loader.serializers.{GZipSerializer, LzoSerializer}
 
 object S3Loader {
@@ -28,7 +29,7 @@ object S3Loader {
   val logger = LoggerFactory.getLogger(getClass)
 
   def run(config: Config): Unit = {
-    val tracker = config.monitoring.flatMap(_.snowplow.map(SnowplowTracking.initializeTracker))
+    val monitoring = Monitoring.build(config.monitoring)
 
     // A sink for records that could not be emitted to S3
     val badSink = KinesisSink.build(config)
@@ -47,13 +48,11 @@ object S3Loader {
         config.output,
         badSink,
         serializer,
-        tracker,
+        monitoring,
         config.monitoring.flatMap(_.metrics.flatMap(_.cloudWatch)).getOrElse(false)
       )
 
-    tracker.foreach { t =>
-      SnowplowTracking.initializeSnowplowTracking(t)
-    }
+    monitoring.initTracking()
     executor.run()
   }
 

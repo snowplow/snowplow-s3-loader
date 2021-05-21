@@ -27,13 +27,8 @@ import com.amazonaws.services.kinesis.clientlibrary.lib.worker.{KinesisClientLib
 import com.amazonaws.services.kinesis.metrics.impl.NullMetricsFactory
 import com.amazonaws.services.kinesis.metrics.interfaces.IMetricsFactory
 
-// Tracker
-import com.snowplowanalytics.snowplow.scalatracker.Tracker
-
-// cats
-import cats.Id
-
 import com.snowplowanalytics.s3.loader.{EmitterInput, KinesisSink, ValidatedRecord}
+import com.snowplowanalytics.s3.loader.monitoring.Monitoring
 import com.snowplowanalytics.s3.loader.Config.{InitialPosition, Output, Purpose}
 import com.snowplowanalytics.s3.loader.serializers.ISerializer
 
@@ -48,7 +43,7 @@ class KinesisSourceExecutor(region: Option[String],
                             output: Output,
                             badSink: KinesisSink,
                             serializer: ISerializer,
-                            tracker: Option[Tracker[Id]],
+                            monitoring: Monitoring,
                             enableCloudWatch: Boolean
 ) extends KinesisConnectorExecutorBase[ValidatedRecord, EmitterInput] {
 
@@ -133,7 +128,7 @@ class KinesisSourceExecutor(region: Option[String],
 
   def getKinesisConnectorRecordProcessorFactory = {
     val client = KinesisS3Pipeline.buildS3Client(region, output.s3.customEndpoint)
-    val pipeline = new KinesisS3Pipeline(client, purpose, output, badSink, serializer, tracker)
+    val pipeline = new KinesisS3Pipeline(client, purpose, output, badSink, serializer, monitoring)
     new KinesisConnectorRecordProcessorFactory[ValidatedRecord, EmitterInput](pipeline, config)
   }
 }
