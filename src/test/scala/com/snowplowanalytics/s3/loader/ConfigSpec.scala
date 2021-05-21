@@ -12,71 +12,94 @@
  */
 package com.snowplowanalytics.s3.loader
 
+import java.net.URI
+import java.nio.file.Paths
+
 import com.typesafe.config.ConfigFactory
-import org.specs2.mutable.Specification
+
 import pureconfig.ConfigSource
+
+import org.specs2.mutable.Specification
+
+import com.snowplowanalytics.s3.loader.Config.{Compression, InitialPosition, Purpose, S3Output}
 
 class ConfigSpec extends Specification {
   "Config" should {
     "be parsed from a string" in {
-      val config = ConfigFactory.parseString("""
-        source = "kinesis"
+      val config = ConfigFactory.parseString("""{
+        "region": "eu-central-1",
+        "purpose": "raw",
 
-        sink = "kinesis"
+        "input": {
+            "appName": "acme-s3-loader",
+            "streamName": "enriched-events",
+            "position": "LATEST",
+            "maxRecords": 10
+        },
 
-        aws {
-          accessKey = "default"
-          secretKey = "default"
+        "output": {
+            "s3": {
+                "path": "s3://s3-loader-integration-test/usual",
+
+                "outputDirectory": "subdirectory",
+                "dateFormat": "%Y-%M-%d",
+                "filenamePrefix": "pre",
+
+                "maxTimeout": 2000,
+                "compression": "gzip"
+            },
+
+            "badStreamName": "stream-name"
+        },
+
+        "buffer": {
+            "byteLimit": 2048,
+            "recordLimit": 10,
+            "timeLimit": 5000
+        },
+
+        "monitoring": {
+            "snowplow": {
+                "collector": "http://snplow.acme.ru",
+                "appId": "angry-birds"
+            },
         }
-
-        kinesis {
-          initialPosition = "TRIM_HORIZON"
-          maxRecords = 5
-          region = "eu-central-1"
-          appName = "s3-loader-integration-test"
-        }
-
-        streams {
-          inStreamName = "s3-loader-integration-test"
-          outStreamName = "s3-loader-integration-test-failures"
-
-          buffer {
-            byteLimit = 2048
-            recordLimit = 10
-            timeLimit = 5000
-          }
-        }
-
-        s3 {
-          region = "eu-central-1"
-          bucket = "s3-loader-integration-test/usual"
-          bucketJson = "s3-loader-integration-test/partitioned"
-          format = "gzip"
-          maxTimeout = 2000
-        }
-
-        monitoring {
-          snowplow {
-            collectorUri = "http://snplow.acme.ru"
-            collectorPort = 80
-            appId = "s3"
-            method = "POST"
-          }
-        }""")
+    }""")
 
       val expected = Config(
-        Config.Source.Kinesis,
-        Config.Sink.Kinesis,
-        Config.AWS("default","default"),
-        Config.Kinesis(Config.InitialPosition.TrimHorizon,5,"eu-central-1","s3-loader-integration-test",None,None),
-        Config.StreamsConfig("s3-loader-integration-test","s3-loader-integration-test-failures",Config.Buffer(2048,10,5000)),
-        Config.S3("eu-central-1","s3-loader-integration-test/usual",None,Config.Format.Gzip,2000,None,None,None,None),
-        Some(Config.Monitoring(Config.SnowplowMonitoring("http://snplow.acme.ru",80,"s3","POST")))
+        Some("eu-central-1"),
+        Purpose.Raw,
+        Config.Input("acme-s3-loader", "enriched-events", InitialPosition.Latest, None, 10),
+        Config.Output(S3Output("s3://s3-loader-integration-test/usual", Some("%Y-%M-%d"), Some("pre"), Compression.Gzip, 2000, None), "stream-name"),
+        Config.Buffer(2048L, 10L, 5000L),
+        Some(
+          Config.Monitoring(
+            Some(
+              Config.SnowplowMonitoring(URI.create("http://snplow.acme.ru"), "angry-birds")
+            ),
+            None
+          )
+        )
       )
 
       val result = ConfigSource.fromConfig(config).load[Config]
 
       result must beRight(expected)
+    }
+
+    "be parsed from an example file" in {
+      val configPath = Paths.get(getClass.getResource("/config.hocon.sample").toURI)
+
+      val expected = Config(
+        Some("eu-central-1"),
+        Purpose.Raw,
+        Config.Input("acme-s3-loader", "raw-events", InitialPosition.Latest, None, 10),
+        Config.Output(S3Output("s3://acme-snowplow-output/raw/", Some("%Y-%M-%d"), Some("pre"), Compression.Gzip, 2000, None), "stream-name"),
+        Config.Buffer(2048L, 10L, 5000L),
+        Some(Config.Monitoring(Some(Config.SnowplowMonitoring(URI.create("http://snplow.acme.ru:80"), "angry-birds")), Some(Config.Metrics(Some(false)))))
+      )
+
+      Config.load(configPath) must beRight(expected)
     }
   }
 }

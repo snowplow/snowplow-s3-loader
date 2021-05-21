@@ -52,6 +52,13 @@ object BuildSettings {
     "-Xlint:adapted-args"
   )
 
+  /** Add example config for integration tests */
+  lazy val addExampleConfToTestCp = Seq(
+    Test / unmanagedClasspath += {
+      baseDirectory.value / "config"
+    }
+  )
+
   lazy val dockerSettings = Seq(
     Docker / maintainer := "Snowplow Analytics Ltd. <support@snowplowanalytics.com>",
     Docker / daemonUser := "snowplow",
