@@ -40,7 +40,6 @@ class ConfigSpec extends Specification {
             "s3": {
                 "path": "s3://s3-loader-integration-test/usual",
 
-                "outputDirectory": "subdirectory",
                 "dateFormat": "%Y-%M-%d",
                 "filenamePrefix": "pre",
 
@@ -90,7 +89,7 @@ class ConfigSpec extends Specification {
         Config.Input("acme-s3-loader", "raw-events", InitialPosition.Latest, None, 10),
         Config.Output(S3Output("s3://acme-snowplow-output/raw/", Some("%Y-%M-%d"), Some("pre"), Format.Gzip, 2000, None), "stream-name"),
         Config.Buffer(2048L, 10L, 5000L),
-        Some(Config.Monitoring(Some(Config.SnowplowMonitoring("snplow.acme.ru",80,"angry-birds","POST")), Some(Config.Metrics(Some(false)))))
+        Some(Config.Monitoring(Some(Config.SnowplowMonitoring("snplow.acme.ru",80,"angry-birds","POST")), Some(Config.Metrics(Some(false), None))))
       )
 
       Config.load(configPath) must beRight(expected)

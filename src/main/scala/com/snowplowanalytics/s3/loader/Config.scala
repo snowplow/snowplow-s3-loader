@@ -47,6 +47,8 @@ case class Config(region: Option[String],
 
 object Config {
 
+  val DefaultStatsDPrefix = "snowplow.s3loader"
+
   implicit def hint[T]: ProductHint[T] = ProductHint[T](ConfigFieldMapping(CamelCase, CamelCase))
 
   def load(path: Path): Either[String, Config] =
@@ -68,7 +70,7 @@ object Config {
     }
   }
   object InitialPosition {
-    case class AtTimestamp(tstamp: Date) extends InitialPosition
+    final case class AtTimestamp(tstamp: Date) extends InitialPosition
     case object TrimHorizon extends InitialPosition
     case object Latest extends InitialPosition
 
@@ -111,11 +113,14 @@ object Config {
     case object Raw extends Purpose
     /** Self-describing JSONs, such as Snowplow bad rows, allowing partitioning */
     case object SelfDescribingJson extends Purpose
+    /** Snowplow Enriched events, resulting into enabled metrics */
+    case object Enriched extends Purpose
 
-    implicit def outputTypeDecoder: Decoder[Purpose] =
+    implicit def purposeDecoder: Decoder[Purpose] =
       Decoder[String].map(_.toLowerCase).emap {
         case "raw" => Raw.asRight
         case "json" => SelfDescribingJson.asRight
+        case "enriched_events" => Enriched.asRight
         case other => s"Cannot parse $other into supported output type".asLeft
       }
   }
@@ -160,23 +165,25 @@ object Config {
       }
   }
 
-  case class Buffer(byteLimit: Long,
+  final case class Buffer(byteLimit: Long,
                     recordLimit: Long,
                     timeLimit: Long)
 
-  case class Logging(level: String)
+  final case class Logging(level: String)
 
-  case class SnowplowMonitoring(host: String,
+  final case class SnowplowMonitoring(host: String,
                                 port: Int,
                                 appId: String,
                                 method: String)
+
+  final case class StatsD(hostname: String, port: Int, tags: Map[String, String], prefix: Option[String])
 
   /**
    * Different metrics services
    * @param cloudWatch embedded into Kinesis Connector lib, CWMetricsFactory
    *                   not recommended to use
    */
-  case class Metrics(cloudWatch: Option[Boolean])
+  case class Metrics(cloudWatch: Option[Boolean], statsd: Option[StatsD])
 
   /**
    * Monitoring configuration
@@ -184,7 +191,6 @@ object Config {
    * @param metrics metrics services
    */
   case class Monitoring(snowplow: Option[SnowplowMonitoring], metrics: Option[Metrics])
-
 
   implicit def inputConfigDecoder: Decoder[Input] =
     deriveDecoder[Input]
@@ -206,6 +212,9 @@ object Config {
 
   implicit def snowplowMonitoringConfigDecoder: Decoder[SnowplowMonitoring] =
     deriveDecoder[SnowplowMonitoring]
+
+  implicit def statsdConfigDecoder: Decoder[StatsD] =
+    deriveDecoder[StatsD]
 
   implicit def monitoringConfigDecoder: Decoder[Monitoring] =
     deriveDecoder[Monitoring]
