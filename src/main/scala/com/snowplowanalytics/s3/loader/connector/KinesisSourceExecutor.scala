@@ -13,16 +13,13 @@
 package com.snowplowanalytics.s3.loader.connector
 
 // Logging
-import com.amazonaws.services.kinesis.clientlibrary.lib.worker.SimpleRecordsFetcherFactory
-import com.snowplowanalytics.s3.loader.Config.{InitialPosition, S3}
-import com.snowplowanalytics.s3.loader.serializers.ISerializer
-import com.snowplowanalytics.s3.loader.{EmitterInput, KinesisSink, ValidatedRecord}
 import org.slf4j.LoggerFactory
 
 import java.time.Duration
 
 // AWS Kinesis Connector libs
 import com.amazonaws.services.kinesis.connectors.{KinesisConnectorConfiguration, KinesisConnectorExecutorBase, KinesisConnectorRecordProcessorFactory}
+import com.amazonaws.services.kinesis.clientlibrary.lib.worker.SimpleRecordsFetcherFactory
 
 // AWS Client Library
 import com.amazonaws.ClientConfiguration
@@ -36,32 +33,34 @@ import com.snowplowanalytics.snowplow.scalatracker.Tracker
 // cats
 import cats.Id
 
+import com.snowplowanalytics.s3.loader.{EmitterInput, KinesisSink, ValidatedRecord}
+import com.snowplowanalytics.s3.loader.Config.{InitialPosition, Output, Purpose}
+import com.snowplowanalytics.s3.loader.serializers.ISerializer
+
 /**
  * A worker (Runnable) class for Kinesis Connector,
  * initializes config and passes control over to [[KinesisS3Pipeline]]
  */
-class KinesisSourceExecutor(config: KinesisConnectorConfiguration,
+class KinesisSourceExecutor(region: Option[String],
+                            config: KinesisConnectorConfiguration,
                             initialPosition: InitialPosition,
-                            s3Config: S3,
+                            purpose: Purpose,
+                            output: Output,
                             badSink: KinesisSink,
                             serializer: ISerializer,
-                            maxConnectionTime: Long,
                             tracker: Option[Tracker[Id]],
-                            disableCloudWatch: Boolean
+                            enableCloudWatch: Boolean
 ) extends KinesisConnectorExecutorBase[ValidatedRecord, EmitterInput] {
 
   private val logger = LoggerFactory.getLogger(getClass)
 
-  if (disableCloudWatch)
-    initialize(config, new NullMetricsFactory())
-  else
-    initialize(config, null)
+  initialize(config, if (enableCloudWatch) null else new NullMetricsFactory())
 
   def getKCLConfig(initialPosition: InitialPosition, kcc: KinesisConnectorConfiguration): KinesisClientLibConfiguration = {
     val cfg = new KinesisClientLibConfiguration(kcc.APP_NAME,
       kcc.KINESIS_INPUT_STREAM,
       kcc.KINESIS_ENDPOINT,
-      kcc.DYNAMODB_ENDPOINT,
+      null,
       kcc.INITIAL_POSITION_IN_STREAM,
       kcc.AWS_CREDENTIALS_PROVIDER,
       kcc.AWS_CREDENTIALS_PROVIDER,
@@ -133,7 +132,8 @@ class KinesisSourceExecutor(config: KinesisConnectorConfiguration,
   }
 
   def getKinesisConnectorRecordProcessorFactory = {
-    val pipeline = new KinesisS3Pipeline(s3Config, badSink, serializer, maxConnectionTime, tracker)
+    val client = KinesisS3Pipeline.buildS3Client(region, output.s3.customEndpoint)
+    val pipeline = new KinesisS3Pipeline(client, purpose, output, badSink, serializer, tracker)
     new KinesisConnectorRecordProcessorFactory[ValidatedRecord, EmitterInput](pipeline, config)
   }
 }

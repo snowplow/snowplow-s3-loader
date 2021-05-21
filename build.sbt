@@ -21,6 +21,7 @@ lazy val root = project.in(file("."))
   .settings(BuildSettings.buildSettings)
   .settings(BuildSettings.sbtAssemblySettings)
   .settings(BuildSettings.dockerSettings)
+  .settings(BuildSettings.addExampleConfToTestCp)
   .settings(
     libraryDependencies ++= Seq(
       // Java

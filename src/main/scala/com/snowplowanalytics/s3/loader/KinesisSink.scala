@@ -19,28 +19,23 @@
 
 package com.snowplowanalytics.s3.loader
 
-// Java
-import com.amazonaws.services.kinesis.AmazonKinesis
-
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets.UTF_8
 
-// Scala
-import scala.util.Random
-
-// Amazon
-import com.amazonaws.services.kinesis.model._
-
-// Concurrent libraries
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.{Random, Failure, Success}
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
+import scala.concurrent.ExecutionContext.Implicits.global
 
-// Logging
+import com.amazonaws.services.kinesis.model._
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
+import com.amazonaws.metrics.RequestMetricCollector
+import com.amazonaws.services.kinesis.{AmazonKinesis, AmazonKinesisClientBuilder}
+
 import org.slf4j.LoggerFactory
 
 /**
  * Configuration for the Kinesis stream
+ * Used only as a sink for bad rows (events that couldn't be sunk into S3)
  *
  * @param client Amazon Kinesis SDK client
  * @param name Kinesis stream name
@@ -107,4 +102,21 @@ class KinesisSink(client: AmazonKinesis, name: String) {
         log.error("Writing failed")
         log.error("  + " + f.getMessage)
     }
+}
+
+object KinesisSink {
+  def build(config: Config): KinesisSink = {
+    val client = AmazonKinesisClientBuilder.standard()
+    config.input.customEndpoint match {
+      case Some(value) => client.setEndpointConfiguration(new EndpointConfiguration(value, config.region.orNull))
+      case None => ()
+    }
+
+    config.monitoring.flatMap(_.metrics.flatMap(_.cloudWatch)) match {
+      case Some(enable) if enable => ()
+      case None => client.setMetricsCollector(RequestMetricCollector.NONE)
+    }
+
+    new KinesisSink(client.build(), config.output.bad.streamName)
+  }
 }

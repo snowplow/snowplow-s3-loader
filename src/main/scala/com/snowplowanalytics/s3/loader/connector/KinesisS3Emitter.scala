@@ -34,16 +34,15 @@ import io.circe.Json
 import io.circe.parser.parse
 import io.circe.syntax._
 
-import com.snowplowanalytics.snowplow.scalatracker.Tracker
-
-// Iglu Core
 import com.snowplowanalytics.iglu.core._
 import com.snowplowanalytics.iglu.core.circe.implicits._
 
+import com.snowplowanalytics.snowplow.scalatracker.Tracker
+
 // This project
 import com.snowplowanalytics.s3.loader.{KinesisSink, DynamicPath, EmitterInput, RowType, SnowplowTracking}
+import com.snowplowanalytics.s3.loader.Config.{Output, Purpose, S3Output}
 import com.snowplowanalytics.s3.loader.serializers.ISerializer
-import com.snowplowanalytics.s3.loader.Config.S3
 import com.snowplowanalytics.s3.loader.connector.KinesisS3Emitter._
 
 /**
@@ -53,10 +52,10 @@ import com.snowplowanalytics.s3.loader.connector.KinesisS3Emitter._
  */
 class KinesisS3Emitter(client: AmazonS3,
                        tracker: Option[Tracker[Id]],
-                       s3Config: S3,
+                       purpose: Purpose,
+                       output: Output,
                        badSink: KinesisSink,
                        serializer: ISerializer,
-                       maxConnectionTime: Long
                       ) extends IEmitter[EmitterInput] {
 
   /**
@@ -73,16 +72,22 @@ class KinesisS3Emitter(client: AmazonS3,
     logger.info(s"Flushing buffer with ${buffer.getRecords.size} records.")
 
     val records = buffer.getRecords.asScala.toList
-    val partitions = if (s3Config.partitionedBucket.isDefined) partitionByType(records).toList else List((RowType.Unpartitioned, records))
+
+    val partitions = purpose match {
+      case Purpose.SelfDescribingJson =>
+        partitionByType(records).toList
+      case _ =>
+        List((RowType.Unpartitioned, records))
+    }
+
     val getBase: Option[String] => String =
-      getBaseFilename(s3Config, buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber)
+      getBaseFilename(output.s3, buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber)
 
     partitions.flatMap {
       case (RowType.Unpartitioned, partitionRecords) if partitionRecords.nonEmpty =>
-        emitRecords(partitionRecords, s3Config.bucket, getBase(None))
+        emitRecords(partitionRecords, output.s3.path, getBase(None))
       case (data: RowType.SelfDescribing, partitionRecords) if partitionRecords.nonEmpty =>
-        val bucket = s3Config.partitionedBucket.getOrElse(s3Config.bucket)
-        emitRecords(partitionRecords, bucket, getBase(Some(data.partition)))
+        emitRecords(partitionRecords, output.s3.path, getBase(Some(data.partition)))
       case _ =>
         records // ReadingError or empty partition - should be handled later by serializer
     }.asJava
@@ -122,7 +127,7 @@ class KinesisS3Emitter(client: AmazonS3,
    * @param now connection attempt start time
    * @return success status of sending to S3
    */
-  def attemptEmit(bucket: String, stream: ISerializer.NamedStream, now: Long, maxConnectionTime: Long): Unit = {
+  def attemptEmit(bucket: String, stream: ISerializer.NamedStream, now: Long): Unit = {
     def logAndSleep(attempt: Int, e: Throwable): Unit = {
       logger.error(s"An exception during putting ${stream.filename} object to S3, attempt $attempt", e)
       tracker.foreach { t =>
@@ -133,7 +138,7 @@ class KinesisS3Emitter(client: AmazonS3,
 
     @tailrec
     def go(attempt: Int): Unit =
-      if (attempt > 1 && System.currentTimeMillis() - now > maxConnectionTime)
+      if (attempt > 1 && System.currentTimeMillis() - now > output.s3.maxTimeout)
         forceShutdown()
       else {
         val request = getRequest(bucket, stream, now)
@@ -164,7 +169,7 @@ class KinesisS3Emitter(client: AmazonS3,
 
     if (successSize > 0)
       serializationResults.namedStreams.foreach { stream =>
-        attemptEmit(bucket, stream, System.currentTimeMillis(), maxConnectionTime)
+        attemptEmit(output.s3.bucketName, stream, System.currentTimeMillis())
       }
 
     failures
@@ -217,18 +222,24 @@ object KinesisS3Emitter {
    * Determines the filename in S3, which is the corresponding
    * Kinesis sequence range of records in the file.
    */
-  def getBaseFilename(s3Config: S3, firstSeq: String, lastSeq: String)
-                     (partition: Option[String]): String = {
-    val path = List(s3Config.outputDirectory, partition, s3Config.dateFormat, s3Config.filenamePrefix)
-      .flatMap(_.toList.filterNot(_.isEmpty))
-      .mkString("/")
+  def getBaseFilename(
+    s3Config: S3Output,
+    firstSeq: String,
+    lastSeq: String
+  )(
+    partition: Option[String]
+  ): String = {
+    val path = List(s3Config.outputDirectory, s3Config.dateFormat).flatten.mkString("/")
+    val fileName = (s3Config.filenamePrefix.toList ++ partition.toList ++ List(
+      LocalDateTime.now.format(
+        DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmmss")
+      ),
+      firstSeq,
+      lastSeq
+    )).mkString("-")
+    val fullPath = List(path, fileName).filterNot(_.isEmpty).mkString("/")
 
-    val filename =
-      List(path, LocalDateTime.now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmmss")), firstSeq, lastSeq)
-        .filterNot(_.isEmpty)
-        .mkString("-")
-
-    DynamicPath.normalize(filename)
+    DynamicPath.normalize(fullPath)
   }
 
   /**
