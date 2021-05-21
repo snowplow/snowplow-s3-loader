@@ -1,0 +1,68 @@
+{
+  # Optional, but recommended
+  "region": "eu-central-1",
+
+  # Options are: RAW, ENRICHED_EVENTS, JSON
+  # RAW simply sinks data 1:1
+  # ENRICHED_EVENTS work with monitoring.statsd to report metrics (identical to RAW otherwise)
+  # JSON partitions self-describing JSONs by their schema
+  "purpose": "RAW",
+
+  # Input Stream config
+  "input": {
+    # Kinesis Client Lib app name (corresponds to DynamoDB table name)
+    "appName": "acme-s3-loader",
+    # Kinesis stream name
+    "streamName": "raw-events",
+    # Options are: LATEST, TRIM_HORIZON, AT_TIMESTAMP
+    "position": "LATEST",
+    # Max batch size to pull from Kinesis
+    "maxRecords": 10
+  },
+
+  "output": {
+    "s3": {
+      # Full path to output data
+      "path": "s3://acme-snowplow-output/raw/",
+
+      # Partitioning format; Optional
+      "dateFormat": "%Y-%M-%d",
+      # Prefix for all file names; Optional
+      "filenamePrefix": "pre",
+
+      # Maximum Timeout that the application is allowed to fail for
+      "maxTimeout": 2000,
+      # Output format; Options: gzip, lzo
+      "format": "gzip"
+    },
+
+    # Kinesis Stream to output failures
+    "badStreamName": "stream-name"
+  },
+
+  # Flush control
+  "buffer": {
+    # Maximum bytes to read before flushing
+    "byteLimit": 2048,
+    # Maximum records to read before flushing
+    "recordLimit": 10,
+    # Flush every X seconds
+    "timeLimit": 5000
+  },
+
+  # Optional
+  "monitoring": {
+    # Snowplow-powered monitoring; Optional
+    "snowplow": {
+      "host": "snplow.acme.ru",
+      "port": 80,
+      "appId": "angry-birds",
+      "method": "POST"
+    },
+
+    "metrics": {
+      # Enable KCL CloudWatch metrics
+      "cloudWatch": false
+    }
+  }
+}

@@ -38,12 +38,11 @@ import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionIn
 
 import com.snowplowanalytics.s3.loader.Config._
 
-case class Config(source: Source,
-                  sink: Sink,
-                  aws: AWS,
-                  kinesis: Kinesis,
-                  streams: StreamsConfig,
-                  s3: S3,
+case class Config(region: Option[String],
+                  purpose: Purpose,
+                  input: Input,
+                  output: Output,
+                  buffer: Buffer,
                   monitoring: Option[Monitoring])
 
 object Config {
@@ -80,7 +79,7 @@ object Config {
       Decoder.decodeJsonObject.emap { obj =>
         val root = obj.toMap
         val opt = for {
-          atTimestamp <- root.get("AT_TIMESTAMP")
+          atTimestamp <- root.collectFirst { case (k, v) if k.toLowerCase == "at_timestamp" => v }
           atTimestampObj <- atTimestamp.asObject.map(_.toMap)
           timestampStr <- atTimestampObj.get("timestamp")
           timestamp <- timestampStr.as[Date].toOption
@@ -99,12 +98,61 @@ object Config {
       }.or(atTimestampDecoder)
   }
 
+  final case class Input(appName: String,
+                         streamName: String,
+                         position: InitialPosition,
+                         customEndpoint: Option[String],
+                         maxRecords: Int)
+
+  sealed trait Purpose
+
+  object Purpose {
+    /** Data as a byte stream, without inspection or parsing */
+    case object Raw extends Purpose
+    /** Self-describing JSONs, such as Snowplow bad rows, allowing partitioning */
+    case object SelfDescribingJson extends Purpose
+
+    implicit def outputTypeDecoder: Decoder[Purpose] =
+      Decoder[String].map(_.toLowerCase).emap {
+        case "raw" => Raw.asRight
+        case "json" => SelfDescribingJson.asRight
+        case other => s"Cannot parse $other into supported output type".asLeft
+      }
+  }
+
+  final case class S3Output(path: String,
+
+                            dateFormat: Option[String],
+                            filenamePrefix: Option[String],
+
+                            format: Format,
+                            maxTimeout: Int,
+                            customEndpoint: Option[String]) {
+
+    /** Just bucket name, without deeper path */
+    def bucketName: String =
+      withoutPrefix.split("/").head
+
+    /** Base directory in the bucket */
+    def outputDirectory: Option[String] = {
+      val possiblyEmpty = withoutPrefix.split("/").tail.toList.mkString("/")
+      if (possiblyEmpty.isEmpty) None else Some(possiblyEmpty)
+    }
+
+    // For backward-compatibility
+    private val scheme = "s3://"
+    private val withoutPrefix =
+      if (path.startsWith(scheme)) path.drop(scheme.length) else path
+  }
+
+  final case class Output(s3: S3Output, badStreamName: String)
+
   sealed trait Format
   object Format {
     case object Lzo extends Format
     case object Gzip extends Format
 
-    implicit val formatDecoder: Decoder[Format] =
+    implicit def formatDecoder: Decoder[Format] =
       Decoder[String].map(_.toLowerCase).emap {
         case "lzo" => Lzo.asRight
         case "gzip" => Gzip.asRight
@@ -112,93 +160,49 @@ object Config {
       }
   }
 
-  sealed trait Source
-  object Source {
-    case object Kinesis extends Source
-
-    implicit val sourceDecoder: Decoder[Source] =
-      Decoder[String].map(_.toLowerCase).emap {
-        case "kinesis" => Kinesis.asRight
-        case other => s"Cannot parse $other into supported source".asLeft
-      }
-  }
-
-  sealed trait Sink
-  object Sink {
-    case object Kinesis extends Sink
-
-    implicit val sinkDecoder: Decoder[Sink] =
-      Decoder[String].map(_.toLowerCase).emap {
-        case "kinesis" => Kinesis.asRight
-        case other => s"Cannot parse $other into supported source".asLeft
-      }
-  }
-
-  case class AWS(accessKey: String, secretKey: String)
-
-  case class Kinesis(initialPosition: InitialPosition,
-                     maxRecords: Long, region: String,
-                     appName: String,
-                     customEndpoint: Option[String],
-                     disableCloudWatch: Option[Boolean]) {
-    val endpoint = customEndpoint.getOrElse(region match {
-      case "cn-north-1" => "kinesis.cn-north-1.amazonaws.com.cn"
-      case _ => s"https://kinesis.$region.amazonaws.com"
-    })
-
-    val disableCW = disableCloudWatch.getOrElse(false)
-  }
-
   case class Buffer(byteLimit: Long,
                     recordLimit: Long,
                     timeLimit: Long)
 
-  case class StreamsConfig(inStreamName: String,
-                           outStreamName: String,
-                           buffer: Buffer)
-
-  case class S3(region: String,
-                bucket: String,
-                partitionedBucket: Option[String],
-                format: Format,
-                maxTimeout: Long,
-                outputDirectory: Option[String],
-                customEndpoint: Option[String],
-                dateFormat: Option[String] = None,
-                filenamePrefix: Option[String] = None) {
-    val endpoint = customEndpoint.getOrElse(region match {
-      case "us-east-1" => "https://s3.amazonaws.com"
-      case "cn-north-1" => "https://s3.cn-north-1.amazonaws.com.cn"
-      case _ => s"https://s3-$region.amazonaws.com"
-    })
-  }
-
   case class Logging(level: String)
 
-  case class SnowplowMonitoring(collectorUri: String,
-                                collectorPort: Int,
+  case class SnowplowMonitoring(host: String,
+                                port: Int,
                                 appId: String,
                                 method: String)
 
-  case class Monitoring(snowplow: SnowplowMonitoring)
+  /**
+   * Different metrics services
+   * @param cloudWatch embedded into Kinesis Connector lib, CWMetricsFactory
+   *                   not recommended to use
+   */
+  case class Metrics(cloudWatch: Option[Boolean])
+
+  /**
+   * Monitoring configuration
+   * @param snowplow Snowplow-powered monitoring with basic init/shutdown/failure tracking
+   * @param metrics metrics services
+   */
+  case class Monitoring(snowplow: Option[SnowplowMonitoring], metrics: Option[Metrics])
+
+
+  implicit def inputConfigDecoder: Decoder[Input] =
+    deriveDecoder[Input]
+
+  implicit def s3OutputConfigDecoder: Decoder[S3Output] =
+    deriveDecoder[S3Output]
+
+  implicit def outputConfigDecoder: Decoder[Output] =
+    deriveDecoder[Output]
 
   implicit def bufferConfigDecoder: Decoder[Buffer] =
     deriveDecoder[Buffer]
 
-  implicit def streamsConfigDecoder: Decoder[StreamsConfig] =
-    deriveDecoder[StreamsConfig]
-
-  implicit def awsConfigDecoder: Decoder[AWS] =
-    deriveDecoder[AWS]
-
-  implicit def s3ConfigDecoder: Decoder[S3] =
-    deriveDecoder[S3]
-
-  implicit def kinesisConfigDecoder: Decoder[Kinesis] =
-    deriveDecoder[Kinesis]
-
   implicit def loggingConfigDecoder: Decoder[Logging] =
     deriveDecoder[Logging]
+
+  implicit def metricsConfigDecoder: Decoder[Metrics] =
+    deriveDecoder[Metrics]
 
   implicit def snowplowMonitoringConfigDecoder: Decoder[SnowplowMonitoring] =
     deriveDecoder[SnowplowMonitoring]

@@ -17,8 +17,9 @@ import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration
 import com.amazonaws.services.kinesis.connectors.impl.{AllPassFilter, BasicMemoryBuffer}
 import com.amazonaws.services.kinesis.connectors.interfaces._
-import com.amazonaws.services.s3.AmazonS3ClientBuilder
-import com.snowplowanalytics.s3.loader.Config.S3
+import com.amazonaws.services.s3.{AmazonS3, AmazonS3ClientBuilder}
+
+import com.snowplowanalytics.s3.loader.Config.{Output, Purpose}
 import com.snowplowanalytics.s3.loader.serializers.ISerializer
 import com.snowplowanalytics.s3.loader.{EmitterInput, KinesisSink, ValidatedRecord}
 
@@ -28,30 +29,23 @@ import cats.Id
 // Tracker
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
 
-// This project
-
 /**
  * S3Pipeline class sets up the Emitter/Buffer/Transformer/Filter
  * Comes from Kinesis Connectors
  */
-class KinesisS3Pipeline(s3Config: S3,
+class KinesisS3Pipeline(client: AmazonS3,
+                        purpose: Purpose,
+                        output: Output,
                         badSink: KinesisSink,
                         serializer: ISerializer,
-                        maxConnectionTime: Long,
                         tracker: Option[Tracker[Id]]
 ) extends IKinesisConnectorPipeline[ValidatedRecord, EmitterInput] {
 
-  def getEmitter(configuration: KinesisConnectorConfiguration): IEmitter[EmitterInput] = {
-    val client = AmazonS3ClientBuilder
-      .standard()
-      .withCredentials(configuration.AWS_CREDENTIALS_PROVIDER)
-      .withEndpointConfiguration(new EndpointConfiguration(s3Config.endpoint, s3Config.region))
-      .build()
-    new KinesisS3Emitter(client, tracker, s3Config, badSink, serializer, maxConnectionTime)
-  }
+  def getEmitter(c: KinesisConnectorConfiguration): IEmitter[EmitterInput] =
+    new KinesisS3Emitter(client, tracker, purpose, output, badSink, serializer)
 
-  def getBuffer(configuration: KinesisConnectorConfiguration): IBuffer[ValidatedRecord] =
-    new BasicMemoryBuffer[ValidatedRecord](configuration)
+  def getBuffer(c: KinesisConnectorConfiguration): IBuffer[ValidatedRecord] =
+    new BasicMemoryBuffer[ValidatedRecord](c)
 
   def getTransformer(c: KinesisConnectorConfiguration): ITransformer[ValidatedRecord, EmitterInput] =
     new IdentityTransformer()
@@ -59,4 +53,15 @@ class KinesisS3Pipeline(s3Config: S3,
   def getFilter(c: KinesisConnectorConfiguration): IFilter[ValidatedRecord] =
     new AllPassFilter[ValidatedRecord]()
 
+}
+
+object KinesisS3Pipeline {
+  def buildS3Client(region: Option[String], customEndpoint: Option[String]): AmazonS3 = {
+    val client = AmazonS3ClientBuilder.standard()
+    customEndpoint match {
+      case Some(value) => client.setEndpointConfiguration(new EndpointConfiguration(value, region.orNull))
+      case None => ()
+    }
+    client.build()
+  }
 }

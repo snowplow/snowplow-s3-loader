@@ -12,14 +12,14 @@
  */
 package com.snowplowanalytics.s3.loader.connector
 
-import com.amazonaws.services.kinesis.model.Record
-import com.snowplowanalytics.s3.loader.{EmitterInput, ValidatedRecord}
+import cats.syntax.validated._
 
+import com.amazonaws.services.kinesis.model.Record
 import com.amazonaws.services.kinesis.connectors.interfaces.ITransformer
 
 import org.slf4j.LoggerFactory
 
-import cats.syntax.validated._
+import com.snowplowanalytics.s3.loader.{EmitterInput, ValidatedRecord}
 
 /** No-op serializer */
 class IdentityTransformer extends ITransformer[ValidatedRecord, EmitterInput] {

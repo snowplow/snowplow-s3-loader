@@ -72,8 +72,8 @@ object SnowplowTracking {
       override def generateUUID: Id[UUID] = UUID.randomUUID()
     }
 
-    val endpoint = config.collectorUri
-    val port = config.collectorPort
+    val endpoint = config.host
+    val port = config.port
     val appName = config.appId
     // Not yet used
     val emitter = AsyncEmitter.createAndStart(endpoint, Some(port), false, None)
