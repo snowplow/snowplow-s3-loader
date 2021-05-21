@@ -72,11 +72,11 @@ object SnowplowTracking {
       override def generateUUID: Id[UUID] = UUID.randomUUID()
     }
 
-    val endpoint = config.collectorUri
-    val port = config.collectorPort
+    val host = config.collector.getHost
+    val port = if (config.collector.getPort == -1) Some(80) else None
+    val https = Option(config.collector.getScheme).contains("https")
     val appName = config.appId
-    // Not yet used
-    val emitter = AsyncEmitter.createAndStart(endpoint, Some(port), false, None)
+    val emitter = AsyncEmitter.createAndStart(host, port, https, None)
     Tracker(NonEmptyList.one(emitter), generated.Settings.name, appName)
   }
 

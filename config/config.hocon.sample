@@ -1,0 +1,67 @@
+{
+  # Optional, but recommended
+  "region": "eu-central-1",
+
+  # Options are: RAW, ENRICHED_EVENTS, JSON
+  # RAW simply sinks data 1:1
+  # SELF_DESCRIBING partitions self-describing data (such as JSON) by its schema
+  "purpose": "RAW",
+
+  # Input Stream config
+  "input": {
+    # Kinesis Client Lib app name (corresponds to DynamoDB table name)
+    "appName": "acme-s3-loader",
+    # Kinesis stream name
+    "streamName": "raw-events",
+    # Options are: LATEST, TRIM_HORIZON, AT_TIMESTAMP
+    "position": "LATEST",
+    # Max batch size to pull from Kinesis
+    "maxRecords": 10
+  },
+
+  "output": {
+    "s3": {
+      # Full path to output data
+      "path": "s3://acme-snowplow-output/raw/",
+
+      # Partitioning format; Optional
+      "dateFormat": "%Y-%M-%d",
+      # Prefix for all file names; Optional
+      "filenamePrefix": "pre",
+
+      # Maximum Timeout that the application is allowed to fail for, e.g. in case of S3 outage
+      "maxTimeout": 2000,
+      # Output format; Options: GZIP, LZO
+      "compression": "GZIP"
+    },
+
+    # Kinesis Stream to output failures
+    "bad": {
+      "streamName": "stream-name"
+    }
+  },
+
+  # Flush control. A first limit the KCL worker hits will trigger flushing
+  "buffer": {
+    # Maximum bytes to read before flushing
+    "byteLimit": 2048,
+    # Maximum records to read before flushing
+    "recordLimit": 10,
+    # Maximum time between flushes
+    "timeLimit": 5000
+  },
+
+  # Optional
+  "monitoring": {
+    # Snowplow-powered monitoring; Optional
+    "snowplow": {
+      "collector": "http://snplow.acme.ru:80",
+      "appId": "angry-birds"
+    },
+
+    "metrics": {
+      # Enable KCL CloudWatch metrics
+      "cloudWatch": false
+    }
+  }
+}
