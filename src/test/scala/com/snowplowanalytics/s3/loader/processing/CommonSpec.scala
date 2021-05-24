@@ -14,11 +14,16 @@ package com.snowplowanalytics.s3.loader.processing
 
 import java.time.Instant
 
-import cats.syntax.validated._
+import cats.data.NonEmptyList
+import cats.syntax.either._
 
 import org.specs2.mutable.Specification
 
-import com.snowplowanalytics.s3.loader.{Config, EmitterInput, FailedRecord}
+import com.snowplowanalytics.snowplow.badrows.BadRow.GenericError
+import com.snowplowanalytics.snowplow.badrows.Failure.GenericFailure
+import com.snowplowanalytics.snowplow.badrows.Payload.RawPayload
+
+import com.snowplowanalytics.s3.loader.{Config, Result, S3Loader}
 
 class CommonSpec extends Specification {
   "partitionByType" should {
@@ -26,34 +31,34 @@ class CommonSpec extends Specification {
       import CommonSpec._
 
       val records = List(
-        dataType11.valid,
-        dataType21.valid,
-        dataType22.valid,
-        dataType31.valid,
-        dataType32.valid,
-        dataType33.valid,
-        failedRecord.invalid,
-        failedRecord.invalid,
-        nonSelfDescribingJson.valid,
-        nonJsonData.valid
+        dataType11.asRight,
+        dataType21.asRight,
+        dataType22.asRight,
+        dataType31.asRight,
+        dataType32.asRight,
+        dataType33.asRight,
+        failedRecord.asLeft,
+        failedRecord.asLeft,
+        nonSelfDescribingJson.asRight,
+        nonJsonData.asRight
       )
 
       val res = Common.partitionByType(records)
 
       val expected = Map(
-        RowType.SelfDescribing("com.acme1", "example1", "jsonschema", 2) -> List(dataType11.valid),
-        RowType.SelfDescribing("com.acme1", "example2", "jsonschema", 2) -> List(dataType21.valid, dataType22.valid),
-        RowType.SelfDescribing("com.acme2", "example1", "jsonschema", 2) -> List(dataType31.valid, dataType32.valid, dataType33.valid),
-        RowType.ReadingError -> List(failedRecord.invalid, failedRecord.invalid),
-        RowType.Unpartitioned -> List(nonSelfDescribingJson.valid, nonJsonData.valid)
+        RowType.SelfDescribing("com.acme1", "example1", "jsonschema", 2) -> List(dataType11.asRight),
+        RowType.SelfDescribing("com.acme1", "example2", "jsonschema", 2) -> List(dataType21.asRight, dataType22.asRight),
+        RowType.SelfDescribing("com.acme2", "example1", "jsonschema", 2) -> List(dataType31.asRight, dataType32.asRight, dataType33.asRight),
+        RowType.ReadingError -> List(failedRecord.asLeft, failedRecord.asLeft),
+        RowType.Unpartitioned -> List(nonSelfDescribingJson.asRight, nonJsonData.asRight)
       )
 
       res must beEqualTo(expected)
     }
 
     "handle empty list of records to partition" in {
-      val records = List.empty[EmitterInput]
-      val expected = Map.empty[RowType, List[EmitterInput]]
+      val records = List.empty[Result]
+      val expected = Map.empty[RowType, List[Result]]
       val actual = Common.partitionByType(records)
       actual ==== expected
     }
@@ -69,13 +74,13 @@ class CommonSpec extends Specification {
 
   "partition" should {
     "add metadata for enriched if statsd is enabled" in {
-      val input = List("".getBytes.valid)
+      val input = List("".getBytes.asRight)
       val result = Common.partition(Config.Purpose.Enriched, true, input)
       result.meta should beEqualTo(Batch.Meta(None, 1))
     }
 
     "not add metadata for enriched if statsd is disabled" in {
-      val input = List("".getBytes.valid)
+      val input = List("".getBytes.asRight)
       val result = Common.partition(Config.Purpose.Enriched, false, input)
       result.meta should beEqualTo(Batch.EmptyMeta)
     }
@@ -83,11 +88,11 @@ class CommonSpec extends Specification {
     "partition by type for self-describing" in {
       import CommonSpec._
 
-      val input = List(dataType11.valid, dataType21.valid)
+      val input = List(dataType11.asRight, dataType21.asRight)
       val result = Common.partition(Config.Purpose.SelfDescribingJson, false, input)
       result should beEqualTo(Batch(Batch.EmptyMeta, List(
-        (RowType.SelfDescribing("com.acme1","example1","jsonschema",2), List(dataType11.valid)),
-        (RowType.SelfDescribing("com.acme1","example2","jsonschema",2), List(dataType21.valid)),
+        (RowType.SelfDescribing("com.acme1","example1","jsonschema",2), List(dataType11.asRight)),
+        (RowType.SelfDescribing("com.acme1","example2","jsonschema",2), List(dataType21.asRight)),
       )))
     }
   }
@@ -153,5 +158,9 @@ object CommonSpec {
 
   val nonJsonData = "nonJsonData".getBytes("UTF-8")
 
-  val failedRecord = FailedRecord(List("error1", "error2"), "line")
+  val failedRecord = GenericError(
+    S3Loader.processor,
+    GenericFailure(Instant.now(), NonEmptyList.one("error")),
+    RawPayload("input")
+  )
 }

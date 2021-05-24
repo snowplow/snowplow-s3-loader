@@ -18,8 +18,7 @@
  */
 package com.snowplowanalytics.s3
 
-// Scalaz
-import cats.data.Validated
+import com.snowplowanalytics.snowplow.badrows.BadRow.GenericError
 
 package object loader {
 
@@ -29,12 +28,7 @@ package object loader {
   type RawRecord = Array[Byte]
 
   /**
-   * Validation for a SnowplowRawEvent
+   * Final result of S3 Loader processing
    */
-  type ValidatedRecord = Validated[FailedRecord, RawRecord]
-
-  /**
-   * Currently the same as ValidatedRecord, but could change in the future
-   */
-  type EmitterInput = Validated[FailedRecord, RawRecord]
+  type Result = Either[GenericError, RawRecord]
 }

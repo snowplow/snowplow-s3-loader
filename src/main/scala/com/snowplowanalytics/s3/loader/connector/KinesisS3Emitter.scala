@@ -13,7 +13,7 @@
 package com.snowplowanalytics.s3.loader.connector
 
 import java.io.ByteArrayInputStream
-import java.time.{Instant, LocalDateTime, ZoneOffset}
+import java.time.{Instant, LocalDateTime}
 import java.time.format.DateTimeFormatter
 
 import scala.annotation.tailrec
@@ -26,13 +26,13 @@ import com.amazonaws.services.s3.model.{ObjectMetadata, PutObjectRequest}
 import com.amazonaws.services.kinesis.connectors.UnmodifiableBuffer
 import com.amazonaws.services.kinesis.connectors.interfaces.IEmitter
 
-import cats.data.Validated
 import cats.implicits._
 
-import io.circe.Json
 import io.circe.syntax._
 
-import com.snowplowanalytics.s3.loader.{DynamicPath, EmitterInput, KinesisSink}
+import com.snowplowanalytics.snowplow.badrows.BadRow.GenericError
+
+import com.snowplowanalytics.s3.loader.{DynamicPath, Result, KinesisSink}
 import com.snowplowanalytics.s3.loader.monitoring.{Monitoring, SnowplowTracking}
 import com.snowplowanalytics.s3.loader.Config.{Output, Purpose, S3Output}
 import com.snowplowanalytics.s3.loader.serializers.ISerializer
@@ -50,7 +50,7 @@ class KinesisS3Emitter(client: AmazonS3,
                        output: Output,
                        badSink: KinesisSink,
                        serializer: ISerializer,
-                      ) extends IEmitter[EmitterInput] {
+                      ) extends IEmitter[Result] {
 
   /**
    * Reads items from a buffer and saves them to s3.
@@ -62,7 +62,7 @@ class KinesisS3Emitter(client: AmazonS3,
    * @param buffer BasicMemoryBuffer containing EmitterInputs
    * @return list of inputs which failed transformation
    */
-  def emit(buffer: UnmodifiableBuffer[EmitterInput]): java.util.List[EmitterInput] = {
+  def emit(buffer: UnmodifiableBuffer[Result]): java.util.List[Result] = {
     logger.info(s"Flushing buffer with ${buffer.getRecords.size} records.")
 
     val records = buffer.getRecords.asScala.toList
@@ -75,9 +75,9 @@ class KinesisS3Emitter(client: AmazonS3,
 
     partitionedBatch.data.flatMap {
       case (RowType.Unpartitioned, partitionRecords) if partitionRecords.nonEmpty =>
-        emitRecords(partitionRecords, output.s3.path, afterEmit, getBase(None))
+        emitRecords(partitionRecords, output.s3.path, afterEmit, getBase(None)).map(_.asLeft)
       case (data: RowType.SelfDescribing, partitionRecords) if partitionRecords.nonEmpty =>
-        emitRecords(partitionRecords, output.s3.path, afterEmit, getBase(Some(data.partition)))
+        emitRecords(partitionRecords, output.s3.path, afterEmit, getBase(Some(data.partition))).map(_.asLeft)
       case _ =>
         records // ReadingError or empty partition - should be handled later by serializer
     }.asJava
@@ -95,17 +95,11 @@ class KinesisS3Emitter(client: AmazonS3,
    *
    * @param records List of failed records to send to Kinesis
    */
-  def fail(records: java.util.List[EmitterInput]): Unit =
-    for (Validated.Invalid(record) <- records.asScala) {
-      logger.warn(s"Record failed: ${record.line}")
+  def fail(records: java.util.List[Result]): Unit =
+    for (Left(record) <- records.asScala) {
+      logger.warn(s"Record failed: ${record.payload.event}")
       logger.info("Sending failed record to Kinesis")
-      val output = Json.obj(
-        "line" -> record.line.asJson,
-        "errors" -> record.errors.asJson,
-        "failure_tstamp" -> getTimestamp(System.currentTimeMillis()).asJson
-      )
-
-      badSink.store(output.noSpaces, None)
+      badSink.store(record.asJson.noSpaces, None)
     }
 
 
@@ -151,9 +145,9 @@ class KinesisS3Emitter(client: AmazonS3,
    * @param baseFilename final filename
    * @return list of records that could not be emitted
    */
-  def emitRecords(records: List[EmitterInput], bucket: String, callback: () => Unit, baseFilename: String): List[EmitterInput] = {
+  def emitRecords(records: List[Result], bucket: String, callback: () => Unit, baseFilename: String): List[GenericError] = {
     val serializationResults = serializer.serialize(records, baseFilename)
-    val (successes, failures) = serializationResults.results.partition(_.isValid)
+    val (failures, successes) = serializationResults.results.separate
     val successSize = successes.size
 
     logger.debug(s"Successfully serialized $successSize records out of ${successSize + failures.size}")
@@ -188,7 +182,6 @@ object KinesisS3Emitter {
    * 10 seconds = 10 * 1000 = 10000
    */
   private val BackoffPeriod = 10000L
-  private val TstampFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(ZoneOffset.UTC)
 
   private val logger = LoggerFactory.getLogger(getClass)
 
@@ -232,15 +225,6 @@ object KinesisS3Emitter {
 
     DynamicPath.normalize(fullPath)
   }
-
-  /**
-   * Returns an ISO valid timestamp
-   *
-   * @param tstamp The Timestamp to convert (milliseconds)
-   * @return the formatted Timestamp
-   */
-  private def getTimestamp(tstamp: Long): String =
-    TstampFormat.format(Instant.ofEpochMilli(tstamp))
 
   /**
    * Period between retrying sending events to S3
