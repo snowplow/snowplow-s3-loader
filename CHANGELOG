@@ -1,5 +1,27 @@
-1.0.0 (2020-12-22)
-------------------
+Version 2.0.0 (2021-05-25)
+--------------------------
+Use snowplow-badrows (#215)
+Report metrics to StatsD (#216)
+Integrate Sentry (close #218)
+Redesign config file structure (#214)
+Harmonize module structure (#210)
+Drop NSQ support (#211)
+Extend copyright notice to 2021 (#219)
+Apply automated code-formatting (#221)
+Point to Snowplow roadmap in the README (#220)
+Replace joda-time by java-time (#202)
+Replace scopt by decline (#201)
+Remove json4s dependency (#200)
+Bump hadoop-common to 2.7.7 (#208)
+Bump jackson to 2.9.10.8 (#207)
+Bump amazon-kinesis-client to 1.14.2 (#206)
+Bump sbt-native-packager to 1.8.1 (#205)
+Bump pureconfig to 0.14.1 (#203)
+Bump base-debian to 0.2.2 (#199)
+Bump sbt to 1.5.2 (#198)
+
+Version 1.0.0 (2020-12-22)
+--------------------------
 Add coveralls integration (#195)
 Use log4j-over-slf4j for log4j logs (#194)
 Use sbt-scoverage plugin (#164)
@@ -39,7 +61,6 @@ Allow override of kinesis and s3 endpoints in configuration (#131)
 Document that maxTimeout is in milliseconds (#129)
 Move Twitter repo to https (#127)
 Remove colons from NSQ filenames (#125)
-
 
 Version 0.6.0 (2017-09-14)
 --------------------------
