@@ -12,25 +12,25 @@
  */
 package com.snowplowanalytics.s3.loader.connector
 
-import cats.syntax.validated._
+import cats.syntax.either._
 
 import com.amazonaws.services.kinesis.model.Record
 import com.amazonaws.services.kinesis.connectors.interfaces.ITransformer
 
 import org.slf4j.LoggerFactory
 
-import com.snowplowanalytics.s3.loader.{EmitterInput, ValidatedRecord}
+import com.snowplowanalytics.s3.loader.{Result, RawRecord}
 
 /** No-op serializer */
-class IdentityTransformer extends ITransformer[ValidatedRecord, EmitterInput] {
+class IdentityTransformer extends ITransformer[RawRecord, Result] {
 
   val log = LoggerFactory.getLogger(getClass)
 
-  def toClass(record: Record): ValidatedRecord = {
+  def toClass(record: Record): RawRecord = {
     log.debug(s"Converting record: [$record] to EmitterInput before adding it to the buffer")
-    record.getData.array.valid
+    record.getData.array
   }
 
-  def fromClass(record: ValidatedRecord): ValidatedRecord =
-    record
+  def fromClass(record: RawRecord): Result =
+    record.asRight
 }

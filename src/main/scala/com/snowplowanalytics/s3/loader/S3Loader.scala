@@ -19,6 +19,8 @@ import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration
 
 import org.slf4j.LoggerFactory
 
+import com.snowplowanalytics.snowplow.badrows.Processor
+
 import com.snowplowanalytics.s3.loader.Config.Format
 import com.snowplowanalytics.s3.loader.connector.KinesisSourceExecutor
 import com.snowplowanalytics.s3.loader.monitoring.Monitoring
@@ -27,6 +29,8 @@ import com.snowplowanalytics.s3.loader.serializers.{GZipSerializer, LzoSerialize
 object S3Loader {
 
   val logger = LoggerFactory.getLogger(getClass)
+
+  val processor = Processor(generated.Settings.name, generated.Settings.version)
 
   def run(config: Config): Unit = {
     val monitoring = Monitoring.build(config.monitoring)

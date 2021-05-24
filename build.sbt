@@ -41,6 +41,7 @@ lazy val root = project.in(file("."))
       Dependencies.Libraries.decline,
       Dependencies.Libraries.circe,
       Dependencies.Libraries.snowplowTracker,
+      Dependencies.Libraries.snowplowBadrows,
       Dependencies.Libraries.pureconfig,
       Dependencies.Libraries.pureconfigCirce,
       // Scala (test only)

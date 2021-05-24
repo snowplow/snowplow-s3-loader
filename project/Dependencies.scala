@@ -36,6 +36,7 @@ object Dependencies {
     val decline         = "2.0.0"
     val circe           = "0.13.0"
     val snowplowTracker = "0.7.0"
+    val snowplowBadrows = "2.1.0"
     val pureconfig      = "0.14.1"
     val igluCore        = "1.0.0"
     // Scala (test only)
@@ -68,6 +69,7 @@ object Dependencies {
     val decline          = "com.monovore"                     %% "decline"                           % V.decline
     val circe            = "io.circe"                         %% "circe-generic"                     % V.circe
     val snowplowTracker  = "com.snowplowanalytics"            %% "snowplow-scala-tracker-emitter-id" % V.snowplowTracker
+    val snowplowBadrows  = "com.snowplowanalytics"            %% "snowplow-badrows"                  % V.snowplowBadrows
     val pureconfig       = "com.github.pureconfig"            %% "pureconfig"                        % V.pureconfig
     val pureconfigCirce  = "com.github.pureconfig"            %% "pureconfig-circe"                  % V.pureconfig
 

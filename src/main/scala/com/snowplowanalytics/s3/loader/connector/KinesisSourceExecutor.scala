@@ -13,6 +13,7 @@
 package com.snowplowanalytics.s3.loader.connector
 
 // Logging
+import com.snowplowanalytics.s3.loader.RawRecord
 import org.slf4j.LoggerFactory
 
 import java.time.Duration
@@ -27,7 +28,7 @@ import com.amazonaws.services.kinesis.clientlibrary.lib.worker.{KinesisClientLib
 import com.amazonaws.services.kinesis.metrics.impl.NullMetricsFactory
 import com.amazonaws.services.kinesis.metrics.interfaces.IMetricsFactory
 
-import com.snowplowanalytics.s3.loader.{EmitterInput, KinesisSink, ValidatedRecord}
+import com.snowplowanalytics.s3.loader.{Result, KinesisSink}
 import com.snowplowanalytics.s3.loader.monitoring.Monitoring
 import com.snowplowanalytics.s3.loader.Config.{InitialPosition, Output, Purpose}
 import com.snowplowanalytics.s3.loader.serializers.ISerializer
@@ -45,7 +46,7 @@ class KinesisSourceExecutor(region: Option[String],
                             serializer: ISerializer,
                             monitoring: Monitoring,
                             enableCloudWatch: Boolean
-) extends KinesisConnectorExecutorBase[ValidatedRecord, EmitterInput] {
+) extends KinesisConnectorExecutorBase[RawRecord, Result] {
 
   private val logger = LoggerFactory.getLogger(getClass)
 
@@ -131,6 +132,6 @@ class KinesisSourceExecutor(region: Option[String],
   def getKinesisConnectorRecordProcessorFactory = {
     val client = KinesisS3Pipeline.buildS3Client(region, output.s3.customEndpoint)
     val pipeline = new KinesisS3Pipeline(client, purpose, output, badSink, serializer, monitoring)
-    new KinesisConnectorRecordProcessorFactory[ValidatedRecord, EmitterInput](pipeline, config)
+    new KinesisConnectorRecordProcessorFactory[RawRecord, Result](pipeline, config)
   }
 }

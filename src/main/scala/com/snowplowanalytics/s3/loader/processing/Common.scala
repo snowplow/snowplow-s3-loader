@@ -1,9 +1,20 @@
+/*
+ * Copyright (c) 2014-2021 Snowplow Analytics Ltd. All rights reserved.
+ *
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
+ */
 package com.snowplowanalytics.s3.loader.processing
 
 import java.time.Instant
 import java.nio.charset.StandardCharsets.UTF_8
 
-import cats.data.Validated
 import cats.syntax.either._
 
 import io.circe.parser.parse
@@ -11,7 +22,7 @@ import io.circe.parser.parse
 import com.snowplowanalytics.iglu.core.SchemaKey
 import com.snowplowanalytics.iglu.core.circe.implicits._
 
-import com.snowplowanalytics.s3.loader.EmitterInput
+import com.snowplowanalytics.s3.loader.Result
 import com.snowplowanalytics.s3.loader.Config.Purpose
 import com.snowplowanalytics.s3.loader.monitoring.StatsD.CollectorTstampIdx
 
@@ -27,7 +38,7 @@ object Common {
    * @param statsDEnabled whether any metrics should be reported at all
    * @param records raw records themselves
    */
-  def partition(purpose: Purpose, statsDEnabled: Boolean, records: List[EmitterInput]): Batch.Partitioned =
+  def partition(purpose: Purpose, statsDEnabled: Boolean, records: List[Result]): Batch.Partitioned =
     purpose match {
       case Purpose.SelfDescribingJson =>
         Batch.from(records).map(rs => partitionByType(rs).toList)
@@ -42,9 +53,9 @@ object Common {
    * to their schema key. Put records which are not self describing data
    * to under "old bad row type".
    */
-  def partitionByType(records: List[EmitterInput]): Map[RowType, List[EmitterInput]] =
+  def partitionByType(records: List[Result]): Map[RowType, List[Result]] =
     records.groupBy {
-      case Validated.Valid(byteRecord) =>
+      case Right(byteRecord) =>
         val strRecord = new String(byteRecord, UTF_8)
         parse(strRecord) match {
           case Right(json) =>
@@ -52,18 +63,18 @@ object Common {
             schemaKey.fold(_ => RowType.Unpartitioned, k => RowType.SelfDescribing(k.vendor, k.name, k.format, k.version.model))
           case _ => RowType.Unpartitioned
         }
-      case _ => RowType.ReadingError
+      case Left(_) => RowType.ReadingError
     }
 
   /**
    *  Extract the earliest timestamp from a batch of payloads
    */
-  def getEarliestTstamp(records: List[EmitterInput]): Option[Instant] = {
+  def getEarliestTstamp(records: List[Result]): Option[Instant] = {
     val timestamps = records.flatMap {
-      case Validated.Valid(byteRecord) =>
+      case Right(byteRecord) =>
         val strRecord = new String(byteRecord, UTF_8)
         getTstamp(strRecord).toOption
-      case Validated.Invalid(_) =>
+      case Left(_) =>
         Nil
     }
     timestamps.sorted.headOption

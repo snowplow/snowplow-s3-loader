@@ -13,9 +13,6 @@
 package com.snowplowanalytics.s3.loader
 package serializers
 
-// cats
-import cats.data.Validated
-
 // Java libs
 import java.io.ByteArrayOutputStream
 import java.util.zip.GZIPOutputStream
@@ -24,13 +21,13 @@ import java.util.zip.GZIPOutputStream
  * Object to handle ZIP compression of raw events
  */
 object GZipSerializer extends ISerializer {
-  def serialize(records: List[EmitterInput], baseFilename: String): ISerializer.Result = {
+  def serialize(records: List[Result], baseFilename: String): ISerializer.Serialized = {
     val outputStream = new ByteArrayOutputStream()
     val gzipOutputStream = new GZIPOutputStream(outputStream, 64 * 1024)
 
     // Populate the output stream with records
     val results = records.map {
-      case Validated.Valid(r) =>
+      case Right(r) =>
         serializeRecord(r,
                         gzipOutputStream,
                         (g: GZIPOutputStream) => {
@@ -45,6 +42,6 @@ object GZipSerializer extends ISerializer {
 
     val namedStreams = List(ISerializer.NamedStream(s"$baseFilename.gz", outputStream))
 
-    ISerializer.Result(namedStreams, results)
+    ISerializer.Serialized(namedStreams, results)
   }
 }
