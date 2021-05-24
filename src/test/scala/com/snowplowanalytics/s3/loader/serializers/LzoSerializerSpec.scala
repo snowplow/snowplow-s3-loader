@@ -21,9 +21,6 @@ import com.twitter.elephantbird.mapreduce.io.RawBlockReader
 // Apache Thrift
 import org.apache.thrift.{TDeserializer, TSerializer}
 
-// cats
-import cats.syntax.validated._
-
 // Scala
 import scala.sys.process._
 
@@ -52,7 +49,7 @@ class LzoSerializerSpec extends Specification {
 
       cleanup()
 
-      val inputEvents = List(new CollectorPayload("A", "B", 1000, "a", "b").valid, new CollectorPayload("X", "Y", 2000, "x", "y").valid)
+      val inputEvents = List(Right(new CollectorPayload("A", "B", 1000, "a", "b")), Right(new CollectorPayload("X", "Y", 2000, "x", "y")))
 
       val binaryInputs = inputEvents.map(e => e.map(x => serializer.serialize(x)))
 
@@ -74,7 +71,7 @@ class LzoSerializerSpec extends Specification {
         val target = new CollectorPayload
         deserializer.deserialize(target, rawResult)
 
-        target.valid must_== e
+        Right(target) must_== e
       }
     }
   }
