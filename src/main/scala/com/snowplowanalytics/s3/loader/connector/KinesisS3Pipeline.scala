@@ -18,7 +18,7 @@ import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration
 import com.amazonaws.services.kinesis.connectors.impl.{AllPassFilter, BasicMemoryBuffer}
 import com.amazonaws.services.kinesis.connectors.interfaces._
 
-import com.snowplowanalytics.s3.loader.{EmitterInput, KinesisSink, ValidatedRecord}
+import com.snowplowanalytics.s3.loader.{Result, KinesisSink, RawRecord}
 import com.snowplowanalytics.s3.loader.Config.{Output, Purpose}
 import com.snowplowanalytics.s3.loader.monitoring.Monitoring
 import com.snowplowanalytics.s3.loader.serializers.ISerializer
@@ -34,20 +34,19 @@ class KinesisS3Pipeline(client: AmazonS3,
                         badSink: KinesisSink,
                         serializer: ISerializer,
                         monitoring: Monitoring
-) extends IKinesisConnectorPipeline[ValidatedRecord, EmitterInput] {
+) extends IKinesisConnectorPipeline[RawRecord, Result] {
 
-  def getEmitter(c: KinesisConnectorConfiguration): IEmitter[EmitterInput] =
+  def getEmitter(c: KinesisConnectorConfiguration): IEmitter[Result] =
     new KinesisS3Emitter(client, monitoring, purpose, output, badSink, serializer)
 
-  def getBuffer(c: KinesisConnectorConfiguration): IBuffer[ValidatedRecord] =
-    new BasicMemoryBuffer[ValidatedRecord](c)
+  def getBuffer(c: KinesisConnectorConfiguration): IBuffer[RawRecord] =
+    new BasicMemoryBuffer[RawRecord](c)
 
-  def getTransformer(c: KinesisConnectorConfiguration): ITransformer[ValidatedRecord, EmitterInput] =
+  def getTransformer(c: KinesisConnectorConfiguration): ITransformer[RawRecord, Result] =
     new IdentityTransformer()
 
-  def getFilter(c: KinesisConnectorConfiguration): IFilter[ValidatedRecord] =
-    new AllPassFilter[ValidatedRecord]()
-
+  def getFilter(c: KinesisConnectorConfiguration): IFilter[RawRecord] =
+    new AllPassFilter[RawRecord]()
 }
 
 object KinesisS3Pipeline {
