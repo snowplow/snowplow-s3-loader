@@ -19,12 +19,16 @@ import org.slf4j.LoggerFactory
 
 import cats.Id
 
+import io.sentry.{ Sentry, SentryClient }
+
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
 
 import com.snowplowanalytics.s3.loader.Config
 import com.snowplowanalytics.s3.loader.processing.Batch.Meta
 
-class Monitoring(snowplow: Option[Tracker[Id]], statsD: Option[Config.StatsD]) {
+class Monitoring(snowplow: Option[Tracker[Id]],
+                 statsD: Option[Config.StatsD],
+                 sentry: Option[SentryClient]) {
 
   private implicit val EC: ExecutionContext =
     scala.concurrent.ExecutionContext.global
@@ -56,16 +60,24 @@ class Monitoring(snowplow: Option[Tracker[Id]], statsD: Option[Config.StatsD]) {
     snowplow.foreach { tracker =>
       SnowplowTracking.initializeSnowplowTracking(tracker)
     }
+
+  def captureError(error: Throwable): Unit =
+    sentry.foreach { client =>
+      client.sendException(error)
+    }
 }
 
 object Monitoring {
   def build(config: Option[Config.Monitoring]): Monitoring =
     config match {
-      case Some(Config.Monitoring(snowplow, metrics)) =>
+      case Some(Config.Monitoring(snowplow, sentry, metrics)) =>
         val tracker = snowplow.map { snowplowConfig =>
           SnowplowTracking.initializeTracker(snowplowConfig)
         }
-        new Monitoring(tracker, metrics.flatMap(_.statsd))
-      case None => new Monitoring(None, None)
+        val sentryClient = sentry.map { sentryConfig =>
+          Sentry.init(sentryConfig.dsn.toString)
+        }
+        new Monitoring(tracker, metrics.flatMap(_.statsd), sentryClient)
+      case None => new Monitoring(None, None, None)
     }
 }
