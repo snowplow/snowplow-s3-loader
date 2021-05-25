@@ -14,7 +14,7 @@ package com.snowplowanalytics.s3.loader.connector
 
 import org.specs2.mutable.Specification
 
-import com.snowplowanalytics.s3.loader.Config.{ S3Output, Compression }
+import com.snowplowanalytics.s3.loader.Config.{Compression, S3Output}
 
 class KinesisS3EmitterSpec extends Specification {
   "KinesisS3Emitter" should {
@@ -26,7 +26,8 @@ class KinesisS3EmitterSpec extends Specification {
     val filenamePrefix = "fileNamePrefix"
 
     "format file name with optional components" in {
-      val s3Config = S3Output(s"s3://no-bucket/$outputDirectory", Some(dateFormat), Some(filenamePrefix), Compression.Gzip, 0, None)
+      val s3Config =
+        S3Output(s"s3://no-bucket/$outputDirectory", Some(dateFormat), Some(filenamePrefix), Compression.Gzip, 0, None)
       val actual = KinesisS3Emitter.getBaseFilename(s3Config, firstSeq, lastSeq)(Some(partition))
 
       actual.replaceAll("\\d{4}-\\d{2}-\\d{2}-\\d{6}", "2021-04-30-000000") must beEqualTo(
@@ -35,17 +36,24 @@ class KinesisS3EmitterSpec extends Specification {
     }
 
     "format file name without optional components" in {
-      val s3Config = S3Output("s3://no-bucket", None, None, Compression.Gzip, 0, None)
-      val actual = KinesisS3Emitter.getBaseFilename(s3Config, firstSeq, lastSeq)(None)
+      val s3Config =
+        S3Output("s3://no-bucket", None, None, Compression.Gzip, 0, None)
+      val actual =
+        KinesisS3Emitter.getBaseFilename(s3Config, firstSeq, lastSeq)(None)
 
-      actual.replaceAll("\\d{4}-\\d{2}-\\d{2}-\\d{6}", "2021-04-30-000000") must beEqualTo(s"2021-04-30-000000-$firstSeq-$lastSeq")
+      actual.replaceAll("\\d{4}-\\d{2}-\\d{2}-\\d{6}", "2021-04-30-000000") must beEqualTo(
+        s"2021-04-30-000000-$firstSeq-$lastSeq"
+      )
     }
 
     "format file name with path, but without optional components" in {
       val s3Config = S3Output(s"s3://no-bucket/$outputDirectory", None, None, Compression.Gzip, 0, None)
-      val actual = KinesisS3Emitter.getBaseFilename(s3Config, firstSeq, lastSeq)(None)
+      val actual =
+        KinesisS3Emitter.getBaseFilename(s3Config, firstSeq, lastSeq)(None)
 
-      actual.replaceAll("\\d{4}-\\d{2}-\\d{2}-\\d{6}", "2021-04-30-000000") must beEqualTo(s"$outputDirectory/2021-04-30-000000-$firstSeq-$lastSeq")
+      actual.replaceAll("\\d{4}-\\d{2}-\\d{2}-\\d{6}", "2021-04-30-000000") must beEqualTo(
+        s"$outputDirectory/2021-04-30-000000-$firstSeq-$lastSeq"
+      )
     }
 
     "format file name with path and partition" in {

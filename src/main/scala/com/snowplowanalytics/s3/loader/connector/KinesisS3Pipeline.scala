@@ -18,11 +18,10 @@ import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration
 import com.amazonaws.services.kinesis.connectors.impl.{AllPassFilter, BasicMemoryBuffer}
 import com.amazonaws.services.kinesis.connectors.interfaces._
 
-import com.snowplowanalytics.s3.loader.{Result, KinesisSink, RawRecord}
+import com.snowplowanalytics.s3.loader.{KinesisSink, RawRecord, Result}
 import com.snowplowanalytics.s3.loader.Config.{Output, Purpose}
 import com.snowplowanalytics.s3.loader.monitoring.Monitoring
 import com.snowplowanalytics.s3.loader.serializers.ISerializer
-
 
 /**
  * S3Pipeline class sets up the Emitter/Buffer/Transformer/Filter
@@ -33,8 +32,8 @@ class KinesisS3Pipeline(client: AmazonS3,
                         output: Output,
                         badSink: KinesisSink,
                         serializer: ISerializer,
-                        monitoring: Monitoring
-) extends IKinesisConnectorPipeline[RawRecord, Result] {
+                        monitoring: Monitoring)
+    extends IKinesisConnectorPipeline[RawRecord, Result] {
 
   def getEmitter(c: KinesisConnectorConfiguration): IEmitter[Result] =
     new KinesisS3Emitter(client, monitoring, purpose, output, badSink, serializer)
@@ -42,7 +41,9 @@ class KinesisS3Pipeline(client: AmazonS3,
   def getBuffer(c: KinesisConnectorConfiguration): IBuffer[RawRecord] =
     new BasicMemoryBuffer[RawRecord](c)
 
-  def getTransformer(c: KinesisConnectorConfiguration): ITransformer[RawRecord, Result] =
+  def getTransformer(
+    c: KinesisConnectorConfiguration
+  ): ITransformer[RawRecord, Result] =
     new IdentityTransformer()
 
   def getFilter(c: KinesisConnectorConfiguration): IFilter[RawRecord] =
@@ -53,7 +54,10 @@ object KinesisS3Pipeline {
   def buildS3Client(region: Option[String], customEndpoint: Option[String]): AmazonS3 = {
     val client = AmazonS3ClientBuilder.standard()
     customEndpoint match {
-      case Some(value) => client.setEndpointConfiguration(new EndpointConfiguration(value, region.orNull))
+      case Some(value) =>
+        client.setEndpointConfiguration(
+          new EndpointConfiguration(value, region.orNull)
+        )
       case None => ()
     }
     client.build()

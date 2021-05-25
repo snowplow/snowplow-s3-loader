@@ -38,7 +38,11 @@ object Common {
    * @param statsDEnabled whether any metrics should be reported at all
    * @param records raw records themselves
    */
-  def partition(purpose: Purpose, statsDEnabled: Boolean, records: List[Result]): Batch.Partitioned =
+  def partition(
+    purpose: Purpose,
+    statsDEnabled: Boolean,
+    records: List[Result]
+  ): Batch.Partitioned =
     purpose match {
       case Purpose.SelfDescribingJson =>
         Batch.from(records).map(rs => partitionByType(rs).toList)
@@ -84,7 +88,9 @@ object Common {
   def getTstamp(row: String): Either[RuntimeException, Instant] = {
     val array = row.split("\t", -1)
     for {
-      string <- Either.catchOnly[IndexOutOfBoundsException](array(CollectorTstampIdx)).map(_.replaceAll(" ", "T") + "Z")
+      string <- Either
+                  .catchOnly[IndexOutOfBoundsException](array(CollectorTstampIdx))
+                  .map(_.replaceAll(" ", "T") + "Z")
       tstamp <- Either.catchOnly[DateTimeParseException](Instant.parse(string))
     } yield tstamp
   }

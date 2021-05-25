@@ -19,7 +19,11 @@ import org.slf4j.LoggerFactory
 import java.time.Duration
 
 // AWS Kinesis Connector libs
-import com.amazonaws.services.kinesis.connectors.{KinesisConnectorConfiguration, KinesisConnectorExecutorBase, KinesisConnectorRecordProcessorFactory}
+import com.amazonaws.services.kinesis.connectors.{
+  KinesisConnectorConfiguration,
+  KinesisConnectorExecutorBase,
+  KinesisConnectorRecordProcessorFactory
+}
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.SimpleRecordsFetcherFactory
 
 // AWS Client Library
@@ -28,7 +32,7 @@ import com.amazonaws.services.kinesis.clientlibrary.lib.worker.{KinesisClientLib
 import com.amazonaws.services.kinesis.metrics.impl.NullMetricsFactory
 import com.amazonaws.services.kinesis.metrics.interfaces.IMetricsFactory
 
-import com.snowplowanalytics.s3.loader.{Result, KinesisSink}
+import com.snowplowanalytics.s3.loader.{KinesisSink, Result}
 import com.snowplowanalytics.s3.loader.monitoring.Monitoring
 import com.snowplowanalytics.s3.loader.Config.{InitialPosition, Output, Purpose}
 import com.snowplowanalytics.s3.loader.serializers.ISerializer
@@ -45,15 +49,19 @@ class KinesisSourceExecutor(region: Option[String],
                             badSink: KinesisSink,
                             serializer: ISerializer,
                             monitoring: Monitoring,
-                            enableCloudWatch: Boolean
-) extends KinesisConnectorExecutorBase[RawRecord, Result] {
+                            enableCloudWatch: Boolean)
+    extends KinesisConnectorExecutorBase[RawRecord, Result] {
 
   private val logger = LoggerFactory.getLogger(getClass)
 
   initialize(config, if (enableCloudWatch) null else new NullMetricsFactory())
 
-  def getKCLConfig(initialPosition: InitialPosition, kcc: KinesisConnectorConfiguration): KinesisClientLibConfiguration = {
-    val cfg = new KinesisClientLibConfiguration(kcc.APP_NAME,
+  def getKCLConfig(
+    initialPosition: InitialPosition,
+    kcc: KinesisConnectorConfiguration
+  ): KinesisClientLibConfiguration = {
+    val cfg = new KinesisClientLibConfiguration(
+      kcc.APP_NAME,
       kcc.KINESIS_INPUT_STREAM,
       kcc.KINESIS_ENDPOINT,
       null,
@@ -72,7 +80,7 @@ class KinesisSourceExecutor(region: Option[String],
       new ClientConfiguration,
       new ClientConfiguration,
       new ClientConfiguration,
-      KinesisClientLibConfiguration.DEFAULT_TASK_BACKOFF_TIME_MILLIS,  // taskBackoffTimeMillis
+      KinesisClientLibConfiguration.DEFAULT_TASK_BACKOFF_TIME_MILLIS, // taskBackoffTimeMillis
       KinesisClientLibConfiguration.DEFAULT_METRICS_BUFFER_TIME_MILLIS, // metricsBufferTimeMillis
       KinesisClientLibConfiguration.DEFAULT_METRICS_MAX_QUEUE_SIZE, // metricsMaxQueueSize
       KinesisClientLibConfiguration.DEFAULT_VALIDATE_SEQUENCE_NUMBER_BEFORE_CHECKPOINTING, // validateSequenceNumberBeforeCheckpointing
@@ -87,12 +95,14 @@ class KinesisSourceExecutor(region: Option[String],
       kcc.APP_NAME + ","
         + kcc.CONNECTOR_DESTINATION + ","
         + KinesisConnectorConfiguration.KINESIS_CONNECTOR_USER_AGENT
-    ).withCallProcessRecordsEvenForEmptyRecordList(KinesisConnectorConfiguration.DEFAULT_CALL_PROCESS_RECORDS_EVEN_FOR_EMPTY_LIST)
+    ).withCallProcessRecordsEvenForEmptyRecordList(
+      KinesisConnectorConfiguration.DEFAULT_CALL_PROCESS_RECORDS_EVEN_FOR_EMPTY_LIST
+    )
 
     initialPosition match {
       case InitialPosition.AtTimestamp(tstamp) =>
         cfg.withTimestampAtInitialPositionInStream(tstamp)
-      case InitialPosition.TrimHorizon | InitialPosition.Latest  =>
+      case InitialPosition.TrimHorizon | InitialPosition.Latest =>
         cfg.withInitialPositionInStream(initialPosition.toKCL)
     }
   }
@@ -103,8 +113,12 @@ class KinesisSourceExecutor(region: Option[String],
    * @param kinesisConnectorConfiguration Amazon Kinesis connector configuration
    * @param metricFactory would be used to emit metrics in Amazon Kinesis Client Library
    */
-  override def initialize(kinesisConnectorConfiguration: KinesisConnectorConfiguration, metricFactory: IMetricsFactory): Unit = {
-    val kinesisClientLibConfiguration = getKCLConfig(initialPosition, kinesisConnectorConfiguration)
+  override def initialize(
+    kinesisConnectorConfiguration: KinesisConnectorConfiguration,
+    metricFactory: IMetricsFactory
+  ): Unit = {
+    val kinesisClientLibConfiguration =
+      getKCLConfig(initialPosition, kinesisConnectorConfiguration)
 
     if (!kinesisConnectorConfiguration.CALL_PROCESS_RECORDS_EVEN_FOR_EMPTY_LIST)
       logger.warn(
@@ -121,14 +135,16 @@ class KinesisSourceExecutor(region: Option[String],
       val init = (new Worker.Builder)
         .recordProcessorFactory(getKinesisConnectorRecordProcessorFactory())
         .config(kinesisClientLibConfiguration)
-      val builder = if (metricFactory != null) init.metricsFactory(metricFactory) else init
+      val builder =
+        if (metricFactory != null) init.metricsFactory(metricFactory) else init
       builder.build()
     }
     logger.info(getClass.getSimpleName + " worker created")
   }
 
   def getKinesisConnectorRecordProcessorFactory = {
-    val client = KinesisS3Pipeline.buildS3Client(region, output.s3.customEndpoint)
+    val client =
+      KinesisS3Pipeline.buildS3Client(region, output.s3.customEndpoint)
     val pipeline = new KinesisS3Pipeline(client, purpose, output, badSink, serializer, monitoring)
     new KinesisConnectorRecordProcessorFactory[RawRecord, Result](pipeline, config)
   }
