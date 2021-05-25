@@ -30,6 +30,7 @@ object Dependencies {
     val apacheCommons    = "3.2.1"
     val jackson          = "2.9.10.8"
     val jacksonCbor      = "2.9.10"
+    val sentry           = "1.7.30"
     // Thrift (test only)
     val collectorPayload = "0.0.0"
     // Scala
@@ -65,6 +66,7 @@ object Dependencies {
       .exclude("com.hadoop.gplcompression", "hadoop-lzo")
     val hadoopLZO        = "com.snowplowanalytics"            %  "hadoop-lzo"                        % V.hadoopLZO
     val apacheCommons    = "org.apache.directory.studio"      % "org.apache.commons.collections"     % V.apacheCommons
+    val sentry           = "io.sentry"                        % "sentry"                             % V.sentry
 
     val decline          = "com.monovore"                     %% "decline"                           % V.decline
     val circe            = "io.circe"                         %% "circe-generic"                     % V.circe

@@ -33,6 +33,8 @@ import com.amazonaws.services.kinesis.{AmazonKinesis, AmazonKinesisClientBuilder
 
 import org.slf4j.LoggerFactory
 
+import com.snowplowanalytics.s3.loader.monitoring.Monitoring
+
 /**
  * Configuration for the Kinesis stream
  * Used only as a sink for bad rows (events that couldn't be sunk into S3)
@@ -40,7 +42,7 @@ import org.slf4j.LoggerFactory
  * @param client Amazon Kinesis SDK client
  * @param name Kinesis stream name
  */
-class KinesisSink(client: AmazonKinesis, name: String) {
+class KinesisSink(client: AmazonKinesis, monitoring: Monitoring, name: String) {
 
   private val log = LoggerFactory.getLogger(getClass)
 
@@ -99,13 +101,14 @@ class KinesisSink(client: AmazonKinesis, name: String) {
         log.info(s"  + ShardId: ${result.getShardId}")
         log.info(s"  + SequenceNumber: ${result.getSequenceNumber}")
       case Failure(f) =>
+        monitoring.captureError(f)
         log.error("Writing failed")
         log.error("  + " + f.getMessage)
     }
 }
 
 object KinesisSink {
-  def build(config: Config): KinesisSink = {
+  def build(config: Config, monitoring: Monitoring): KinesisSink = {
     val client = AmazonKinesisClientBuilder.standard()
     config.input.customEndpoint match {
       case Some(value) => client.setEndpointConfiguration(new EndpointConfiguration(value, config.region.orNull))
@@ -117,6 +120,6 @@ object KinesisSink {
       case None => client.setMetricsCollector(RequestMetricCollector.NONE)
     }
 
-    new KinesisSink(client.build(), config.output.badStreamName)
+    new KinesisSink(client.build(), monitoring, config.output.badStreamName)
   }
 }

@@ -174,6 +174,8 @@ object Config {
 
   final case class StatsD(hostname: String, port: Int, tags: Map[String, String], prefix: Option[String])
 
+  final case class Sentry(dsn: URI)
+
   /**
    * Different metrics services
    * @param cloudWatch embedded into Kinesis Connector lib, CWMetricsFactory
@@ -186,7 +188,7 @@ object Config {
    * @param snowplow Snowplow-powered monitoring with basic init/shutdown/failure tracking
    * @param metrics metrics services
    */
-  case class Monitoring(snowplow: Option[SnowplowMonitoring], metrics: Option[Metrics])
+  case class Monitoring(snowplow: Option[SnowplowMonitoring], sentry: Option[Sentry], metrics: Option[Metrics])
 
   implicit def inputConfigDecoder: Decoder[Input] =
     deriveDecoder[Input]
@@ -203,9 +205,6 @@ object Config {
   implicit def loggingConfigDecoder: Decoder[Logging] =
     deriveDecoder[Logging]
 
-  implicit def javaUriDecoder: Decoder[URI] =
-    Decoder[String].emap(s => Either.catchOnly[IllegalArgumentException](URI.create(s)).leftMap(_.getMessage))
-
   implicit def metricsConfigDecoder: Decoder[Metrics] =
     deriveDecoder[Metrics]
 
@@ -214,6 +213,12 @@ object Config {
 
   implicit def statsdConfigDecoder: Decoder[StatsD] =
     deriveDecoder[StatsD]
+
+  implicit def javaUriDecoder: Decoder[URI] =
+    Decoder[String].emap(s => Either.catchOnly[IllegalArgumentException](URI.create(s)).leftMap(_.getMessage))
+
+  implicit def sentryConfigDecoder: Decoder[Sentry] =
+    deriveDecoder[Sentry]
 
   implicit def monitoringConfigDecoder: Decoder[Monitoring] =
     deriveDecoder[Monitoring]

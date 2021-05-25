@@ -76,6 +76,7 @@ class ConfigSpec extends Specification {
             Some(
               Config.SnowplowMonitoring(URI.create("http://snplow.acme.ru"), "angry-birds")
             ),
+            None,
             None
           )
         )
@@ -95,7 +96,11 @@ class ConfigSpec extends Specification {
         Config.Input("acme-s3-loader", "raw-events", InitialPosition.Latest, None, 10),
         Config.Output(S3Output("s3://acme-snowplow-output/raw/", Some("%Y-%M-%d"), Some("pre"), Compression.Gzip, 2000, None), "stream-name"),
         Config.Buffer(2048L, 10L, 5000L),
-        Some(Config.Monitoring(Some(Config.SnowplowMonitoring(URI.create("http://snplow.acme.ru:80"), "angry-birds")), Some(Config.Metrics(Some(false), None))))
+        Some(Config.Monitoring(
+          Some(Config.SnowplowMonitoring(URI.create("http://snplow.acme.ru:80"), "angry-birds")),
+          Some(Config.Sentry(URI.create("https://sentry.acme.com/42"))),
+          Some(Config.Metrics(Some(false), Some(Config.StatsD("statsd.acme.ru", 1024, Map.empty, Some("snowplow.monitoring")))))
+        ))
       )
 
       Config.load(configPath) must beRight(expected)
