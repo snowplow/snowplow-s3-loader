@@ -25,8 +25,10 @@ import cats.syntax.show._
  */
 object Main {
 
-  val config = Opts.option[Path]("config", "Path to configuration HOCON file", "c", "filename")
-  val parser = Command(s"${generated.Settings.name}-${generated.Settings.version}", "Streaming sink app for S3")(config)
+  val config = Opts
+    .option[Path]("config", "Path to configuration HOCON file", "c", "filename")
+  val parser =
+    Command(s"${generated.Settings.name}-${generated.Settings.version}", "Streaming sink app for S3")(config)
 
   def main(args: Array[String]): Unit =
     parser.parse(args.toList) match {

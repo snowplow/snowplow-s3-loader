@@ -28,19 +28,22 @@ object GZipSerializer extends ISerializer {
     // Populate the output stream with records
     val results = records.map {
       case Right(r) =>
-        serializeRecord(r,
-                        gzipOutputStream,
-                        (g: GZIPOutputStream) => {
-                          g.write(r)
-                          g.write("\n".getBytes)
-                        }
+        serializeRecord(
+          r,
+          gzipOutputStream,
+          (g: GZIPOutputStream) => {
+            g.write(r)
+            g.write("\n".getBytes)
+          }
         )
       case f => f
     }
 
     gzipOutputStream.close()
 
-    val namedStreams = List(ISerializer.NamedStream(s"$baseFilename.gz", outputStream))
+    val namedStreams = List(
+      ISerializer.NamedStream(s"$baseFilename.gz", outputStream)
+    )
 
     ISerializer.Serialized(namedStreams, results)
   }

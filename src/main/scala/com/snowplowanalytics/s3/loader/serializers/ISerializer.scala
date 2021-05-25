@@ -33,7 +33,7 @@ import com.snowplowanalytics.snowplow.badrows.BadRow.GenericError
 import com.snowplowanalytics.snowplow.badrows.Failure.GenericFailure
 import com.snowplowanalytics.snowplow.badrows.Payload.RawPayload
 
-import com.snowplowanalytics.s3.loader.{ S3Loader, Result, RawRecord }
+import com.snowplowanalytics.s3.loader.{RawRecord, Result, S3Loader}
 
 /**
  * Shared interface for all serializers
@@ -53,13 +53,23 @@ trait ISerializer {
       record.asRight
     } catch {
       case e: IOException =>
-        val failure = GenericFailure(Instant.now(), NonEmptyList.one(s"IO error writing raw event to output stream. ${e}"))
-        val payload = RawPayload(new String(Base64.encodeBase64(record), "UTF-8"))
+        val failure = GenericFailure(
+          Instant.now(),
+          NonEmptyList.one(s"IO error writing raw event to output stream. ${e}")
+        )
+        val payload = RawPayload(
+          new String(Base64.encodeBase64(record), "UTF-8")
+        )
         GenericError(S3Loader.processor, failure, payload).asLeft
       case NonFatal(e) =>
         logger.warn("Error writing raw event to output stream", e)
-        val failure = GenericFailure(Instant.now(), NonEmptyList.one(s"Error writing raw event to output stream. ${e}"))
-        val payload = RawPayload(new String(Base64.encodeBase64(record), "UTF-8"))
+        val failure = GenericFailure(
+          Instant.now(),
+          NonEmptyList.one(s"Error writing raw event to output stream. ${e}")
+        )
+        val payload = RawPayload(
+          new String(Base64.encodeBase64(record), "UTF-8")
+        )
         GenericError(S3Loader.processor, failure, payload).asLeft
     }
 }

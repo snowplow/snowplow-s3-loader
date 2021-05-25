@@ -13,7 +13,7 @@
 package com.snowplowanalytics.s3.loader
 
 import java.nio.file.Paths
-import java.time.{ ZoneOffset, Instant }
+import java.time.{Instant, ZoneOffset}
 import java.time.format.DateTimeFormatter
 
 import scala.util.Try
@@ -39,7 +39,15 @@ object DynamicPath {
       .map(_.toString.trim)
       .map { str =>
         val cleaned = str.filterNot(c => c == '{' || c == '}')
-        (str, Try(DateTimeFormatter.ofPattern(cleaned).withZone(ZoneOffset.UTC).format(decoratorDateTime)).toOption.getOrElse(str))
+        (
+          str,
+          Try(
+            DateTimeFormatter
+              .ofPattern(cleaned)
+              .withZone(ZoneOffset.UTC)
+              .format(decoratorDateTime)
+          ).toOption.getOrElse(str)
+        )
       }
       .toList
 

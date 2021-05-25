@@ -22,7 +22,7 @@ package com.snowplowanalytics.s3.loader
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets.UTF_8
 
-import scala.util.{Random, Failure, Success}
+import scala.util.{Failure, Random, Success}
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -111,13 +111,16 @@ object KinesisSink {
   def build(config: Config, monitoring: Monitoring): KinesisSink = {
     val client = AmazonKinesisClientBuilder.standard()
     config.input.customEndpoint match {
-      case Some(value) => client.setEndpointConfiguration(new EndpointConfiguration(value, config.region.orNull))
+      case Some(value) =>
+        client.setEndpointConfiguration(
+          new EndpointConfiguration(value, config.region.orNull)
+        )
       case None => ()
     }
 
     config.monitoring.flatMap(_.metrics.flatMap(_.cloudWatch)) match {
       case Some(enable) if enable => ()
-      case None => client.setMetricsCollector(RequestMetricCollector.NONE)
+      case None                   => client.setMetricsCollector(RequestMetricCollector.NONE)
     }
 
     new KinesisSink(client.build(), monitoring, config.output.bad.streamName)
