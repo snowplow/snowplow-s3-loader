@@ -60,9 +60,26 @@
       "appId": "angry-birds"
     },
 
+    # Sentry-powered crash-reporting; Optional
+    "sentry": {
+      "dsn": "https://sentry.acme.com/42"
+    }
+
     "metrics": {
       # Enable KCL CloudWatch metrics
       "cloudWatch": false
+
+      # StatsD-powered metrics; Optional
+      "statsd": {
+        "hostname": "statsd.acme.ru",
+        "port": 1024,
+        "tags": {
+          # It can resolve environment variables
+          # "worker": ${HOST}
+        }
+        # Optional
+        "prefix": "snowplow.monitoring"
+      }
     }
   }
 }
