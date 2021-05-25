@@ -70,10 +70,10 @@ $ java -jar snowplow-s3-loader-1.0.0.jar --config my.conf
 
 ## Find out more
 
-| Technical Docs             | Setup Guide          | Roadmap & Contributing |
-|----------------------------|----------------------|------------------------|
-| ![i1][techdocs-image]      | ![i2][setup-image]   | ![i3][roadmap-image]   |
-| [Technical Docs][techdocs] | [Setup Guide][setup] | _coming soon_          |
+| Technical Docs             | Setup Guide           | Roadmap & Contributing |
+|----------------------------|-----------------------|------------------------|
+| ![i1][techdocs-image]      | ![i2][setup-image]    | ![i3][roadmap-image]   |
+| [Technical Docs][techdocs] | [Setup Guide][config] | [Roadmap][roadmap]     |
 
 ## Copyright and license
 
@@ -106,9 +106,9 @@ limitations under the License.
 [s3]: http://aws.amazon.com/s3/
 [sbt]: http://typesafe.artifactoryonline.com/typesafe/ivy-releases/org.scala-sbt/sbt-launch/0.13.0/sbt-launch.jar
 
-[setup]: https://github.com/snowplow/snowplow/wiki/snowplow-s3-loader-setup
-[config]: https://github.com/snowplow/snowplow/wiki/snowplow-s3-loader-setup#configuration
-[techdocs]: https://github.com/snowplow/snowplow/wiki/s3-loader
+[config]: https://docs.snowplowanalytics.com/docs/pipeline-components-and-applications/loaders-storage-targets/s3-loader/#3-configuration
+[techdocs]: https://docs.snowplowanalytics.com/docs/pipeline-components-and-applications/loaders-storage-targets/s3-loader/
+[roadmap]: https://github.com/snowplow/snowplow/projects/7
 
 [techdocs-image]: https://d3i6fms1cm1j0i.cloudfront.net/github/images/techdocs.png
 [setup-image]: https://d3i6fms1cm1j0i.cloudfront.net/github/images/setup.png
