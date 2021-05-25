@@ -32,7 +32,7 @@ import io.circe.syntax._
 
 import com.snowplowanalytics.snowplow.badrows.BadRow.GenericError
 
-import com.snowplowanalytics.s3.loader.{DynamicPath, Result, KinesisSink}
+import com.snowplowanalytics.s3.loader.{DynamicPath, KinesisSink, Result}
 import com.snowplowanalytics.s3.loader.monitoring.{Monitoring, SnowplowTracking}
 import com.snowplowanalytics.s3.loader.Config.{Output, Purpose, S3Output}
 import com.snowplowanalytics.s3.loader.serializers.ISerializer
@@ -49,8 +49,8 @@ class KinesisS3Emitter(client: AmazonS3,
                        purpose: Purpose,
                        output: Output,
                        badSink: KinesisSink,
-                       serializer: ISerializer,
-                      ) extends IEmitter[Result] {
+                       serializer: ISerializer)
+    extends IEmitter[Result] {
 
   /**
    * Reads items from a buffer and saves them to s3.
@@ -66,7 +66,8 @@ class KinesisS3Emitter(client: AmazonS3,
     logger.info(s"Flushing buffer with ${buffer.getRecords.size} records.")
 
     val records = buffer.getRecords.asScala.toList
-    val partitionedBatch = Common.partition(purpose, monitoring.isStatsDEnabled, records)
+    val partitionedBatch =
+      Common.partition(purpose, monitoring.isStatsDEnabled, records)
 
     val getBase: Option[String] => String =
       getBaseFilename(output.s3, buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber)
@@ -75,7 +76,8 @@ class KinesisS3Emitter(client: AmazonS3,
 
     partitionedBatch.data.flatMap {
       case (RowType.Unpartitioned, partitionRecords) if partitionRecords.nonEmpty =>
-        emitRecords(partitionRecords, output.s3.path, afterEmit, getBase(None)).map(_.asLeft)
+        emitRecords(partitionRecords, output.s3.path, afterEmit, getBase(None))
+          .map(_.asLeft)
       case (data: RowType.SelfDescribing, partitionRecords) if partitionRecords.nonEmpty =>
         emitRecords(partitionRecords, output.s3.path, afterEmit, getBase(Some(data.partition))).map(_.asLeft)
       case _ =>
@@ -102,7 +104,6 @@ class KinesisS3Emitter(client: AmazonS3,
       badSink.store(record.asJson.noSpaces, None)
     }
 
-
   /**
    * Keep attempting to send the data to S3 until it succeeds
    *
@@ -112,9 +113,17 @@ class KinesisS3Emitter(client: AmazonS3,
    * @param callback a procedure to execute after successful emit, e.g. reporting
    * @return success status of sending to S3
    */
-  def attemptEmit(bucket: String, stream: ISerializer.NamedStream, now: Long, callback: () => Unit): Unit = {
+  def attemptEmit(
+    bucket: String,
+    stream: ISerializer.NamedStream,
+    now: Long,
+    callback: () => Unit
+  ): Unit = {
     def logAndSleep(attempt: Int, e: Throwable): Unit = {
-      logger.error(s"An exception during putting ${stream.filename} object to S3, attempt $attempt", e)
+      logger.error(
+        s"An exception during putting ${stream.filename} object to S3, attempt $attempt",
+        e
+      )
       monitoring.captureError(e)
       monitoring.viaSnowplow { t =>
         SnowplowTracking.sendFailureEvent(t, BackoffPeriod, attempt, now, e.toString)
@@ -146,12 +155,19 @@ class KinesisS3Emitter(client: AmazonS3,
    * @param baseFilename final filename
    * @return list of records that could not be emitted
    */
-  def emitRecords(records: List[Result], bucket: String, callback: () => Unit, baseFilename: String): List[GenericError] = {
+  def emitRecords(
+    records: List[Result],
+    bucket: String,
+    callback: () => Unit,
+    baseFilename: String
+  ): List[GenericError] = {
     val serializationResults = serializer.serialize(records, baseFilename)
     val (failures, successes) = serializationResults.results.separate
     val successSize = successes.size
 
-    logger.debug(s"Successfully serialized $successSize records out of ${successSize + failures.size}")
+    logger.debug(
+      s"Successfully serialized $successSize records out of ${successSize + failures.size}"
+    )
 
     if (successSize > 0)
       serializationResults.namedStreams.foreach { stream =>
@@ -192,7 +208,11 @@ object KinesisS3Emitter {
    * @param stream name information and content
    * @param now initial connection attempt start time
    */
-  def getRequest(bucket: String, stream: ISerializer.NamedStream, now: Long): PutObjectRequest = {
+  def getRequest(
+    bucket: String,
+    stream: ISerializer.NamedStream,
+    now: Long
+  ): PutObjectRequest = {
     val outputStream = stream.stream
     val key = DynamicPath.decorateDirectoryWithTime(stream.filename, Instant.ofEpochMilli(now))
     val inputStream = new ByteArrayInputStream(outputStream.toByteArray)
@@ -202,16 +222,26 @@ object KinesisS3Emitter {
     new PutObjectRequest(bucket, key, inputStream, objMeta)
   }
 
-
   /**
    * Determines the filename in S3, which is the corresponding
    * Kinesis sequence range of records in the file.
    */
-  def getBaseFilename(s3Config: S3Output, firstSeq: String, lastSeq: String)
-                     (partition: Option[String]): String = {
+  def getBaseFilename(
+    s3Config: S3Output,
+    firstSeq: String,
+    lastSeq: String
+  )(
+    partition: Option[String]
+  ): String = {
 
     val path = List(s3Config.outputDirectory, partition, s3Config.dateFormat).flatten.mkString("/")
-    val fileName = (s3Config.filenamePrefix.toList ++ List(LocalDateTime.now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmmss")), firstSeq, lastSeq)).mkString("-")
+    val fileName = (s3Config.filenamePrefix.toList ++ List(
+      LocalDateTime.now.format(
+        DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmmss")
+      ),
+      firstSeq,
+      lastSeq
+    )).mkString("-")
     val fullPath = List(path, fileName).filterNot(_.isEmpty).mkString("/")
 
     DynamicPath.normalize(fullPath)

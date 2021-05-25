@@ -39,19 +39,26 @@ object LzoSerializer extends ISerializer {
     val outputStream = new ByteArrayOutputStream()
 
     // This writes to the underlying outputstream and indexoutput stream
-    val lzoOutputStream = lzoCodec.createIndexedOutputStream(outputStream, new DataOutputStream(indexOutputStream))
+    val lzoOutputStream = lzoCodec.createIndexedOutputStream(
+      outputStream,
+      new DataOutputStream(indexOutputStream)
+    )
 
     val rawBlockWriter = new RawBlockWriter(lzoOutputStream)
 
     // Populate the output stream with records
     val results = records.map {
-      case Right(r) => serializeRecord(r, rawBlockWriter, (rbw: RawBlockWriter) => rbw.write(r))
+      case Right(r) =>
+        serializeRecord(r, rawBlockWriter, (rbw: RawBlockWriter) => rbw.write(r))
       case Left(b) => Left(b)
     }
 
     rawBlockWriter.close()
 
-    val namedStreams = List(ISerializer.NamedStream(s"$baseFilename.lzo", outputStream), ISerializer.NamedStream(s"$baseFilename.lzo.index", indexOutputStream))
+    val namedStreams = List(
+      ISerializer.NamedStream(s"$baseFilename.lzo", outputStream),
+      ISerializer.NamedStream(s"$baseFilename.lzo.index", indexOutputStream)
+    )
 
     ISerializer.Serialized(namedStreams, results)
   }

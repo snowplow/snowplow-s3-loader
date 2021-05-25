@@ -4,7 +4,7 @@ import java.time.{Duration, Instant}
 import java.net.{DatagramPacket, DatagramSocket, InetAddress}
 import java.nio.charset.StandardCharsets.UTF_8
 
-import scala.concurrent.{ Future, ExecutionContext }
+import scala.concurrent.{ExecutionContext, Future}
 
 import org.slf4j.LoggerFactory
 
@@ -13,7 +13,7 @@ import com.snowplowanalytics.s3.loader.processing.Batch.Meta
 
 object StatsD {
 
-  val CollectorLatencyName  = "latency.collector_to_s3.min"
+  val CollectorLatencyName = "latency.collector_to_s3.min"
   val CollectorTstampIdx = 3
 
   private val logger = LoggerFactory.getLogger(getClass)
@@ -42,7 +42,9 @@ object StatsD {
       Future {
         val socket = new DatagramSocket
         val ip = InetAddress.getByName(config.hostname)
-        socket.send(new DatagramPacket(strMetric, strMetric.length, ip, config.port))
+        socket.send(
+          new DatagramPacket(strMetric, strMetric.length, ip, config.port)
+        )
       }
     }
 
@@ -63,8 +65,8 @@ object StatsD {
     val tagStr = config.tags.map { case (k, v) => s"$k:$v" }.mkString(",")
     val prefix = config.prefix match {
       case Some(p) if p.endsWith(".") => p
-      case Some(p) => s"$p."
-      case None => ""
+      case Some(p)                    => s"$p."
+      case None                       => ""
     }
     s"${prefix}${metric.key}:${metric.value}|g|#$tagStr"
   }

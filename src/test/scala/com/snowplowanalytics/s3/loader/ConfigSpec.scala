@@ -69,7 +69,10 @@ class ConfigSpec extends Specification {
         Some("eu-central-1"),
         Purpose.Raw,
         Config.Input("acme-s3-loader", "enriched-events", InitialPosition.Latest, None, 10),
-        Config.Output(S3Output("s3://s3-loader-integration-test/usual", Some("%Y-%M-%d"), Some("pre"), Compression.Gzip, 2000, None), "stream-name"),
+        Config.Output(
+          S3Output("s3://s3-loader-integration-test/usual", Some("%Y-%M-%d"), Some("pre"), Compression.Gzip, 2000, None),
+          "stream-name"
+        ),
         Config.Buffer(2048L, 10L, 5000L),
         Some(
           Config.Monitoring(
@@ -88,19 +91,34 @@ class ConfigSpec extends Specification {
     }
 
     "be parsed from an example file" in {
-      val configPath = Paths.get(getClass.getResource("/config.hocon.sample").toURI)
+      val configPath =
+        Paths.get(getClass.getResource("/config.hocon.sample").toURI)
 
       val expected = Config(
         Some("eu-central-1"),
         Purpose.Raw,
         Config.Input("acme-s3-loader", "raw-events", InitialPosition.Latest, None, 10),
-        Config.Output(S3Output("s3://acme-snowplow-output/raw/", Some("%Y-%M-%d"), Some("pre"), Compression.Gzip, 2000, None), "stream-name"),
+        Config.Output(
+          S3Output("s3://acme-snowplow-output/raw/", Some("%Y-%M-%d"), Some("pre"), Compression.Gzip, 2000, None),
+          "stream-name"
+        ),
         Config.Buffer(2048L, 10L, 5000L),
-        Some(Config.Monitoring(
-          Some(Config.SnowplowMonitoring(URI.create("http://snplow.acme.ru:80"), "angry-birds")),
-          Some(Config.Sentry(URI.create("https://sentry.acme.com/42"))),
-          Some(Config.Metrics(Some(false), Some(Config.StatsD("statsd.acme.ru", 1024, Map.empty, Some("snowplow.monitoring")))))
-        ))
+        Some(
+          Config.Monitoring(
+            Some(
+              Config.SnowplowMonitoring(URI.create("http://snplow.acme.ru:80"), "angry-birds")
+            ),
+            Some(Config.Sentry(URI.create("https://sentry.acme.com/42"))),
+            Some(
+              Config.Metrics(
+                Some(false),
+                Some(
+                  Config.StatsD("statsd.acme.ru", 1024, Map.empty, Some("snowplow.monitoring"))
+                )
+              )
+            )
+          )
+        )
       )
 
       Config.load(configPath) must beRight(expected)

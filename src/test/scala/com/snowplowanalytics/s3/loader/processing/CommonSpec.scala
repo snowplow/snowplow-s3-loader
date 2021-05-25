@@ -48,7 +48,11 @@ class CommonSpec extends Specification {
       val expected = Map(
         RowType.SelfDescribing("com.acme1", "example1", "jsonschema", 2) -> List(dataType11.asRight),
         RowType.SelfDescribing("com.acme1", "example2", "jsonschema", 2) -> List(dataType21.asRight, dataType22.asRight),
-        RowType.SelfDescribing("com.acme2", "example1", "jsonschema", 2) -> List(dataType31.asRight, dataType32.asRight, dataType33.asRight),
+        RowType.SelfDescribing("com.acme2", "example1", "jsonschema", 2) -> List(
+          dataType31.asRight,
+          dataType32.asRight,
+          dataType33.asRight
+        ),
         RowType.ReadingError -> List(failedRecord.asLeft, failedRecord.asLeft),
         RowType.Unpartitioned -> List(nonSelfDescribingJson.asRight, nonJsonData.asRight)
       )
@@ -89,11 +93,17 @@ class CommonSpec extends Specification {
       import CommonSpec._
 
       val input = List(dataType11.asRight, dataType21.asRight)
-      val result = Common.partition(Config.Purpose.SelfDescribingJson, false, input)
-      result should beEqualTo(Batch(Batch.EmptyMeta, List(
-        (RowType.SelfDescribing("com.acme1","example1","jsonschema",2), List(dataType11.asRight)),
-        (RowType.SelfDescribing("com.acme1","example2","jsonschema",2), List(dataType21.asRight)),
-      )))
+      val result =
+        Common.partition(Config.Purpose.SelfDescribingJson, false, input)
+      result should beEqualTo(
+        Batch(
+          Batch.EmptyMeta,
+          List(
+            (RowType.SelfDescribing("com.acme1", "example1", "jsonschema", 2), List(dataType11.asRight)),
+            (RowType.SelfDescribing("com.acme1", "example2", "jsonschema", 2), List(dataType21.asRight))
+          )
+        )
+      )
     }
   }
 }

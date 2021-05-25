@@ -35,7 +35,9 @@ class GZipSerializerSpec extends Specification {
 
       val compressedFilename = decompressedFilename + ".gz"
 
-      def cleanup() = List(compressedFilename, decompressedFilename).foreach(new File(_).delete())
+      def cleanup() = List(compressedFilename, decompressedFilename).foreach(
+        new File(_).delete()
+      )
 
       cleanup()
 
@@ -44,7 +46,8 @@ class GZipSerializerSpec extends Specification {
         List("X", "Y", 2000, "x", "y").mkString("\t").getBytes.asRight
       )
 
-      val serializationResult = GZipSerializer.serialize(binaryInputs, decompressedFilename)
+      val serializationResult =
+        GZipSerializer.serialize(binaryInputs, decompressedFilename)
 
       val gzipOutput = serializationResult.namedStreams.head.stream
 
