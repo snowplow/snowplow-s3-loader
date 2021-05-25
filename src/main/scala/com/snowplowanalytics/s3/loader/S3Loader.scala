@@ -39,7 +39,7 @@ object S3Loader {
     val badSink = KinesisSink.build(config, monitoring)
 
     val serializer = config.output.s3.compression match {
-      case Compression.Lzo => LzoSerializer
+      case Compression.Lzo  => LzoSerializer
       case Compression.Gzip => GZipSerializer
     }
 
@@ -53,7 +53,9 @@ object S3Loader {
         badSink,
         serializer,
         monitoring,
-        config.monitoring.flatMap(_.metrics.flatMap(_.cloudWatch)).getOrElse(false)
+        config.monitoring
+          .flatMap(_.metrics.flatMap(_.cloudWatch))
+          .getOrElse(false)
       )
 
     monitoring.initTracking()
@@ -78,22 +80,37 @@ object S3Loader {
     val props = new Properties()
 
     props.setProperty(KinesisConnectorConfiguration.PROP_KINESIS_INPUT_STREAM, conf.input.streamName)
-    conf.input.customEndpoint.foreach(props.setProperty(KinesisConnectorConfiguration.PROP_KINESIS_ENDPOINT, _))
+    conf.input.customEndpoint.foreach(
+      props.setProperty(KinesisConnectorConfiguration.PROP_KINESIS_ENDPOINT, _)
+    )
 
     props.setProperty(KinesisConnectorConfiguration.PROP_APP_NAME, conf.input.appName)
-    props.setProperty(KinesisConnectorConfiguration.PROP_INITIAL_POSITION_IN_STREAM, conf.input.position.toKCL.toString)
+    props.setProperty(
+      KinesisConnectorConfiguration.PROP_INITIAL_POSITION_IN_STREAM,
+      conf.input.position.toKCL.toString
+    )
 
-    conf.output.s3.customEndpoint.foreach(props.setProperty(KinesisConnectorConfiguration.PROP_S3_ENDPOINT, _))
+    conf.output.s3.customEndpoint.foreach(
+      props.setProperty(KinesisConnectorConfiguration.PROP_S3_ENDPOINT, _)
+    )
     props.setProperty(KinesisConnectorConfiguration.PROP_S3_BUCKET, conf.output.s3.bucketName)
 
     props.setProperty(KinesisConnectorConfiguration.PROP_BUFFER_BYTE_SIZE_LIMIT, conf.buffer.byteLimit.toString)
-    props.setProperty(KinesisConnectorConfiguration.PROP_BUFFER_RECORD_COUNT_LIMIT, conf.buffer.recordLimit.toString)
-    props.setProperty(KinesisConnectorConfiguration.PROP_BUFFER_MILLISECONDS_LIMIT, conf.buffer.timeLimit.toString)
+    props.setProperty(
+      KinesisConnectorConfiguration.PROP_BUFFER_RECORD_COUNT_LIMIT,
+      conf.buffer.recordLimit.toString
+    )
+    props.setProperty(
+      KinesisConnectorConfiguration.PROP_BUFFER_MILLISECONDS_LIMIT,
+      conf.buffer.timeLimit.toString
+    )
 
     props.setProperty(KinesisConnectorConfiguration.PROP_CONNECTOR_DESTINATION, "s3")
 
     // So that the region of the DynamoDB table is correct
-    conf.region.foreach(props.setProperty(KinesisConnectorConfiguration.PROP_REGION_NAME, _))
+    conf.region.foreach(
+      props.setProperty(KinesisConnectorConfiguration.PROP_REGION_NAME, _)
+    )
 
     // The emit method retries sending to S3 indefinitely, so it only needs to be called once
     props.setProperty(KinesisConnectorConfiguration.PROP_RETRY_LIMIT, "1")

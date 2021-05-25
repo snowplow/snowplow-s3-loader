@@ -39,18 +39,14 @@ import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionIn
 
 import com.snowplowanalytics.s3.loader.Config._
 
-case class Config(region: Option[String],
-                  purpose: Purpose,
-                  input: Input,
-                  output: Output,
-                  buffer: Buffer,
-                  monitoring: Option[Monitoring])
+case class Config(region: Option[String], purpose: Purpose, input: Input, output: Output, buffer: Buffer, monitoring: Option[Monitoring])
 
 object Config {
 
   val DefaultStatsDPrefix = "snowplow.s3loader"
 
-  implicit def hint[T]: ProductHint[T] = ProductHint[T](ConfigFieldMapping(CamelCase, CamelCase))
+  implicit def hint[T]: ProductHint[T] =
+    ProductHint[T](ConfigFieldMapping(CamelCase, CamelCase))
 
   def load(path: Path): Either[String, Config] =
     Either
@@ -64,11 +60,13 @@ object Config {
       }
 
   sealed trait InitialPosition extends Product with Serializable {
-    def toKCL: InitialPositionInStream = this match {
-      case InitialPosition.AtTimestamp(_) => InitialPositionInStream.AT_TIMESTAMP
-      case InitialPosition.TrimHorizon => InitialPositionInStream.TRIM_HORIZON
-      case InitialPosition.Latest => InitialPositionInStream.LATEST
-    }
+    def toKCL: InitialPositionInStream =
+      this match {
+        case InitialPosition.AtTimestamp(_) =>
+          InitialPositionInStream.AT_TIMESTAMP
+        case InitialPosition.TrimHorizon => InitialPositionInStream.TRIM_HORIZON
+        case InitialPosition.Latest      => InitialPositionInStream.LATEST
+      }
   }
   object InitialPosition {
     final case class AtTimestamp(tstamp: Date) extends InitialPosition
@@ -82,55 +80,58 @@ object Config {
       Decoder.decodeJsonObject.emap { obj =>
         val root = obj.toMap
         val opt = for {
-          atTimestamp <- root.collectFirst { case (k, v) if k.toLowerCase == "at_timestamp" => v }
+          atTimestamp <- root.collectFirst {
+                           case (k, v) if k.toLowerCase == "at_timestamp" => v
+                         }
           atTimestampObj <- atTimestamp.asObject.map(_.toMap)
           timestampStr <- atTimestampObj.get("timestamp")
           timestamp <- timestampStr.as[Date].toOption
         } yield AtTimestamp(timestamp)
         opt match {
-          case Some(atTimestamp) =>  atTimestamp.asRight
-          case None => "Initial position can be either LATEST or TRIM_HORIZON string or AT_TIMESTAMP object (e.g. 2020-06-03T00:00:00Z)".asLeft
+          case Some(atTimestamp) => atTimestamp.asRight
+          case None =>
+            "Initial position can be either LATEST or TRIM_HORIZON string or AT_TIMESTAMP object (e.g. 2020-06-03T00:00:00Z)".asLeft
         }
       }
 
     implicit val initPositionDecoder: Decoder[InitialPosition] =
-      Decoder[String].map(_.toLowerCase).emap {
-        case "latest" => Latest.asRight
-        case "trim_horizon" => TrimHorizon.asRight
-        case other => s"Initial position $other cannot be decoded".asLeft
-      }.or(atTimestampDecoder)
+      Decoder[String]
+        .map(_.toLowerCase)
+        .emap {
+          case "latest"       => Latest.asRight
+          case "trim_horizon" => TrimHorizon.asRight
+          case other          => s"Initial position $other cannot be decoded".asLeft
+        }
+        .or(atTimestampDecoder)
   }
 
-  final case class Input(appName: String,
-                         streamName: String,
-                         position: InitialPosition,
-                         customEndpoint: Option[String],
-                         maxRecords: Int)
+  final case class Input(appName: String, streamName: String, position: InitialPosition, customEndpoint: Option[String], maxRecords: Int)
 
   sealed trait Purpose
 
   object Purpose {
+
     /** Data as a byte stream, without inspection or parsing */
     case object Raw extends Purpose
+
     /** Self-describing JSONs, such as Snowplow bad rows, allowing partitioning */
     case object SelfDescribingJson extends Purpose
+
     /** Snowplow Enriched events, resulting into enabled metrics */
     case object Enriched extends Purpose
 
     implicit def purposeDecoder: Decoder[Purpose] =
       Decoder[String].map(_.toLowerCase).emap {
-        case "raw" => Raw.asRight
+        case "raw"             => Raw.asRight
         case "self_describing" => SelfDescribingJson.asRight
         case "enriched_events" => Enriched.asRight
-        case other => s"Cannot parse $other into supported output type".asLeft
+        case other             => s"Cannot parse $other into supported output type".asLeft
       }
   }
 
   final case class S3Output(path: String,
-
                             dateFormat: Option[String],
                             filenamePrefix: Option[String],
-
                             compression: Compression,
                             maxTimeout: Int,
                             customEndpoint: Option[String]) {
@@ -162,9 +163,9 @@ object Config {
 
     implicit def compressionDecoder: Decoder[Compression] =
       Decoder[String].map(_.toLowerCase).emap {
-        case "lzo" => Lzo.asRight
+        case "lzo"  => Lzo.asRight
         case "gzip" => Gzip.asRight
-        case other => s"Cannot parse $other into supported format".asLeft
+        case other  => s"Cannot parse $other into supported format".asLeft
       }
   }
 
@@ -220,7 +221,10 @@ object Config {
     deriveDecoder[StatsD]
 
   implicit def javaUriDecoder: Decoder[URI] =
-    Decoder[String].emap(s => Either.catchOnly[IllegalArgumentException](URI.create(s)).leftMap(_.getMessage))
+    Decoder[String].emap(s =>
+      Either
+        .catchOnly[IllegalArgumentException](URI.create(s))
+        .leftMap(_.getMessage))
 
   implicit def sentryConfigDecoder: Decoder[Sentry] =
     deriveDecoder[Sentry]
@@ -234,9 +238,10 @@ object Config {
   implicit val configReader: ConfigReader[Config] =
     ConfigReader[Json].emap { json =>
       json.as[Config] match {
-        case Left(error)  => Left(new FailureReason {
-          def description: String = error.show
-        })
+        case Left(error) =>
+          Left(new FailureReason {
+            def description: String = error.show
+          })
         case Right(value) => Right(value)
       }
     }
