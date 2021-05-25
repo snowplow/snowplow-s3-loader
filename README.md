@@ -77,7 +77,7 @@ $ java -jar snowplow-s3-loader-1.0.0.jar --config my.conf
 
 ## Copyright and license
 
-Snowplow S3 Loader is copyright 2014-2020 Snowplow Analytics Ltd.
+Snowplow S3 Loader is copyright 2014-2021 Snowplow Analytics Ltd.
 
 Licensed under the [Apache License, Version 2.0][license] (the "License");
 you may not use this software except in compliance with the License.
