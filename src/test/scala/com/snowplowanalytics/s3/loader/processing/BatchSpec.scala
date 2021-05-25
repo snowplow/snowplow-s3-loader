@@ -26,7 +26,6 @@ import com.snowplowanalytics.s3.loader.{Result, S3Loader}
 
 import org.specs2.mutable.Specification
 
-
 class BatchSpec extends Specification {
   "map" should {
     "not change the met" in {
@@ -50,7 +49,8 @@ class BatchSpec extends Specification {
     }
 
     "ignore invalid TSVs for timestamps, but preserve for count" in {
-      val input: List[Result] = List("invalid event", "rubbish").map(_.getBytes.asRight)
+      val input: List[Result] =
+        List("invalid event", "rubbish").map(_.getBytes.asRight)
 
       val expected = Batch(Batch.Meta(None, 2), input)
 
@@ -76,15 +76,16 @@ class BatchSpec extends Specification {
   }
 }
 
-
 object BatchSpec {
 
   def getEvent(collectorTstamp: String): String =
-    input.map {
-      case ("collector_tstamp", _) => collectorTstamp
-      case ("event_id", _) => UUID.randomUUID().toString
-      case (_, v) => v
-    }.mkString("\t")
+    input
+      .map {
+        case ("collector_tstamp", _) => collectorTstamp
+        case ("event_id", _)         => UUID.randomUUID().toString
+        case (_, v)                  => v
+      }
+      .mkString("\t")
 
   val contextsJson =
     """{

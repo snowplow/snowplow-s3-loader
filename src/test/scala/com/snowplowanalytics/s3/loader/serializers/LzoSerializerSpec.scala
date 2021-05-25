@@ -45,15 +45,20 @@ class LzoSerializerSpec extends Specification {
 
       val compressedFilename = decompressedFilename + ".lzo"
 
-      def cleanup() = List(compressedFilename, decompressedFilename).foreach(new File(_).delete())
+      def cleanup() = List(compressedFilename, decompressedFilename).foreach(
+        new File(_).delete()
+      )
 
       cleanup()
 
-      val inputEvents = List(Right(new CollectorPayload("A", "B", 1000, "a", "b")), Right(new CollectorPayload("X", "Y", 2000, "x", "y")))
+      val inputEvents =
+        List(Right(new CollectorPayload("A", "B", 1000, "a", "b")), Right(new CollectorPayload("X", "Y", 2000, "x", "y")))
 
-      val binaryInputs = inputEvents.map(e => e.map(x => serializer.serialize(x)))
+      val binaryInputs =
+        inputEvents.map(e => e.map(x => serializer.serialize(x)))
 
-      val serializationResult = LzoSerializer.serialize(binaryInputs, decompressedFilename)
+      val serializationResult =
+        LzoSerializer.serialize(binaryInputs, decompressedFilename)
 
       val lzoOutput = serializationResult.namedStreams.head.stream
 
@@ -61,7 +66,8 @@ class LzoSerializerSpec extends Specification {
 
       s"lzop -d $compressedFilename" !!
 
-      val input = new BufferedInputStream(new FileInputStream(decompressedFilename))
+      val input =
+        new BufferedInputStream(new FileInputStream(decompressedFilename))
       val reader = new RawBlockReader(input)
 
       cleanup()

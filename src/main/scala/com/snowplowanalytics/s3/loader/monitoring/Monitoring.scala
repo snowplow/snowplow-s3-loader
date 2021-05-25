@@ -12,21 +12,19 @@
  */
 package com.snowplowanalytics.s3.loader.monitoring
 
-import scala.util.{ Success, Failure }
+import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext
 
 import cats.Id
 
-import io.sentry.{ Sentry, SentryClient, SentryOptions }
+import io.sentry.{Sentry, SentryClient, SentryOptions}
 
 import com.snowplowanalytics.snowplow.scalatracker.Tracker
 
 import com.snowplowanalytics.s3.loader.Config
 import com.snowplowanalytics.s3.loader.processing.Batch.Meta
 
-class Monitoring(snowplow: Option[Tracker[Id]],
-                 statsD: Option[Config.StatsD],
-                 sentry: Option[SentryClient]) {
+class Monitoring(snowplow: Option[Tracker[Id]], statsD: Option[Config.StatsD], sentry: Option[SentryClient]) {
 
   private implicit val EC: ExecutionContext =
     scala.concurrent.ExecutionContext.global
@@ -43,7 +41,7 @@ class Monitoring(snowplow: Option[Tracker[Id]],
   def report(meta: Meta): Unit =
     statsD.foreach { config =>
       StatsD.report(config)(meta).onComplete {
-        case Success(_) => ()
+        case Success(_)     => ()
         case Failure(error) => System.err.println(error)
       }
     }

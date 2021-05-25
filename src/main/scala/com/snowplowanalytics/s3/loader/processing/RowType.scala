@@ -24,12 +24,7 @@ object RowType {
   case object Unpartitioned extends RowType
 
   /** JSON line with self-describing payload that can be partitioned */
-  final case class SelfDescribing(
-    vendor: String,
-    name: String,
-    format: String,
-    model: Int
-  ) extends RowType {
+  final case class SelfDescribing(vendor: String, name: String, format: String, model: Int) extends RowType {
     def partition: String = s"$vendor.$name/$format-$model"
   }
 
