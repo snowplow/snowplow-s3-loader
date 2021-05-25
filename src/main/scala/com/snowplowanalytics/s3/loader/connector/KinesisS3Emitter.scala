@@ -115,6 +115,7 @@ class KinesisS3Emitter(client: AmazonS3,
   def attemptEmit(bucket: String, stream: ISerializer.NamedStream, now: Long, callback: () => Unit): Unit = {
     def logAndSleep(attempt: Int, e: Throwable): Unit = {
       logger.error(s"An exception during putting ${stream.filename} object to S3, attempt $attempt", e)
+      monitoring.captureError(e)
       monitoring.viaSnowplow { t =>
         SnowplowTracking.sendFailureEvent(t, BackoffPeriod, attempt, now, e.toString)
       }

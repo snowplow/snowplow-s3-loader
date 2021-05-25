@@ -105,6 +105,7 @@ object BuildSettings {
       case PathList("org", "apache", "log4j", _*)        => MergeStrategy.last  // handled by log4j-over-slf4j
       case PathList(ps @ _*) if ps.last endsWith ".html" => MergeStrategy.first
       case "application.conf"                            => MergeStrategy.concat
+      case "module-info.class"                           => MergeStrategy.discard
       case x =>
         val oldStrategy = (assembly / assemblyMergeStrategy).value
         oldStrategy(x)
