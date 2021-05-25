@@ -12,6 +12,7 @@
  */
 package com.snowplowanalytics.s3.loader
 
+import java.net.URI
 import java.nio.file.Paths
 
 import com.typesafe.config.ConfigFactory
@@ -72,7 +73,7 @@ class ConfigSpec extends Specification {
         Config.Input("acme-s3-loader", "enriched-events", InitialPosition.Latest, None, 10),
         Config.Output(S3Output("s3://s3-loader-integration-test/usual", Some("%Y-%M-%d"), Some("pre"), Format.Gzip, 2000, None), "stream-name"),
         Config.Buffer(2048L, 10L, 5000L),
-        Some(Config.Monitoring(Some(Config.SnowplowMonitoring("http://snplow.acme.ru",80,"angry-birds","POST")), None))
+        Some(Config.Monitoring(Some(Config.SnowplowMonitoring("http://snplow.acme.ru",80,"angry-birds","POST")), None, None))
       )
 
       val result = ConfigSource.fromConfig(config).load[Config]
@@ -89,7 +90,11 @@ class ConfigSpec extends Specification {
         Config.Input("acme-s3-loader", "raw-events", InitialPosition.Latest, None, 10),
         Config.Output(S3Output("s3://acme-snowplow-output/raw/", Some("%Y-%M-%d"), Some("pre"), Format.Gzip, 2000, None), "stream-name"),
         Config.Buffer(2048L, 10L, 5000L),
-        Some(Config.Monitoring(Some(Config.SnowplowMonitoring("snplow.acme.ru",80,"angry-birds","POST")), Some(Config.Metrics(Some(false), None))))
+        Some(Config.Monitoring(
+          Some(Config.SnowplowMonitoring("snplow.acme.ru",80,"angry-birds","POST")),
+          Some(Config.Sentry(URI.create("https://sentry.acme.com/42"))),
+          Some(Config.Metrics(Some(false), Some(Config.StatsD("statsd.acme.ru", 1024, Map.empty, Some("snowplow.monitoring")))))
+        ))
       )
 
       Config.load(configPath) must beRight(expected)

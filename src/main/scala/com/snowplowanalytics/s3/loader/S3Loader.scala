@@ -36,7 +36,7 @@ object S3Loader {
     val monitoring = Monitoring.build(config.monitoring)
 
     // A sink for records that could not be emitted to S3
-    val badSink = KinesisSink.build(config)
+    val badSink = KinesisSink.build(config, monitoring)
 
     val serializer = config.output.s3.format match {
       case Format.Lzo => LzoSerializer
@@ -57,7 +57,13 @@ object S3Loader {
       )
 
     monitoring.initTracking()
-    executor.run()
+
+    try executor.run()
+    catch {
+      case e: Throwable =>
+        monitoring.captureError(e)
+        throw e
+    }
   }
 
   /**
