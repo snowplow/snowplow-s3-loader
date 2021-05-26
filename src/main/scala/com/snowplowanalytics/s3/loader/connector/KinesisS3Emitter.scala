@@ -76,10 +76,10 @@ class KinesisS3Emitter(client: AmazonS3,
 
     partitionedBatch.data.flatMap {
       case (RowType.Unpartitioned, partitionRecords) if partitionRecords.nonEmpty =>
-        emitRecords(partitionRecords, output.s3.path, afterEmit, getBase(None))
+        emitRecords(partitionRecords, afterEmit, getBase(None))
           .map(_.asLeft)
       case (data: RowType.SelfDescribing, partitionRecords) if partitionRecords.nonEmpty =>
-        emitRecords(partitionRecords, output.s3.path, afterEmit, getBase(Some(data.partition))).map(_.asLeft)
+        emitRecords(partitionRecords, afterEmit, getBase(Some(data.partition))).map(_.asLeft)
       case _ =>
         records // ReadingError or empty partition - should be handled later by serializer
     }.asJava
@@ -114,7 +114,6 @@ class KinesisS3Emitter(client: AmazonS3,
    * @return success status of sending to S3
    */
   def attemptEmit(
-    bucket: String,
     stream: ISerializer.NamedStream,
     now: Long,
     callback: () => Unit
@@ -136,7 +135,7 @@ class KinesisS3Emitter(client: AmazonS3,
       if (attempt > 1 && System.currentTimeMillis() - now > output.s3.maxTimeout)
         forceShutdown()
       else {
-        val request = getRequest(bucket, stream, now)
+        val request = getRequest(output.s3.bucketName, stream, now)
         Either.catchNonFatal(client.putObject(request)) match {
           case Right(_) => callback()
           case Left(error) =>
@@ -151,13 +150,11 @@ class KinesisS3Emitter(client: AmazonS3,
   /**
    * Attempt to serialize record into a gz/lzo file and submit them to S3 via emitter
    * @param records buffered raw records
-   * @param bucket where data will be written
    * @param baseFilename final filename
    * @return list of records that could not be emitted
    */
   def emitRecords(
     records: List[Result],
-    bucket: String,
     callback: () => Unit,
     baseFilename: String
   ): List[GenericError] = {
@@ -171,7 +168,7 @@ class KinesisS3Emitter(client: AmazonS3,
 
     if (successSize > 0)
       serializationResults.namedStreams.foreach { stream =>
-        attemptEmit(output.s3.bucketName, stream, System.currentTimeMillis(), callback)
+        attemptEmit(stream, System.currentTimeMillis(), callback)
       }
 
     failures

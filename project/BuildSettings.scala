@@ -31,25 +31,7 @@ object BuildSettings {
   lazy val basicSettings = Seq(
     organization          :=  "com.snowplowanalytics",
     scalaVersion          :=  "2.13.2",
-    scalacOptions         :=  compilerOptions,
-    javacOptions          :=  javaCompilerOptions,
     resolvers             ++= Dependencies.resolvers
-  )
-
-  lazy val compilerOptions = Seq(
-    "-deprecation",
-    "-encoding", "UTF-8",
-    "-feature",
-    "-language:existentials",
-    "-language:higherKinds",
-    "-language:implicitConversions",
-    "-unchecked",
-    "-Ywarn-numeric-widen",
-    "-Wdead-code",
-    "-Werror",
-    "-Wunused:imports",
-    "-Xlint",
-    "-Xlint:adapted-args"
   )
 
   /** Add example config for integration tests */
@@ -72,11 +54,6 @@ object BuildSettings {
     }
   )
 
-  lazy val javaCompilerOptions = Seq(
-    "-source", "1.8",
-    "-target", "1.8"
-  )
-
   // Makes our SBT app settings available from within the app
   lazy val scalifySettings = Seq(
     Compile / sourceGenerators += Def.task {
@@ -91,8 +68,6 @@ object BuildSettings {
       Seq(file)
     }.taskValue
   )
-
-  lazy val buildSettings = basicSettings ++ scalifySettings
 
   // sbt-assembly settings for building a fat jar
   import sbtassembly.AssemblyPlugin.autoImport._
