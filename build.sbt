@@ -18,7 +18,8 @@ lazy val root = project.in(file("."))
     version     := "1.0.0",
     description := "Load the contents of a Kinesis stream topic to S3"
   )
-  .settings(BuildSettings.buildSettings)
+  .settings(BuildSettings.basicSettings)
+  .settings(BuildSettings.scalifySettings)
   .settings(BuildSettings.sbtAssemblySettings)
   .settings(BuildSettings.dockerSettings)
   .settings(BuildSettings.addExampleConfToTestCp)
