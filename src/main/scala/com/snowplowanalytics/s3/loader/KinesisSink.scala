@@ -95,7 +95,7 @@ class KinesisSink(client: AmazonKinesis, monitoring: Monitoring, name: String) {
    *            record is assigned. Defaults to a random string.
    */
   def store(output: String, key: Option[String]): Unit =
-    put(name, ByteBuffer.wrap(output.getBytes(UTF_8)), key.getOrElse(Random.nextInt.toString)) onComplete {
+    put(name, ByteBuffer.wrap(output.getBytes(UTF_8)), key.getOrElse(Random.nextInt().toString)) onComplete {
       case Success(result) =>
         log.info("Writing successful")
         log.info(s"  + ShardId: ${result.getShardId}")
@@ -120,7 +120,7 @@ object KinesisSink {
 
     config.monitoring.flatMap(_.metrics.flatMap(_.cloudWatch)) match {
       case Some(enable) if enable => ()
-      case None                   => client.setMetricsCollector(RequestMetricCollector.NONE)
+      case _                      => client.setMetricsCollector(RequestMetricCollector.NONE)
     }
 
     new KinesisSink(client.build(), monitoring, config.output.bad.streamName)
