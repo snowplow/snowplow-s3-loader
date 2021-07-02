@@ -43,9 +43,9 @@ object BuildSettings {
 
   lazy val dockerSettings = Seq(
     Docker / maintainer := "Snowplow Analytics Ltd. <support@snowplowanalytics.com>",
-    Docker / daemonUser := "snowplow",
+    Docker / daemonUser := "daemon",
     Docker / packageName := "snowplow/snowplow-s3-loader",
-    dockerBaseImage := "snowplow/base-debian:0.2.2",
+    dockerBaseImage := "adoptopenjdk:11-jre-hotspot-focal",
     dockerUpdateLatest := true,
     dockerCommands := {
       val installLzo = Seq(Cmd("RUN", "mkdir -p /var/lib/apt/lists/partial && apt-get update && apt-get install -y lzop && apt-get purge -y"))
