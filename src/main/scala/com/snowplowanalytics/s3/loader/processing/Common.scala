@@ -70,20 +70,6 @@ object Common {
       case Left(_) => RowType.ReadingError
     }
 
-  /**
-   *  Extract the earliest timestamp from a batch of payloads
-   */
-  def getEarliestTstamp(records: List[Result]): Option[Instant] = {
-    val timestamps = records.flatMap {
-      case Right(byteRecord) =>
-        val strRecord = new String(byteRecord, UTF_8)
-        getTstamp(strRecord).toOption
-      case Left(_) =>
-        Nil
-    }
-    timestamps.sorted.headOption
-  }
-
   /** Extract a timestamp from enriched TSV line */
   def getTstamp(row: String): Either[RuntimeException, Instant] = {
     val array = row.split("\t", -1)
@@ -94,4 +80,12 @@ object Common {
       tstamp <- Either.catchOnly[DateTimeParseException](Instant.parse(string))
     } yield tstamp
   }
+
+  def compareTstamps(a: Option[Instant], b: Option[Instant]): Option[Instant] =
+    (a, b) match {
+      case (Some(ai), Some(bi)) => Some(if (ai.isBefore(bi)) ai else bi)
+      case (None, bi @ Some(_)) => bi
+      case (ai @ Some(_), None) => ai
+      case _                    => None
+    }
 }
