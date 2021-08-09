@@ -13,6 +13,7 @@
 package com.snowplowanalytics.s3.loader.processing
 
 import java.time.Instant
+import java.nio.charset.StandardCharsets.UTF_8
 
 import com.snowplowanalytics.s3.loader.Result
 import com.snowplowanalytics.s3.loader.processing.Batch.Meta
@@ -34,9 +35,17 @@ object Batch {
   val EmptyMeta: Meta = Meta(None, 0)
 
   def fromEnriched(inputs: List[Result]): Batch[List[Result]] = {
-    val earliest = Common.getEarliestTstamp(inputs)
-    val count = inputs.length
-    Batch(Meta(earliest, count), inputs)
+    val meta = inputs.foldLeft(EmptyMeta) {
+      case (Meta(tstamp, count), Left(_)) =>
+        Meta(tstamp, count + 1)
+      case (Meta(tstamp, count), Right(raw)) =>
+        val strRecord = new String(raw, UTF_8)
+        val extracted = Common.getTstamp(strRecord).toOption
+        val min = Common.compareTstamps(tstamp, extracted)
+        Meta(min, count + 1)
+    }
+
+    Batch(meta, inputs)
   }
 
   def from(inputs: List[Result]): Batch[List[Result]] =

@@ -147,6 +147,10 @@ class KinesisS3Emitter(client: AmazonS3,
     go(1)
   }
 
+  /** Empty accumulator for serialization results */
+  private val EmptyEmit: (Int, Int, List[GenericError]) =
+    (0, 0, Nil)
+
   /**
    * Attempt to serialize record into a gz/lzo file and submit them to S3 via emitter
    * @param records buffered raw records
@@ -159,11 +163,15 @@ class KinesisS3Emitter(client: AmazonS3,
     baseFilename: String
   ): List[GenericError] = {
     val serializationResults = serializer.serialize(records, baseFilename)
-    val (failures, successes) = serializationResults.results.separate
-    val successSize = successes.size
+    val (failureSize, successSize, failures) = serializationResults.results.foldLeft(EmptyEmit) {
+      case ((failureCount, successCount, failures), Right(_)) =>
+        (failureCount, successCount + 1, failures)
+      case ((failureCount, successCount, failures), Left(failure)) =>
+        (failureCount + 1, successCount, failure :: failures)
+    }
 
     logger.debug(
-      s"Successfully serialized $successSize records out of ${successSize + failures.size}"
+      s"Successfully serialized $successSize records out of ${successSize + failureSize}"
     )
 
     if (successSize > 0)
