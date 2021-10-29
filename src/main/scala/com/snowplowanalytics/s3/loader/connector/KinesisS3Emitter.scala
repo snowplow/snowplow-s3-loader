@@ -86,10 +86,11 @@ class KinesisS3Emitter(client: AmazonS3,
   }
 
   /**
-   * Closes the client when the KinesisConnectorRecordProcessor is shut down
+   * Executed when KinesisConnectorRecordProcessor is shutdown.
+   * See https://github.com/snowplow/snowplow-s3-loader/issues/231
+   * on why S3 client is not shutdown here
    */
-  def shutdown(): Unit =
-    client.shutdown()
+  def shutdown(): Unit = ()
 
   /**
    * Sends records which fail deserialization or compression
