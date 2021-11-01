@@ -1,0 +1,37 @@
+name: lacework
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: coursier/cache-action@v3
+      - name: Set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - name: Get current version
+        id: ver
+        run: echo "::set-output name=tag::${GITHUB_REF#refs/tags/}"
+
+      - name: Install lacework scanner
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install curl
+          curl -L https://github.com/lacework/lacework-vulnerability-scanner/releases/latest/download/lw-scanner-linux-amd64 -o lw-scanner
+          chmod +x lw-scanner
+
+      - name: Build docker images
+        run: sbt docker:publishLocal
+
+      - name: Scan snowplow-s3-loader
+        env:
+          LW_ACCESS_TOKEN: ${{ secrets.LW_ACCESS_TOKEN }}
+          LW_ACCOUNT_NAME: ${{ secrets.LW_ACCOUNT_NAME }}
+          LW_SCANNER_SAVE_RESULTS: ${{ !contains(steps.version.outputs.tag, 'rc') }}
+        run: ./lw-scanner image evaluate snowplow/snowplow-s3-loader ${{ steps.ver.outputs.tag }} --build-id ${{ github.run_id }} --no-pull
