@@ -25,13 +25,18 @@ import scoverage.ScoverageKeys._
 // Scalafmt plugin
 import org.scalafmt.sbt.ScalafmtPlugin.autoImport._
 
+// dynver plugin
+import sbtdynver.DynVerPlugin.autoImport._
+
 object BuildSettings {
 
   // Basic settings for our app
   lazy val basicSettings = Seq(
     organization          :=  "com.snowplowanalytics",
     scalaVersion          :=  "2.13.6",
-    resolvers             ++= Dependencies.resolvers
+    resolvers             ++= Dependencies.resolvers,
+    ThisBuild / dynverVTagPrefix := false,
+    ThisBuild / dynverSeparator := "-"
   )
 
   /** Add example config for integration tests */
