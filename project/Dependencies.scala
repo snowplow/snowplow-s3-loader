@@ -15,7 +15,7 @@ import sbt._
 object Dependencies {
   val resolvers = Seq(
     ("Snowplow Analytics Maven releases repo" at "http://maven.snplow.com/releases/").withAllowInsecureProtocol(true),
-    "Snowplow Bintray Maven repo"            at "https://snowplow.bintray.com/snowplow-maven"
+    "Twitter" at "https://maven.twttr.com/"
   )
 
   object V {
@@ -64,7 +64,7 @@ object Dependencies {
       .exclude("junit", "junit")
     val elephantbird     = ("com.twitter.elephantbird"        %  "elephant-bird-core"                % V.elephantbird)
       .exclude("com.hadoop.gplcompression", "hadoop-lzo")
-    val hadoopLZO        = "com.snowplowanalytics"            %  "hadoop-lzo"                        % V.hadoopLZO
+    val hadoopLZO        = "com.hadoop.gplcompression"        %  "hadoop-lzo"                        % V.hadoopLZO
     val apacheCommons    = "org.apache.directory.studio"      % "org.apache.commons.collections"     % V.apacheCommons
     val sentry           = "io.sentry"                        % "sentry"                             % V.sentry
 
