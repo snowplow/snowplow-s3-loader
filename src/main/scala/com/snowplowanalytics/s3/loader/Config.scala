@@ -130,7 +130,7 @@ object Config {
   }
 
   final case class S3Output(path: String,
-                            dateFormat: Option[String],
+                            partitionFormat: Option[String],
                             filenamePrefix: Option[String],
                             compression: Compression,
                             maxTimeout: Int,
@@ -145,6 +145,13 @@ object Config {
       val possiblyEmpty = withoutPrefix.split("/").tail.toList.mkString("/")
       if (possiblyEmpty.isEmpty) None else Some(possiblyEmpty)
     }
+
+    def partitionForPurpose(purpose: Purpose): Option[String] =
+      (partitionFormat, purpose) match {
+        case (Some(f), _)                           => Some(f)
+        case (None, Purpose.SelfDescribingJson)     => Some("{vendor}.{schema}")
+        case (None, Purpose.Raw | Purpose.Enriched) => None
+      }
 
     // For backward-compatibility
     private val scheme = "s3://"

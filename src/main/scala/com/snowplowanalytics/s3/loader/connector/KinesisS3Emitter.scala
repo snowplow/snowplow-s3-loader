@@ -69,8 +69,8 @@ class KinesisS3Emitter(client: AmazonS3,
     val partitionedBatch =
       Common.partition(purpose, monitoring.isStatsDEnabled, records)
 
-    val getBase: Option[String] => String =
-      getBaseFilename(output.s3, buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber)
+    val getBase: Option[RowType.SelfDescribing] => String =
+      getBaseFilename(output.s3, purpose, buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber, LocalDateTime.now)
     val afterEmit: () => Unit =
       () => monitoring.report(partitionedBatch.meta)
 
@@ -79,7 +79,7 @@ class KinesisS3Emitter(client: AmazonS3,
         emitRecords(partitionRecords, afterEmit, getBase(None))
           .map(_.asLeft)
       case (data: RowType.SelfDescribing, partitionRecords) if partitionRecords.nonEmpty =>
-        emitRecords(partitionRecords, afterEmit, getBase(Some(data.partition))).map(_.asLeft)
+        emitRecords(partitionRecords, afterEmit, getBase(Some(data))).map(_.asLeft)
       case _ =>
         records // ReadingError or empty partition - should be handled later by serializer
     }.asJava
@@ -234,20 +234,33 @@ object KinesisS3Emitter {
    */
   def getBaseFilename(
     s3Config: S3Output,
+    purpose: Purpose,
     firstSeq: String,
-    lastSeq: String
+    lastSeq: String,
+    now: LocalDateTime
   )(
-    partition: Option[String]
+    sdj: Option[RowType.SelfDescribing]
   ): String = {
-    val path = List(s3Config.outputDirectory, s3Config.dateFormat).flatten.mkString("/")
-    val fileName = (s3Config.filenamePrefix.toList ++ partition.toList ++ List(
-      LocalDateTime.now.format(
+    val partitionPath = s3Config.partitionForPurpose(purpose).map {
+      _.template("vendor", sdj.fold("unknown")(_.vendor))
+        .template("schema", sdj.fold("unknown")(_.name))
+        .template("format", sdj.fold("unknown")(_.format))
+        .template("model", sdj.fold(-1)(_.model).toString)
+        .template("yy+", now.format(DateTimeFormatter.ofPattern("yyyy")))
+        .template("mm", now.format(DateTimeFormatter.ofPattern("MM")))
+        .template("dd", now.format(DateTimeFormatter.ofPattern("dd")))
+        .template("hh", now.format(DateTimeFormatter.ofPattern("HH")))
+    }
+
+    val path = List(s3Config.outputDirectory, partitionPath).flatten
+    val fileName = (s3Config.filenamePrefix ++: List(
+      now.format(
         DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmmss")
       ),
       firstSeq,
       lastSeq
     )).mkString("-")
-    val fullPath = List(path, fileName).filterNot(_.isEmpty).mkString("/")
+    val fullPath = (path :+ fileName).filterNot(_.isEmpty).mkString("/")
 
     DynamicPath.normalize(fullPath)
   }
@@ -262,4 +275,9 @@ object KinesisS3Emitter {
     catch {
       case _: InterruptedException => ()
     }
+
+  private implicit class StringOps(val s: String) extends AnyVal {
+    def template(matcher: String, replacement: String): String =
+      s.replaceAll(s"""(?i)\\{$matcher\\}""", replacement)
+  }
 }
