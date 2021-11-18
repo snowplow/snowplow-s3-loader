@@ -41,7 +41,7 @@ class ConfigSpec extends Specification {
             "s3": {
                 "path": "s3://s3-loader-integration-test/usual",
 
-                "dateFormat": "%Y-%M-%d",
+                "partitionFormat": "schema={vendor}.{schema}/year={yy}",
                 "filenamePrefix": "pre",
 
                 "maxTimeout": 2000,
@@ -72,7 +72,12 @@ class ConfigSpec extends Specification {
         Purpose.Raw,
         Config.Input("acme-s3-loader", "enriched-events", InitialPosition.Latest, None, 10),
         Config.Output(
-          S3Output("s3://s3-loader-integration-test/usual", Some("%Y-%M-%d"), Some("pre"), Compression.Gzip, 2000, None),
+          S3Output("s3://s3-loader-integration-test/usual",
+                   Some("schema={vendor}.{schema}/year={yy}"),
+                   Some("pre"),
+                   Compression.Gzip,
+                   2000,
+                   None),
           Config.KinesisOutput("stream-name")
         ),
         Config.Buffer(2048L, 10L, 5000L),
@@ -103,7 +108,12 @@ class ConfigSpec extends Specification {
         Purpose.Raw,
         Config.Input("acme-s3-loader", "raw-events", InitialPosition.Latest, None, 10),
         Config.Output(
-          S3Output("s3://acme-snowplow-output/raw/", Some("%Y-%M-%d"), Some("pre"), Compression.Gzip, 2000, None),
+          S3Output("s3://acme-snowplow-output/raw/",
+                   Some("{vendor}.{name}/model={model}/date={yy}-{mm}-{dd}"),
+                   Some("pre"),
+                   Compression.Gzip,
+                   2000,
+                   None),
           Config.KinesisOutput("stream-name")
         ),
         Config.Buffer(2048L, 10L, 5000L),
