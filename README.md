@@ -24,6 +24,21 @@ The records are treated as byte arrays containing UTF-8 encoded strings (whether
 
 ## Quickstart
 
+#### Docker
+
+```bash
+docker run snowplow/snowplow-s3-loader:2.1.0 --help
+```
+
+#### Download jar
+
+```bash
+curl -Lo snowplow-s3-loader.jar https://github.com/snowplow/snowplow-s3-loader/releases/download/2.1.0/snowplow-s3-loader-2.1.0.jar
+java -jar snowplow-s3-loader.jar --help
+```
+
+#### Build it yourself
+
 Assuming git and [SBT][sbt] installed:
 
 ```bash
@@ -57,10 +72,10 @@ Usage: snowplow-s3-loader [options]
 Create your own config file:
 
 ```bash
-$ cp examples/config.hocon.sample my.conf
+$ cp config/config.hocon.sample my.conf
 ```
 
-You will need to edit all fields in the config.  Consult [this portion][config] of the setup guide on how to fill in the fields.
+You will need to edit all fields in the config.  Consult [the configuration reference][config] of the setup guide on how to fill in the fields.
 
 Next, start the sink, making sure to specify your new config file:
 
@@ -70,10 +85,10 @@ $ java -jar snowplow-s3-loader-2.0.0.jar --config my.conf
 
 ## Find out more
 
-| Technical Docs             | Setup Guide           | Roadmap & Contributing |
-|----------------------------|-----------------------|------------------------|
-| ![i1][techdocs-image]      | ![i2][setup-image]    | ![i3][roadmap-image]   |
-| [Technical Docs][techdocs] | [Setup Guide][config] | [Roadmap][roadmap]     |
+| Technical Docs             | Setup Guide           | Roadmap              | Contributing                |
+|:--------------------------:|:---------------------:|:--------------------:|:---------------------------:|
+| ![i1][techdocs-image]      | ![i2][setup-image]    | ![i3][roadmap-image] |![i4][contributing-image]    |
+| [Technical Docs][techdocs] | [Setup Guide][config] | [Roadmap][roadmap]   |[Contributing][contributing] |
 
 ## Copyright and license
 
@@ -103,12 +118,14 @@ limitations under the License.
 [protobufs]: https://github.com/google/protobuf/
 [elephant-bird]: https://github.com/twitter/elephant-bird/
 [s3]: http://aws.amazon.com/s3/
-[sbt]: http://typesafe.artifactoryonline.com/typesafe/ivy-releases/org.scala-sbt/sbt-launch/0.13.0/sbt-launch.jar
+[sbt]:https://www.scala-sbt.org/
 
-[config]: https://docs.snowplowanalytics.com/docs/pipeline-components-and-applications/loaders-storage-targets/s3-loader/#3-configuration
+[config]: https://docs.snowplowanalytics.com/docs/pipeline-components-and-applications/loaders-storage-targets/s3-loader/configuration-reference/
 [techdocs]: https://docs.snowplowanalytics.com/docs/pipeline-components-and-applications/loaders-storage-targets/s3-loader/
 [roadmap]: https://github.com/snowplow/snowplow/projects/7
+[contributing]: https://docs.snowplowanalytics.com/docs/contributing/
 
 [techdocs-image]: https://d3i6fms1cm1j0i.cloudfront.net/github/images/techdocs.png
 [setup-image]: https://d3i6fms1cm1j0i.cloudfront.net/github/images/setup.png
 [roadmap-image]: https://d3i6fms1cm1j0i.cloudfront.net/github/images/roadmap.png
+[contributing-image]: https://d3i6fms1cm1j0i.cloudfront.net/github/images/contributing.png
