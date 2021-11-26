@@ -1,3 +1,15 @@
+Version 2.1.0 (2021-11-26)
+--------------------------
+Update readme (#239)
+Fix duplicate statsd metrics when loading lzo files (#229)
+Fix dateFormat partitioning in output path (#236)
+Integrate lacework (#232)
+Use sbt-dynver (#233)
+Add Twitter Maven repository (#234)
+Fix premature shutdown of HTTP connection pool (#231)
+Bump amazon-kinesis-client to 1.14.4 (#230)
+Optimise fromEnriched function (#227)
+
 Version 2.0.0 (2021-07-03)
 --------------------------
 Use AdoptOpenJDK 11 as docker base image (#224)

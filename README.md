@@ -60,7 +60,7 @@ $ sudo apt-get install lzop liblzo2-dev
 The Snowplow S3 Loader has the following command-line interface:
 
 ```
-snowplow-s3-loader: Version 2.0.0
+snowplow-s3-loader: Version 2.1.0
 
 Usage: snowplow-s3-loader [options]
 
@@ -80,7 +80,7 @@ You will need to edit all fields in the config.  Consult [the configuration refe
 Next, start the sink, making sure to specify your new config file:
 
 ```bash
-$ java -jar snowplow-s3-loader-2.0.0.jar --config my.conf
+$ java -jar snowplow-s3-loader-2.1.0.jar --config my.conf
 ```
 
 ## Find out more
@@ -106,7 +106,7 @@ limitations under the License.
 [travis-image]: https://travis-ci.org/snowplow/snowplow-s3-loader.png?branch=master
 [travis]: http://travis-ci.org/snowplow/snowplow-s3-loader
 
-[release-image]: http://img.shields.io/badge/release-2.0.0-blue.svg?style=flat
+[release-image]: http://img.shields.io/badge/release-2.1.0-blue.svg?style=flat
 [releases]: https://github.com/snowplow/snowplow-s3-loader/releases
 
 [license-image]: http://img.shields.io/badge/license-Apache--2-blue.svg?style=flat
