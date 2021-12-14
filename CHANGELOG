@@ -1,3 +1,10 @@
+Version 2.1.1 (2021-12-15)
+--------------------------
+Exclude transitive dependencies of hadoop (#243)
+Bump commons-collections to 3.2.2 (#242)
+Bump elephant-bird-core to 4.17 (#241)
+Remove log4j (#240)
+
 Version 2.1.0 (2021-11-26)
 --------------------------
 Update readme (#239)
