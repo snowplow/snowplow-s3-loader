@@ -32,6 +32,7 @@ object Dependencies {
     val jackson          = "2.9.10.8"
     val jacksonCbor      = "2.9.10"
     val sentry           = "1.7.30"
+    val collections      = "3.2.2" // Address vulnerability
     // Thrift (test only)
     val collectorPayload = "0.0.0"
     // Scala

@@ -36,6 +36,7 @@ lazy val root = project.in(file("."))
       Dependencies.Libraries.jackson,
       Dependencies.Libraries.jacksonCbor,
       Dependencies.Libraries.sentry,
+      Dependencies.Libraries.collections,
       // Scala
       Dependencies.Libraries.decline,
       Dependencies.Libraries.circe,
