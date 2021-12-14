@@ -35,6 +35,7 @@ object Dependencies {
     val collections      = "3.2.2" // Address vulnerability
     // Thrift (test only)
     val collectorPayload = "0.0.0"
+    val thrift           = "0.15.0" // Address vulnerabilities
     // Scala
     val decline         = "2.0.0"
     val circe           = "0.13.0"
@@ -54,6 +55,7 @@ object Dependencies {
     val kinesisConnector = "com.amazonaws"                    %  "amazon-kinesis-connectors" % V.kinesisConnector
     val jacksonCbor      = "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor"    % V.jacksonCbor
     val jackson          = "com.fasterxml.jackson.core"       % "jackson-databind"           % V.jackson
+    val thrift           = "org.apache.thrift"                % "libthrift"                  % V.thrift
     val hadoop           = ("org.apache.hadoop"               %  "hadoop-common"             % V.hadoop)
       .exclude("org.slf4j", "slf4j-log4j12")
       .exclude("commons-beanutils", "commons-beanutils")
@@ -62,6 +64,18 @@ object Dependencies {
       .exclude("commons-logging", "commons-logging")
       .exclude("org.apache.htrace", "htrace-core")
       .exclude("junit", "junit")
+      .exclude("org.apache.zookeeper", "zookeeper")
+      .exclude("org.apache.hadoop", "hadoop-auth")
+      .exclude("org.apache.curator", "curator-client")
+      .exclude("log4j", "log4j")
+      .exclude("com.google.code.gson", "gson")
+      .exclude("org.apache.avro", "avro")
+      .exclude("org.codehaus.jackson", "jackson-mapper-asl")
+      .exclude("com.sun.jersey", "jersey-json")
+      .exclude("org.mortbay.jetty", "jetty-sslengine")
+      .exclude("org.mortbay.jetty", "jetty-util")
+      .exclude("org.mortbay.jetty", "jetty")
+    val collections      = "commons-collections"              % "commons-collections"                % V.collections
     val elephantbird     = ("com.twitter.elephantbird"        %  "elephant-bird-core"                % V.elephantbird)
       .exclude("com.hadoop.gplcompression", "hadoop-lzo")
     val hadoopLZO        = "com.hadoop.gplcompression"        %  "hadoop-lzo"                        % V.hadoopLZO
