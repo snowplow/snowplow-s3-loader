@@ -48,9 +48,7 @@ object Dependencies {
   object Libraries {
     // Java
     val slf4j            = "org.slf4j"                        %  "slf4j-simple"              % V.slf4j
-    val log4jOverSlf4j   = "org.slf4j"                        %  "log4j-over-slf4j"          % V.slf4j
-    val log4jCore        = "org.apache.logging.log4j"         %  "log4j-core"                % V.log4j
-    val log4jApi         = "org.apache.logging.log4j"         %  "log4j-api"                 % V.log4j
+    val jclOverSlf4j     = "org.slf4j"                        %  "jcl-over-slf4j"            % V.slf4j
     val kinesisClient    = "com.amazonaws"                    %  "amazon-kinesis-client"     % V.kinesisClient
     val kinesisConnector = "com.amazonaws"                    %  "amazon-kinesis-connectors" % V.kinesisConnector
     val jacksonCbor      = "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor"    % V.jacksonCbor

@@ -28,9 +28,7 @@ lazy val root = project.in(file("."))
       Dependencies.Libraries.kinesisClient,
       Dependencies.Libraries.kinesisConnector,
       Dependencies.Libraries.slf4j,
-      Dependencies.Libraries.log4jOverSlf4j,
-      Dependencies.Libraries.log4jCore,
-      Dependencies.Libraries.log4jApi,
+      Dependencies.Libraries.jclOverSlf4j,
       Dependencies.Libraries.hadoop,
       Dependencies.Libraries.elephantbird,
       Dependencies.Libraries.hadoopLZO,
@@ -49,7 +47,8 @@ lazy val root = project.in(file("."))
       Dependencies.Libraries.specs2,
       // Thrift (test only)
       Dependencies.Libraries.collectorPayload
-    )
+    ),
+    excludeDependencies += "commons-logging" % "commons-logging"
   )
   .enablePlugins(JavaAppPackaging, DockerPlugin)
 
