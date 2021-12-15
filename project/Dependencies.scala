@@ -23,7 +23,7 @@ object Dependencies {
     // Java
     val slf4j            = "1.7.30"
     val log4j            = "2.14.0"
-    val kinesisClient    = "1.14.4"
+    val kinesisClient    = "1.14.5"
     val kinesisConnector = "1.3.0"
     val hadoop           = "2.7.7"
     val elephantbird     = "4.17"
