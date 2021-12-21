@@ -109,7 +109,7 @@ class ConfigSpec extends Specification {
         Config.Input("acme-s3-loader", "raw-events", InitialPosition.Latest, None, 10),
         Config.Output(
           S3Output("s3://acme-snowplow-output/raw/",
-                   Some("{vendor}.{name}/model={model}/date={yy}-{mm}-{dd}"),
+                   Some("{vendor}.{schema}/model={model}/date={yy}-{mm}-{dd}"),
                    Some("pre"),
                    Compression.Gzip,
                    2000,
