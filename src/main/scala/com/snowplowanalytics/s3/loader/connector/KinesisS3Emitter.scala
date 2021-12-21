@@ -242,7 +242,8 @@ object KinesisS3Emitter {
   ): String = {
     val partitionPath = s3Config.partitionForPurpose(purpose).map {
       _.template("vendor", sdj.fold("unknown")(_.vendor))
-        .template("schema", sdj.fold("unknown")(_.name))
+        .template("name", sdj.fold("unknown")(_.name))
+        .template("schema", sdj.fold("unknown")(_.name)) // allowed synonym
         .template("format", sdj.fold("unknown")(_.format))
         .template("model", sdj.fold(-1)(_.model).toString)
         .template("yy+", now.format(DateTimeFormatter.ofPattern("yyyy")))
