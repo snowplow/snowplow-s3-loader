@@ -26,9 +26,9 @@
       "path": "s3://acme-snowplow-output/raw/",
 
       # Partitioning format; Optional
-      # Valid substitutions are {vendor}, {name}, {format}, {model} for self-describing jsons
+      # Valid substitutions are {vendor}, {schema}, {format}, {model} for self-describing jsons
       # and {yy}, {mm}, {dd}, {hh} for year, month, day, hour
-      partitionFormat: "{vendor}.{name}/model={model}/date={yy}-{mm}-{dd}"
+      partitionFormat: "{vendor}.{schema}/model={model}/date={yy}-{mm}-{dd}"
 
       # Prefix for all file names; Optional
       "filenamePrefix": "pre",
