@@ -1,3 +1,8 @@
+Version 2.1.3 (2021-12-23)
+--------------------------
+Fix partition format in example hocon (#247)
+Clean up terminated shards before expiry (#248)
+
 Version 2.1.2 (2021-12-15)
 --------------------------
 Bump amazon-kinesis-client to 1.14.5 (#245)
