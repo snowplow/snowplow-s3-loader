@@ -39,6 +39,7 @@ lazy val root = project.in(file("."))
       Dependencies.Libraries.sentry,
       Dependencies.Libraries.collections,
       Dependencies.Libraries.jaxbApi,
+      Dependencies.Libraries.protobuf,
       // Scala
       Dependencies.Libraries.decline,
       Dependencies.Libraries.circe,

@@ -33,6 +33,7 @@ object Dependencies {
     val sentry           = "1.7.30"
     val collections      = "3.2.2" // Address vulnerability
     val jaxbApi          = "2.3.1"
+    val protobuf         = "3.19.4" // Address vulnerability
     // Thrift (test only)
     val collectorPayload = "0.0.0"
     val thrift           = "0.15.0" // Address vulnerabilities
@@ -82,6 +83,7 @@ object Dependencies {
     val hadoopLZO        = "com.hadoop.gplcompression"        %  "hadoop-lzo"                        % V.hadoopLZO
     val apacheCommons    = "org.apache.directory.studio"      % "org.apache.commons.collections"     % V.apacheCommons
     val sentry           = "io.sentry"                        % "sentry"                             % V.sentry
+    val protobuf         = "com.google.protobuf"              % "protobuf-java"                      % V.protobuf
 
     val decline          = "com.monovore"                     %% "decline"                           % V.decline
     val circe            = "io.circe"                         %% "circe-generic"                     % V.circe
