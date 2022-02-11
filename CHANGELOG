@@ -1,3 +1,11 @@
+Version 2.1.4 (2022-02-26)
+--------------------------
+Update copyright notice to 2022 (close #255)
+Change docker base image to eclipse-temurin:11-jre-focal (close #254)
+Bump protobuf-java to 3.19.4 (close #253)
+Bump jackson to 2.12.6 (close 2.12.6)
+Bump kinesis client to 1.14.7 (close #251)
+
 Version 2.1.3 (2021-12-23)
 --------------------------
 Fix partition format in example hocon (#247)
