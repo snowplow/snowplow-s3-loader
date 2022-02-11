@@ -50,7 +50,7 @@ object BuildSettings {
     Docker / maintainer := "Snowplow Analytics Ltd. <support@snowplowanalytics.com>",
     Docker / daemonUser := "daemon",
     Docker / packageName := "snowplow/snowplow-s3-loader",
-    dockerBaseImage := "adoptopenjdk:11-jre-hotspot-focal",
+    dockerBaseImage := "eclipse-temurin:11-jre-focal",
     dockerUpdateLatest := true,
     dockerCommands := {
       val installLzo = Seq(Cmd("RUN", "mkdir -p /var/lib/apt/lists/partial && apt-get update && apt-get install -y lzop && apt-get purge -y"))
