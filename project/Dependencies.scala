@@ -29,8 +29,7 @@ object Dependencies {
     val elephantbird     = "4.17"
     val hadoopLZO        = "0.4.20"
     val apacheCommons    = "3.2.1"
-    val jackson          = "2.9.10.8"
-    val jacksonCbor      = "2.9.10"
+    val jackson          = "2.12.6"
     val sentry           = "1.7.30"
     val collections      = "3.2.2" // Address vulnerability
     val jaxbApi          = "2.3.1"
@@ -54,7 +53,7 @@ object Dependencies {
     val jclOverSlf4j     = "org.slf4j"                        %  "jcl-over-slf4j"            % V.slf4j
     val kinesisClient    = "com.amazonaws"                    %  "amazon-kinesis-client"     % V.kinesisClient
     val kinesisConnector = "com.amazonaws"                    %  "amazon-kinesis-connectors" % V.kinesisConnector
-    val jacksonCbor      = "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor"    % V.jacksonCbor
+    val jacksonCbor      = "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor"    % V.jackson
     val jackson          = "com.fasterxml.jackson.core"       % "jackson-databind"           % V.jackson
     val thrift           = "org.apache.thrift"                % "libthrift"                  % V.thrift
     val hadoop           = ("org.apache.hadoop"               %  "hadoop-common"             % V.hadoop)
