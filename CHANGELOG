@@ -1,3 +1,11 @@
+Version 2.1.4 (2022-02-15)
+--------------------------
+Update copyright notice to 2022 (#255)
+Change docker base image to eclipse-temurin:11-jre-focal (#254)
+Bump protobuf-java to 3.19.4 (#253)
+Bump jackson to 2.12.6 (2.12.6)
+Bump kinesis client to 1.14.7 (#251)
+
 Version 2.1.3 (2021-12-23)
 --------------------------
 Fix partition format in example hocon (#247)
@@ -32,7 +40,7 @@ Use AdoptOpenJDK 11 as docker base image (#224)
 Use snowplow-badrows (#215)
 Use sbt-tpolecat (#222)
 Report metrics to StatsD (#216)
-Integrate Sentry (close #218)
+Integrate Sentry (#218)
 Redesign config file structure (#214)
 Harmonize module structure (#210)
 Drop NSQ support (#211)
