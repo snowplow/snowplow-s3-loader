@@ -15,9 +15,12 @@
 import sbt._
 import Keys._
 
-import com.typesafe.sbt.packager.Keys._
-import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.Docker
-import com.typesafe.sbt.packager.docker._
+import com.typesafe.sbt.SbtNativePackager.autoImport._
+import com.typesafe.sbt.packager.archetypes.jar.LauncherJarPlugin.autoImport.packageJavaLauncherJar
+import com.typesafe.sbt.packager.docker.{Cmd, DockerPermissionStrategy}
+import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport._
+import com.typesafe.sbt.packager.linux.LinuxPlugin.autoImport._
+import com.typesafe.sbt.packager.universal.UniversalPlugin.autoImport._
 
 // Scoverage plugin
 import scoverage.ScoverageKeys._
@@ -47,7 +50,7 @@ object BuildSettings {
     }
   )
 
-  lazy val dockerSettings = Seq(
+  lazy val dockerSettingsFocal = Seq(
     Docker / maintainer := "Snowplow Analytics Ltd. <support@snowplowanalytics.com>",
     Docker / daemonUser := "daemon",
     Docker / packageName := "snowplow/snowplow-s3-loader",
@@ -55,13 +58,28 @@ object BuildSettings {
     dockerUpdateLatest := true,
   )
 
-  lazy val lzoDockerSettings = Seq(
+  lazy val dockerSettingsDistroless = Seq(
+    Docker / maintainer := "Snowplow Analytics Ltd. <support@snowplowanalytics.com>",
+    dockerBaseImage := "gcr.io/distroless/java11-debian11:nonroot",
+    Docker / daemonUser := "nonroot",
+    Docker / daemonGroup := "nonroot",
+    dockerRepository := Some("snowplow"),
+    Docker / daemonUserUid := None,
+    Docker / defaultLinuxInstallLocation := "/home/snowplow",
+    dockerEntrypoint := Seq("java", "-jar",s"/home/snowplow/lib/${(packageJavaLauncherJar / artifactPath).value.getName}"),
+    dockerPermissionStrategy := DockerPermissionStrategy.CopyChown,
+    dockerAlias := dockerAlias.value.withTag(Some(version.value + "-distroless")),
+    dockerUpdateLatest := false
+  )
+
+  lazy val lzoDockerSettingsFocal = dockerSettingsFocal ++ Seq(
     dockerCommands := {
       val installLzo = Seq(Cmd("RUN", "mkdir -p /var/lib/apt/lists/partial && apt-get update && apt-get install -y lzop && apt-get purge -y"))
       val (h, t) = dockerCommands.value.splitAt(dockerCommands.value.size-4)
       h ++ installLzo ++ t
     },
-    dockerAlias := dockerAlias.value.withTag(Some(version.value + "-lzo"))
+    dockerAlias := dockerAlias.value.withTag(Some(version.value + "-lzo")),
+    dockerUpdateLatest := false
   )
 
   // Makes our SBT app settings available from within the app
@@ -112,9 +130,18 @@ object BuildSettings {
     scalafmtOnCompile := false
   )
 
-  lazy val commonSettings = basicSettings ++ scalifySettings ++ sbtAssemblySettings ++ dockerSettings ++ addExampleConfToTestCp
+  lazy val commonSettings = basicSettings ++ scalifySettings ++ sbtAssemblySettings ++ addExampleConfToTestCp
 
-  lazy val lzoSettings = lzoDockerSettings ++ Seq(
+  lazy val mainSettings = commonSettings ++ dockerSettingsFocal ++ Seq(
+    name := "snowplow-s3-loader"
+  )
+
+  lazy val distrolessSettings = commonSettings ++ dockerSettingsDistroless ++ Seq(
+    name := "snowplow-s3-loader"
+  )
+
+  lazy val lzoSettings = commonSettings ++ lzoDockerSettingsFocal ++ Seq(
+    name := "snowplow-s3-loader-lzo",
     Compile / discoveredMainClasses := Seq(),
     Compile / mainClass := Some("com.snowplowanalytics.s3.loader.lzo.Main")
   )

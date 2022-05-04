@@ -92,4 +92,41 @@ object Dependencies {
     val specs2           = "org.specs2"                       %% "specs2-core"                       % V.specs2           % Test
     val collectorPayload = "com.snowplowanalytics"            %  "collector-payload-1"               % V.collectorPayload % Test
   }
+
+  val mainDependencies = Seq(
+      // Java
+      Libraries.kinesisClient,
+      Libraries.kinesisConnector,
+      Libraries.slf4j,
+      Libraries.jclOverSlf4j,
+      Libraries.jackson,
+      Libraries.sentry,
+      Libraries.jaxbApi,
+      // Scala
+      Libraries.decline,
+      Libraries.circe,
+      Libraries.snowplowTracker,
+      Libraries.snowplowBadrows,
+      Libraries.pureconfig,
+      Libraries.pureconfigCirce,
+      // Scala (test only)
+      Libraries.specs2,
+      // Thrift (test only)
+      Libraries.collectorPayload,
+      Libraries.thrift % Test
+  )
+
+  val lzoDependencies = Seq(
+      Libraries.hadoop,
+      Libraries.elephantbird,
+      Libraries.hadoopLZO,
+      Libraries.thrift,
+      Libraries.collections,
+      Libraries.jacksonCbor,
+  )
+
+  val mainExclusions = Seq(
+    "commons-logging" % "commons-logging"
+  )
+
 }

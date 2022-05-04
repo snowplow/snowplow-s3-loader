@@ -39,6 +39,10 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         run: sbt 'project lzo' docker:publish
 
+      - name: Publish to Docker Hub distroless
+        if: startsWith(github.ref, 'refs/tags/')
+        run: sbt 'project distroless' docker:publish
+
       - name: Build artifacts
         run: |
           sbt assembly

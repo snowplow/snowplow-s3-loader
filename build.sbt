@@ -14,56 +14,28 @@
  */
 
 lazy val root = project.in(file("."))
-  .aggregate(main, lzo)
+  .aggregate(main, distroless, lzo)
 
 lazy val main = project.in(file("modules/main"))
+  .settings(BuildSettings.mainSettings)
   .settings(
-    name := "snowplow-s3-loader",
-  )
-  .settings(BuildSettings.commonSettings)
-  .settings(
-    libraryDependencies ++= Seq(
-      // Java
-      Dependencies.Libraries.kinesisClient,
-      Dependencies.Libraries.kinesisConnector,
-      Dependencies.Libraries.slf4j,
-      Dependencies.Libraries.jclOverSlf4j,
-      Dependencies.Libraries.jackson,
-      Dependencies.Libraries.sentry,
-      Dependencies.Libraries.jaxbApi,
-      // Scala
-      Dependencies.Libraries.decline,
-      Dependencies.Libraries.circe,
-      Dependencies.Libraries.snowplowTracker,
-      Dependencies.Libraries.snowplowBadrows,
-      Dependencies.Libraries.pureconfig,
-      Dependencies.Libraries.pureconfigCirce,
-      // Scala (test only)
-      Dependencies.Libraries.specs2,
-      // Thrift (test only)
-      Dependencies.Libraries.collectorPayload,
-      Dependencies.Libraries.thrift % Test,
-    ),
-    excludeDependencies += "commons-logging" % "commons-logging"
+    libraryDependencies ++= Dependencies.mainDependencies,
+    excludeDependencies ++= Dependencies.mainExclusions
   )
   .enablePlugins(JavaAppPackaging, DockerPlugin)
 
+lazy val distroless = project.in(file("modules/distroless"))
+  .settings(BuildSettings.distrolessSettings)
+  .settings(sourceDirectory := (main / sourceDirectory).value)
+  .settings(
+    libraryDependencies ++= Dependencies.mainDependencies,
+    excludeDependencies ++= Dependencies.mainExclusions
+  )
+  .enablePlugins(JavaAppPackaging, DockerPlugin, LauncherJarPlugin)
+
 lazy val lzo = project.in(file("modules/lzo"))
-  .settings(
-    name := "snowplow-s3-loader-lzo",
-  )
-  .settings(BuildSettings.commonSettings)
   .settings(BuildSettings.lzoSettings)
-  .settings(
-    libraryDependencies ++= Seq(
-      Dependencies.Libraries.hadoop,
-      Dependencies.Libraries.elephantbird,
-      Dependencies.Libraries.hadoopLZO,
-      Dependencies.Libraries.thrift,
-      Dependencies.Libraries.collections,
-      Dependencies.Libraries.jacksonCbor,
-    )
-  )
+  .settings(libraryDependencies ++= Dependencies.lzoDependencies)
   .dependsOn(main % "compile->compile; test->test")
   .enablePlugins(JavaAppPackaging, DockerPlugin)
 
