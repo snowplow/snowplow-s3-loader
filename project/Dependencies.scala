@@ -23,7 +23,7 @@ object Dependencies {
     // Java
     val slf4j            = "1.7.30"
     val log4j            = "2.14.0"
-    val kinesisClient    = "1.14.7"
+    val kinesisClient    = "1.14.8"
     val kinesisConnector = "1.3.0"
     val hadoop           = "2.10.1"
     val elephantbird     = "4.17"
@@ -32,7 +32,6 @@ object Dependencies {
     val sentry           = "1.7.30"
     val collections      = "3.2.2" // Address vulnerability
     val jaxbApi          = "2.3.1"
-    val protobuf         = "3.19.4" // Address vulnerability
     // Thrift (test only)
     val collectorPayload = "0.0.0"
     val thrift           = "0.15.0" // Address vulnerabilities
@@ -81,7 +80,6 @@ object Dependencies {
       .exclude("com.hadoop.gplcompression", "hadoop-lzo")
     val hadoopLZO        = "com.hadoop.gplcompression"        %  "hadoop-lzo"                        % V.hadoopLZO
     val sentry           = "io.sentry"                        % "sentry"                             % V.sentry
-    val protobuf         = "com.google.protobuf"              % "protobuf-java"                      % V.protobuf
 
     val decline          = "com.monovore"                     %% "decline"                           % V.decline
     val circe            = "io.circe"                         %% "circe-generic"                     % V.circe

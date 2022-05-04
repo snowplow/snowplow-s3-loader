@@ -32,7 +32,6 @@ lazy val main = project.in(file("modules/main"))
       Dependencies.Libraries.jacksonCbor,
       Dependencies.Libraries.sentry,
       Dependencies.Libraries.jaxbApi,
-      Dependencies.Libraries.protobuf,
       // Scala
       Dependencies.Libraries.decline,
       Dependencies.Libraries.circe,
