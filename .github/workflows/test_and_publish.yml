@@ -24,22 +24,20 @@ jobs:
       - name: Check formatting
         run: sbt scalafmtCheck
 
-      - name: Publish to Docker Hub
+      - name: Login to Docker Hub
         if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-          project_version=$(sbt version -Dsbt.log.noformat=true | perl -ne 'print "$1\n" if /info.*(\d+\.\d+\.\d+[^\r\n]*)/' | tail -n 1 | tr -d '\n')
-          if [[ "${{ github.ref }}" = "refs/tags/${project_version}" ]]
-          then
-            echo Publishing to Docker Hub
-            sbt docker:publish
-          else
-            echo "${{ github.ref }} does not match project version $project_version => not publishing"
-            exit 1
-          fi
+        run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Publish to Docker Hub
+        if: startsWith(github.ref, 'refs/tags/')
+        run: sbt 'project main' docker:publish
+
+      - name: Publish to Docker Hub lzo
+        if: startsWith(github.ref, 'refs/tags/')
+        run: sbt 'project lzo' docker:publish
 
       - name: Build artifacts
         run: |
@@ -57,7 +55,8 @@ jobs:
           name: Version ${{ steps.ver.outputs.project_version }}
           tag_name: ${{ steps.ver.outputs.project_version }}
           files: |
-            target/scala-2.13/snowplow-s3-loader-${{ steps.ver.outputs.project_version }}.jar
+            modules/main/target/scala-2.13/snowplow-s3-loader-${{ steps.ver.outputs.project_version }}.jar
+            modules/lzo/target/scala-2.13/snowplow-s3-loader-lzo-${{ steps.ver.outputs.project_version }}.jar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

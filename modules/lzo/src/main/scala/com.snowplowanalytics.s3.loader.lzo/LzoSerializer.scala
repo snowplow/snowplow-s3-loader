@@ -10,8 +10,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.snowplowanalytics.s3.loader
-package serializers
+package com.snowplowanalytics.s3.loader.lzo
 
 // Java libs
 import java.io.{ByteArrayOutputStream, DataOutputStream}
@@ -22,6 +21,9 @@ import com.hadoop.compression.lzo.LzopCodec
 
 // Elephant bird
 import com.twitter.elephantbird.mapreduce.io.RawBlockWriter
+
+import com.snowplowanalytics.s3.loader.Result
+import com.snowplowanalytics.s3.loader.serializers.ISerializer
 
 /**
  * Object to handle LZO compression of raw events

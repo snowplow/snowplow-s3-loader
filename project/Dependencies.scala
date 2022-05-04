@@ -25,10 +25,9 @@ object Dependencies {
     val log4j            = "2.14.0"
     val kinesisClient    = "1.14.7"
     val kinesisConnector = "1.3.0"
-    val hadoop           = "2.7.7"
+    val hadoop           = "2.10.1"
     val elephantbird     = "4.17"
     val hadoopLZO        = "0.4.20"
-    val apacheCommons    = "3.2.1"
     val jackson          = "2.12.6"
     val sentry           = "1.7.30"
     val collections      = "3.2.2" // Address vulnerability
@@ -77,11 +76,10 @@ object Dependencies {
       .exclude("org.mortbay.jetty", "jetty-util")
       .exclude("org.mortbay.jetty", "jetty")
     val collections      = "commons-collections"              % "commons-collections"                % V.collections
-    val jaxbApi          = "javax.xml.bind"                   % "jaxb-api"                           % V.jaxbApi
+    val jaxbApi          = "javax.xml.bind"                   % "jaxb-api"                           % V.jaxbApi       % Runtime
     val elephantbird     = ("com.twitter.elephantbird"        %  "elephant-bird-core"                % V.elephantbird)
       .exclude("com.hadoop.gplcompression", "hadoop-lzo")
     val hadoopLZO        = "com.hadoop.gplcompression"        %  "hadoop-lzo"                        % V.hadoopLZO
-    val apacheCommons    = "org.apache.directory.studio"      % "org.apache.commons.collections"     % V.apacheCommons
     val sentry           = "io.sentry"                        % "sentry"                             % V.sentry
     val protobuf         = "com.google.protobuf"              % "protobuf-java"                      % V.protobuf
 

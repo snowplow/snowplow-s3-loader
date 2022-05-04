@@ -12,16 +12,15 @@
  * See the Apache License Version 2.0 for the specific language governing permissions and
  * limitations there under.
  */
+
 lazy val root = project.in(file("."))
+  .aggregate(main, lzo)
+
+lazy val main = project.in(file("modules/main"))
   .settings(
-    name        := "snowplow-s3-loader",
-    description := "Load the contents of a Kinesis stream topic to S3"
+    name := "snowplow-s3-loader",
   )
-  .settings(BuildSettings.basicSettings)
-  .settings(BuildSettings.scalifySettings)
-  .settings(BuildSettings.sbtAssemblySettings)
-  .settings(BuildSettings.dockerSettings)
-  .settings(BuildSettings.addExampleConfToTestCp)
+  .settings(BuildSettings.commonSettings)
   .settings(
     libraryDependencies ++= Seq(
       // Java
@@ -29,15 +28,9 @@ lazy val root = project.in(file("."))
       Dependencies.Libraries.kinesisConnector,
       Dependencies.Libraries.slf4j,
       Dependencies.Libraries.jclOverSlf4j,
-      Dependencies.Libraries.hadoop,
-      Dependencies.Libraries.elephantbird,
-      Dependencies.Libraries.hadoopLZO,
-      Dependencies.Libraries.apacheCommons,
       Dependencies.Libraries.jackson,
       Dependencies.Libraries.jacksonCbor,
-      Dependencies.Libraries.thrift,
       Dependencies.Libraries.sentry,
-      Dependencies.Libraries.collections,
       Dependencies.Libraries.jaxbApi,
       Dependencies.Libraries.protobuf,
       // Scala
@@ -50,10 +43,29 @@ lazy val root = project.in(file("."))
       // Scala (test only)
       Dependencies.Libraries.specs2,
       // Thrift (test only)
-      Dependencies.Libraries.collectorPayload
+      Dependencies.Libraries.collectorPayload,
+      Dependencies.Libraries.thrift % Test,
     ),
     excludeDependencies += "commons-logging" % "commons-logging"
   )
+  .enablePlugins(JavaAppPackaging, DockerPlugin)
+
+lazy val lzo = project.in(file("modules/lzo"))
+  .settings(
+    name := "snowplow-s3-loader-lzo",
+  )
+  .settings(BuildSettings.commonSettings)
+  .settings(BuildSettings.lzoSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      Dependencies.Libraries.hadoop,
+      Dependencies.Libraries.elephantbird,
+      Dependencies.Libraries.hadoopLZO,
+      Dependencies.Libraries.thrift,
+      Dependencies.Libraries.collections,
+    )
+  )
+  .dependsOn(main % "compile->compile; test->test")
   .enablePlugins(JavaAppPackaging, DockerPlugin)
 
 shellPrompt := { _ => "s3-loader> " }

@@ -32,8 +32,9 @@ object BuildSettings {
 
   // Basic settings for our app
   lazy val basicSettings = Seq(
-    organization          :=  "com.snowplowanalytics",
-    scalaVersion          :=  "2.13.6",
+    organization :=  "com.snowplowanalytics",
+    scalaVersion :=  "2.13.6",
+    description  := "Load the contents of a Kinesis stream topic to S3",
     resolvers             ++= Dependencies.resolvers,
     ThisBuild / dynverVTagPrefix := false,
     ThisBuild / dynverSeparator := "-"
@@ -42,7 +43,7 @@ object BuildSettings {
   /** Add example config for integration tests */
   lazy val addExampleConfToTestCp = Seq(
     Test / unmanagedClasspath += {
-      baseDirectory.value / "config"
+      baseDirectory.value / "../../config"
     }
   )
 
@@ -52,11 +53,15 @@ object BuildSettings {
     Docker / packageName := "snowplow/snowplow-s3-loader",
     dockerBaseImage := "eclipse-temurin:11-jre-focal",
     dockerUpdateLatest := true,
+  )
+
+  lazy val lzoDockerSettings = Seq(
     dockerCommands := {
       val installLzo = Seq(Cmd("RUN", "mkdir -p /var/lib/apt/lists/partial && apt-get update && apt-get install -y lzop && apt-get purge -y"))
       val (h, t) = dockerCommands.value.splitAt(dockerCommands.value.size-4)
       h ++ installLzo ++ t
-    }
+    },
+    dockerAlias := dockerAlias.value.withTag(Some(version.value + "-lzo"))
   )
 
   // Makes our SBT app settings available from within the app
@@ -82,10 +87,12 @@ object BuildSettings {
       case PathList("javax", "servlet", xs @ _*)         => MergeStrategy.first
       case PathList("org", "objectweb", "asm", xs @ _*)  => MergeStrategy.first
       case PathList("org", "objectweb", "asm", xs @ _*)  => MergeStrategy.first
-      case PathList("org", "apache", "log4j", _*)        => MergeStrategy.last  // handled by log4j-over-slf4j
+      case PathList("org", "apache", "log4j", _*)        => MergeStrategy.last 
+      case PathList("org", "apache", "commons", _*)      => MergeStrategy.last
       case PathList(ps @ _*) if ps.last endsWith ".html" => MergeStrategy.first
       case "application.conf"                            => MergeStrategy.concat
       case "module-info.class"                           => MergeStrategy.discard
+      case PathList("com", "snowplowanalytics", "s3", "loader", "generated", _*) => MergeStrategy.last
       case x =>
         val oldStrategy = (assembly / assemblyMergeStrategy).value
         oldStrategy(x)
@@ -103,5 +110,12 @@ object BuildSettings {
   lazy val formattingSettings = Seq(
     scalafmtConfig    := file(".scalafmt.conf"),
     scalafmtOnCompile := false
+  )
+
+  lazy val commonSettings = basicSettings ++ scalifySettings ++ sbtAssemblySettings ++ dockerSettings ++ addExampleConfToTestCp
+
+  lazy val lzoSettings = lzoDockerSettings ++ Seq(
+    Compile / discoveredMainClasses := Seq(),
+    Compile / mainClass := Some("com.snowplowanalytics.s3.loader.lzo.Main")
   )
 }

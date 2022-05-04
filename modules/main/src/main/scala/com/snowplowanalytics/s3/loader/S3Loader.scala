@@ -24,24 +24,25 @@ import com.snowplowanalytics.snowplow.badrows.Processor
 import com.snowplowanalytics.s3.loader.Config.Compression
 import com.snowplowanalytics.s3.loader.connector.KinesisSourceExecutor
 import com.snowplowanalytics.s3.loader.monitoring.Monitoring
-import com.snowplowanalytics.s3.loader.serializers.{GZipSerializer, LzoSerializer}
+import com.snowplowanalytics.s3.loader.serializers.{GZipSerializer, ISerializer}
 
-object S3Loader {
+trait S3Loader {
 
   val logger = LoggerFactory.getLogger(getClass)
 
   val processor = Processor(generated.Settings.name, generated.Settings.version)
+
+  def serializer(config: Config): ISerializer =
+    config.output.s3.compression match {
+      case Compression.Gzip => GZipSerializer
+      case Compression.Lzo  => throw new IllegalArgumentException("This build of S3 loader does not support LZO compression")
+    }
 
   def run(config: Config): Unit = {
     val monitoring = Monitoring.build(config.monitoring)
 
     // A sink for records that could not be emitted to S3
     val badSink = KinesisSink.build(config, monitoring)
-
-    val serializer = config.output.s3.compression match {
-      case Compression.Lzo  => LzoSerializer
-      case Compression.Gzip => GZipSerializer
-    }
 
     val executor =
       new KinesisSourceExecutor(
@@ -51,7 +52,7 @@ object S3Loader {
         config.purpose,
         config.output,
         badSink,
-        serializer,
+        serializer(config),
         monitoring,
         config.monitoring
           .flatMap(_.metrics.flatMap(_.cloudWatch))
@@ -122,3 +123,5 @@ object S3Loader {
     new KinesisConnectorConfiguration(props, credentialsProvider)
   }
 }
+
+object S3Loader extends S3Loader

@@ -23,19 +23,19 @@ import cats.syntax.show._
 /**
  * The entrypoint class for the Kinesis-S3 Sink application.
  */
-object Main {
+trait MainPlatform {
 
   val config = Opts
     .option[Path]("config", "Path to configuration HOCON file", "c", "filename")
   val parser =
     Command(s"${generated.Settings.name}-${generated.Settings.version}", "Streaming sink app for S3")(config)
 
-  def main(args: Array[String]): Unit =
+  def withConfig(args: Array[String])(f: Config => Unit): Unit =
     parser.parse(args.toList) match {
       case Right(c) =>
         Config.load(c) match {
           case Right(config) =>
-            S3Loader.run(config)
+            f(config)
           case Left(e) =>
             System.err.println(s"Configuration error: $e")
             System.exit(1)
@@ -44,4 +44,9 @@ object Main {
         System.err.println(error.show)
         System.exit(1)
     }
+}
+
+object Main extends MainPlatform {
+  def main(args: Array[String]): Unit =
+    withConfig(args)(S3Loader.run)
 }
