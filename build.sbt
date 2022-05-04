@@ -29,7 +29,6 @@ lazy val main = project.in(file("modules/main"))
       Dependencies.Libraries.slf4j,
       Dependencies.Libraries.jclOverSlf4j,
       Dependencies.Libraries.jackson,
-      Dependencies.Libraries.jacksonCbor,
       Dependencies.Libraries.sentry,
       Dependencies.Libraries.jaxbApi,
       // Scala
@@ -62,6 +61,7 @@ lazy val lzo = project.in(file("modules/lzo"))
       Dependencies.Libraries.hadoopLZO,
       Dependencies.Libraries.thrift,
       Dependencies.Libraries.collections,
+      Dependencies.Libraries.jacksonCbor,
     )
   )
   .dependsOn(main % "compile->compile; test->test")
