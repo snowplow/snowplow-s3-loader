@@ -25,11 +25,11 @@ object Dependencies {
     val log4j            = "2.14.0"
     val kinesisClient    = "1.14.8"
     val kinesisConnector = "1.3.0"
-    val hadoop           = "2.10.1"
+    val hadoop           = "3.3.3"
     val elephantbird     = "4.17"
     val hadoopLZO        = "0.4.20"
     val jackson          = "2.12.6.1"
-    val jacksonCbor      = "2.12.6"
+    val jacksonCbor      = "2.12.7"
     val sentry           = "1.7.30"
     val collections      = "3.2.2" // Address vulnerability
     val jaxbApi          = "2.3.1"
@@ -49,37 +49,22 @@ object Dependencies {
 
   object Libraries {
     // Java
-    val slf4j            = "org.slf4j"                        %  "slf4j-simple"              % V.slf4j
-    val jclOverSlf4j     = "org.slf4j"                        %  "jcl-over-slf4j"            % V.slf4j
-    val kinesisClient    = "com.amazonaws"                    %  "amazon-kinesis-client"     % V.kinesisClient
-    val kinesisConnector = "com.amazonaws"                    %  "amazon-kinesis-connectors" % V.kinesisConnector
-    val jacksonCbor      = "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor"    % V.jacksonCbor
-    val jackson          = "com.fasterxml.jackson.core"       % "jackson-databind"           % V.jackson
-    val thrift           = "org.apache.thrift"                % "libthrift"                  % V.thrift
-    val hadoop           = ("org.apache.hadoop"               %  "hadoop-common"             % V.hadoop)
-      .exclude("org.slf4j", "slf4j-log4j12")
-      .exclude("commons-beanutils", "commons-beanutils")
-      .exclude("commons-beanutils", "commons-beanutils-core")
-      .exclude("commons-collections", "commons-collections")
-      .exclude("commons-logging", "commons-logging")
-      .exclude("org.apache.htrace", "htrace-core")
-      .exclude("junit", "junit")
-      .exclude("org.apache.zookeeper", "zookeeper")
-      .exclude("org.apache.hadoop", "hadoop-auth")
-      .exclude("org.apache.curator", "curator-client")
-      .exclude("log4j", "log4j")
-      .exclude("com.google.code.gson", "gson")
-      .exclude("org.apache.avro", "avro")
-      .exclude("org.codehaus.jackson", "jackson-mapper-asl")
-      .exclude("com.sun.jersey", "jersey-json")
-      .exclude("org.mortbay.jetty", "jetty-sslengine")
-      .exclude("org.mortbay.jetty", "jetty-util")
-      .exclude("org.mortbay.jetty", "jetty")
+    val slf4j            = "org.slf4j"                        %  "slf4j-simple"                 % V.slf4j
+    val jclOverSlf4j     = "org.slf4j"                        %  "jcl-over-slf4j"               % V.slf4j
+    val kinesisClient    = "com.amazonaws"                    %  "amazon-kinesis-client"        % V.kinesisClient
+    val kinesisConnector = "com.amazonaws"                    %  "amazon-kinesis-connectors"    % V.kinesisConnector
+    val jacksonCbor      = "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor"       % V.jacksonCbor
+    val jackson          = "com.fasterxml.jackson.core"       % "jackson-databind"              % V.jackson
+    val thrift           = "org.apache.thrift"                % "libthrift"                     % V.thrift
+    val hadoopMapReduce  = "org.apache.hadoop"                %  "hadoop-mapreduce-client-core" % V.hadoop
+    val hadoop           = "org.apache.hadoop"                %  "hadoop-common"                % V.hadoop
+
     val collections      = "commons-collections"              % "commons-collections"                % V.collections
     val jaxbApi          = "javax.xml.bind"                   % "jaxb-api"                           % V.jaxbApi       % Runtime
     val elephantbird     = ("com.twitter.elephantbird"        %  "elephant-bird-core"                % V.elephantbird)
       .exclude("com.hadoop.gplcompression", "hadoop-lzo")
-    val hadoopLZO        = "com.hadoop.gplcompression"        %  "hadoop-lzo"                        % V.hadoopLZO
+    val hadoopLZO        = ("com.hadoop.gplcompression"       %  "hadoop-lzo"                        % V.hadoopLZO)
+      .excludeAll(ExclusionRule(organization = "org.apache.hadoop"))
     val sentry           = "io.sentry"                        % "sentry"                             % V.sentry
 
     val decline          = "com.monovore"                     %% "decline"                           % V.decline
@@ -97,6 +82,7 @@ object Dependencies {
       // Java
       Libraries.kinesisClient,
       Libraries.kinesisConnector,
+      Libraries.jacksonCbor,
       Libraries.slf4j,
       Libraries.jclOverSlf4j,
       Libraries.jackson,
@@ -118,6 +104,7 @@ object Dependencies {
 
   val lzoDependencies = Seq(
       Libraries.hadoop,
+      Libraries.hadoopMapReduce,
       Libraries.elephantbird,
       Libraries.hadoopLZO,
       Libraries.thrift,
@@ -126,7 +113,24 @@ object Dependencies {
   )
 
   val mainExclusions = Seq(
-    "commons-logging" % "commons-logging"
+    ExclusionRule(organization = "commons-logging", name = "commons-logging"),
+  )
+
+  val hadoopExclusions = mainExclusions ++ Seq(
+    ExclusionRule(organization = "org.apache.avro",   name = "avro"),
+    ExclusionRule(organization = "org.apache.hadoop", name = "hadoop-hdfs-client"),
+    ExclusionRule(organization = "org.apache.hadoop", name = "hadoop-yarn-client"),
+    ExclusionRule(organization = "org.apache.hadoop", name = "hadoop-yarn-api"),
+    ExclusionRule(organization = "org.apache.hadoop", name = "hadoop-auth"),
+    ExclusionRule(organization = "org.slf4j",         name = "slf4j-reload4j"),
+    ExclusionRule(organization = "org.apache.hadoop.thirdparty", name = "hadoop-shaded-protobuf_3_7"),
+    ExclusionRule(organization = "com.sun.jersey"),
+    ExclusionRule(organization = "com.sun.jersey.contribs"),
+    ExclusionRule(organization = "com.fasterxml.jackson.jaxrs"),
+    ExclusionRule(organization = "org.eclipse.jetty"),
+    ExclusionRule(organization = "org.apache.zookeeper"),
+    ExclusionRule(organization = "jakarta.activation"),
+    ExclusionRule(organization = "jakarta.xml.bind"),
   )
 
 }

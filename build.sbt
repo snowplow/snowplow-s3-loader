@@ -35,7 +35,10 @@ lazy val distroless = project.in(file("modules/distroless"))
 
 lazy val lzo = project.in(file("modules/lzo"))
   .settings(BuildSettings.lzoSettings)
-  .settings(libraryDependencies ++= Dependencies.lzoDependencies)
+  .settings(
+    libraryDependencies ++= Dependencies.lzoDependencies,
+    excludeDependencies ++= Dependencies.hadoopExclusions
+  )
   .dependsOn(main % "compile->compile; test->test")
   .enablePlugins(JavaAppPackaging, DockerPlugin)
 

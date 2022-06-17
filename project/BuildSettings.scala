@@ -102,14 +102,14 @@ object BuildSettings {
   lazy val sbtAssemblySettings = Seq(
     assembly / assemblyJarName := { s"${name.value}-${version.value}.jar" },
     assembly / assemblyMergeStrategy := {
-      case PathList("javax", "servlet", xs @ _*)         => MergeStrategy.first
-      case PathList("org", "objectweb", "asm", xs @ _*)  => MergeStrategy.first
-      case PathList("org", "objectweb", "asm", xs @ _*)  => MergeStrategy.first
-      case PathList("org", "apache", "log4j", _*)        => MergeStrategy.last 
-      case PathList("org", "apache", "commons", _*)      => MergeStrategy.last
-      case PathList(ps @ _*) if ps.last endsWith ".html" => MergeStrategy.first
-      case "application.conf"                            => MergeStrategy.concat
-      case "module-info.class"                           => MergeStrategy.discard
+      case PathList("javax", "servlet", xs @ _*)               => MergeStrategy.first
+      case PathList("org", "objectweb", "asm", xs @ _*)        => MergeStrategy.first
+      case PathList("org", "objectweb", "asm", xs @ _*)        => MergeStrategy.first
+      case PathList("org", "apache", "log4j", _*)              => MergeStrategy.last 
+      case PathList("org", "apache", "commons", _*)            => MergeStrategy.last
+      case PathList(ps @ _*) if ps.last endsWith ".html"       => MergeStrategy.first
+      case "application.conf"                                  => MergeStrategy.concat
+      case PathList(ps @ _*) if ps.last == "module-info.class" => MergeStrategy.first
       case PathList("com", "snowplowanalytics", "s3", "loader", "generated", _*) => MergeStrategy.last
       case x =>
         val oldStrategy = (assembly / assemblyMergeStrategy).value
