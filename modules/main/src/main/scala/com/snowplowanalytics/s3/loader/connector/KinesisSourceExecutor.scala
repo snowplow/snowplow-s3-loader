@@ -28,7 +28,7 @@ import com.amazonaws.services.kinesis.clientlibrary.lib.worker.SimpleRecordsFetc
 
 // AWS Client Library
 import com.amazonaws.ClientConfiguration
-import com.amazonaws.services.kinesis.clientlibrary.lib.worker.{KinesisClientLibConfiguration, Worker}
+import com.amazonaws.services.kinesis.clientlibrary.lib.worker.{InitialPositionInStream, KinesisClientLibConfiguration, Worker}
 import com.amazonaws.services.kinesis.metrics.impl.NullMetricsFactory
 import com.amazonaws.services.kinesis.metrics.interfaces.IMetricsFactory
 
@@ -65,7 +65,7 @@ class KinesisSourceExecutor(region: Option[String],
       kcc.KINESIS_INPUT_STREAM,
       kcc.KINESIS_ENDPOINT,
       null,
-      kcc.INITIAL_POSITION_IN_STREAM,
+      InitialPositionInStream.LATEST, // adjust this after the constructor
       kcc.AWS_CREDENTIALS_PROVIDER,
       kcc.AWS_CREDENTIALS_PROVIDER,
       kcc.AWS_CREDENTIALS_PROVIDER,
