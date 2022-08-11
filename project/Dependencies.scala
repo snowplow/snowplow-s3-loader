@@ -23,6 +23,7 @@ object Dependencies {
     // Java
     val slf4j            = "1.7.30"
     val log4j            = "2.14.0"
+    val sts              = "1.12.279"
     val kinesisClient    = "1.14.8"
     val kinesisConnector = "1.3.0"
     val hadoop           = "3.3.3"
@@ -53,6 +54,7 @@ object Dependencies {
     val jclOverSlf4j     = "org.slf4j"                        %  "jcl-over-slf4j"               % V.slf4j
     val kinesisClient    = "com.amazonaws"                    %  "amazon-kinesis-client"        % V.kinesisClient
     val kinesisConnector = "com.amazonaws"                    %  "amazon-kinesis-connectors"    % V.kinesisConnector
+    val sts              = "com.amazonaws"                    %  "aws-java-sdk-sts"             % V.sts           % Runtime
     val jacksonCbor      = "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor"       % V.jacksonCbor
     val jackson          = "com.fasterxml.jackson.core"       % "jackson-databind"              % V.jackson
     val thrift           = "org.apache.thrift"                % "libthrift"                     % V.thrift
@@ -82,6 +84,7 @@ object Dependencies {
       // Java
       Libraries.kinesisClient,
       Libraries.kinesisConnector,
+      Libraries.sts,
       Libraries.jacksonCbor,
       Libraries.slf4j,
       Libraries.jclOverSlf4j,
