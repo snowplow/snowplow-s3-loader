@@ -36,7 +36,7 @@ object BuildSettings {
   // Basic settings for our app
   lazy val basicSettings = Seq(
     organization :=  "com.snowplowanalytics",
-    scalaVersion :=  "2.13.6",
+    scalaVersion :=  "2.13.9",
     description  := "Load the contents of a Kinesis stream topic to S3",
     resolvers             ++= Dependencies.resolvers,
     ThisBuild / dynverVTagPrefix := false,
