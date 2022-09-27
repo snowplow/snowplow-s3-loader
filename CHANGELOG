@@ -1,3 +1,8 @@
+Version 2.2.3 (2022-09-27)
+--------------------------
+Fix: loader cannot start with InitialPosition = AT_TIMESTAMP (#267)
+Bump scala version to 2.13.9 (#270)
+
 Version 2.2.2 (2022-07-21)
 --------------------------
 Ensure docker image has latest libfreetype6 version (#265)

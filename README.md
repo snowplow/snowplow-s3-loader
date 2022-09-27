@@ -22,75 +22,6 @@ The compression process generates both compressed .lzo files and small .lzo.inde
 
 The records are treated as byte arrays containing UTF-8 encoded strings (whether CSV, JSON or TSV). New lines are used to separate records written to a file. This format can be used with the Snowplow Kinesis Enriched stream, among other streams.
 
-## Quickstart
-
-#### Docker
-
-We publish three flavours of the docker image:
-- Pull the `:2.2.1` tag if you only need GZip output format
-- Pull the `:2.2.1-lzo` tag if you also need LZO output format
-- Pull the `:2.2.1-distroless` tag for an lightweight alternative to `:2.2.1`
-
-
-```bash
-docker run snowplow/snowplow-s3-loader:2.2.1 --help
-docker run snowplow/snowplow-s3-loader:2.2.1-lzo --help
-docker run snowplow/snowplow-s3-loader:2.2.1-distroless --help
-```
-
-#### Download jar
-
-```bash
-curl -Lo snowplow-s3-loader.jar https://github.com/snowplow/snowplow-s3-loader/releases/download/2.2.1/snowplow-s3-loader-2.2.1.jar
-java -jar snowplow-s3-loader.jar --help
-```
-
-#### Build it yourself
-
-Assuming git and [SBT][sbt] installed:
-
-```bash
-$ git clone https://github.com/snowplow/snowplow-s3-loader.git
-$ cd snowplow-s3-loader
-$ sbt assembly
-```
-
-## Prerequisites
-
-You must have `lzop` and `lzop-dev` installed. In Ubuntu, install them like this:
-
-```bash
-$ sudo apt-get install lzop liblzo2-dev
-```
-
-## Command Line Interface
-
-The Snowplow S3 Loader has the following command-line interface:
-
-```
-snowplow-s3-loader: Version 2.2.1
-
-Usage: snowplow-s3-loader [options]
-
---config <filename>
-```
-
-## Running
-
-Create your own config file:
-
-```bash
-$ cp config/config.hocon.sample my.conf
-```
-
-You will need to edit all fields in the config.  Consult [the configuration reference][config] of the setup guide on how to fill in the fields.
-
-Next, start the sink, making sure to specify your new config file:
-
-```bash
-$ java -jar snowplow-s3-loader-2.2.1.jar --config my.conf
-```
-
 ## Find out more
 
 | Technical Docs             | Setup Guide           | Roadmap              | Contributing                |
@@ -114,7 +45,7 @@ limitations under the License.
 [travis-image]: https://travis-ci.org/snowplow/snowplow-s3-loader.png?branch=master
 [travis]: http://travis-ci.org/snowplow/snowplow-s3-loader
 
-[release-image]: http://img.shields.io/badge/release-2.2.1-blue.svg?style=flat
+[release-image]: http://img.shields.io/badge/release-2.2.3-blue.svg?style=flat
 [releases]: https://github.com/snowplow/snowplow-s3-loader/releases
 
 [license-image]: http://img.shields.io/badge/license-Apache--2-blue.svg?style=flat
@@ -128,10 +59,10 @@ limitations under the License.
 [s3]: http://aws.amazon.com/s3/
 [sbt]:https://www.scala-sbt.org/
 
-[config]: https://docs.snowplowanalytics.com/docs/pipeline-components-and-applications/loaders-storage-targets/s3-loader/configuration-reference/
-[techdocs]: https://docs.snowplowanalytics.com/docs/pipeline-components-and-applications/loaders-storage-targets/s3-loader/
+[config]: https://docs.snowplow.io/docs/pipeline-components-and-applications/loaders-storage-targets/s3-loader/configuration-reference/
+[techdocs]: https://docs.snowplow.io/docs/pipeline-components-and-applications/loaders-storage-targets/s3-loader/
 [roadmap]: https://github.com/snowplow/snowplow/projects/7
-[contributing]: https://docs.snowplowanalytics.com/docs/contributing/
+[contributing]: https://docs.snowplow.io/docs/contributing/
 
 [techdocs-image]: https://d3i6fms1cm1j0i.cloudfront.net/github/images/techdocs.png
 [setup-image]: https://d3i6fms1cm1j0i.cloudfront.net/github/images/setup.png
