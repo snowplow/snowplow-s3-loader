@@ -33,6 +33,7 @@ object Dependencies {
     val sentry           = "1.7.30"
     val collections      = "3.2.2" // Address vulnerability
     val jaxbApi          = "2.3.1"
+    val protobuf         = "3.21.12"
     // Thrift (test only)
     val collectorPayload = "0.0.0"
     val thrift           = "0.15.0" // Address vulnerabilities
@@ -59,6 +60,7 @@ object Dependencies {
     val thrift           = "org.apache.thrift"                % "libthrift"                     % V.thrift
     val hadoopMapReduce  = "org.apache.hadoop"                %  "hadoop-mapreduce-client-core" % V.hadoop
     val hadoop           = "org.apache.hadoop"                %  "hadoop-common"                % V.hadoop
+    val protobuf         = "com.google.protobuf"              % "protobuf-java"                 % V.protobuf
 
     val collections      = "commons-collections"              % "commons-collections"                % V.collections
     val jaxbApi          = "javax.xml.bind"                   % "jaxb-api"                           % V.jaxbApi       % Runtime
@@ -90,6 +92,7 @@ object Dependencies {
       Libraries.jackson,
       Libraries.sentry,
       Libraries.jaxbApi,
+      Libraries.protobuf,
       // Scala
       Libraries.decline,
       Libraries.circe,
