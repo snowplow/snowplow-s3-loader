@@ -31,7 +31,7 @@ The records are treated as byte arrays containing UTF-8 encoded strings (whether
 
 ## Copyright and license
 
-Snowplow S3 Loader is copyright 2014-2022 Snowplow Analytics Ltd.
+Snowplow S3 Loader is copyright 2014-2023 Snowplow Analytics Ltd.
 
 Licensed under the [Apache License, Version 2.0][license] (the "License");
 you may not use this software except in compliance with the License.
