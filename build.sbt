@@ -22,7 +22,7 @@ lazy val main = project.in(file("modules/main"))
     libraryDependencies ++= Dependencies.mainDependencies,
     excludeDependencies ++= Dependencies.mainExclusions
   )
-  .enablePlugins(JavaAppPackaging, DockerPlugin)
+  .enablePlugins(JavaAppPackaging, SnowplowDockerPlugin)
 
 lazy val distroless = project.in(file("modules/distroless"))
   .settings(BuildSettings.distrolessSettings)
@@ -31,7 +31,7 @@ lazy val distroless = project.in(file("modules/distroless"))
     libraryDependencies ++= Dependencies.mainDependencies,
     excludeDependencies ++= Dependencies.mainExclusions
   )
-  .enablePlugins(JavaAppPackaging, DockerPlugin, LauncherJarPlugin)
+  .enablePlugins(JavaAppPackaging, SnowplowDistrolessDockerPlugin)
 
 lazy val lzo = project.in(file("modules/lzo"))
   .settings(BuildSettings.lzoSettings)
@@ -40,6 +40,6 @@ lazy val lzo = project.in(file("modules/lzo"))
     excludeDependencies ++= Dependencies.hadoopExclusions
   )
   .dependsOn(main % "compile->compile; test->test")
-  .enablePlugins(JavaAppPackaging, DockerPlugin)
+  .enablePlugins(JavaAppPackaging, SnowplowDockerPlugin)
 
 shellPrompt := { _ => "s3-loader> " }

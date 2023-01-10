@@ -50,36 +50,14 @@ object BuildSettings {
     }
   )
 
-  lazy val dockerSettingsFocal = Seq(
-    Docker / maintainer := "Snowplow Analytics Ltd. <support@snowplowanalytics.com>",
-    Docker / daemonUser := "daemon",
-    Docker / packageName := "snowplow/snowplow-s3-loader",
-    dockerBaseImage := "eclipse-temurin:11-jre-focal",
-    dockerUpdateLatest := true,
-  )
-
-  lazy val dockerSettingsDistroless = Seq(
-    Docker / maintainer := "Snowplow Analytics Ltd. <support@snowplowanalytics.com>",
-    dockerBaseImage := "gcr.io/distroless/java11-debian11:nonroot",
-    Docker / daemonUser := "nonroot",
-    Docker / daemonGroup := "nonroot",
-    dockerRepository := Some("snowplow"),
-    Docker / daemonUserUid := None,
-    Docker / defaultLinuxInstallLocation := "/home/snowplow",
-    dockerEntrypoint := Seq("java", "-jar",s"/home/snowplow/lib/${(packageJavaLauncherJar / artifactPath).value.getName}"),
-    dockerPermissionStrategy := DockerPermissionStrategy.CopyChown,
-    dockerAlias := dockerAlias.value.withTag(Some(version.value + "-distroless")),
-    dockerUpdateLatest := false
-  )
-
-  lazy val lzoDockerSettingsFocal = dockerSettingsFocal ++ Seq(
+  lazy val lzoDockerSettings = Seq(
     dockerCommands := {
       val installLzo = Seq(Cmd("RUN", "mkdir -p /var/lib/apt/lists/partial && apt-get update && apt-get install -y lzop && apt-get purge -y"))
       val (h, t) = dockerCommands.value.splitAt(dockerCommands.value.size-4)
       h ++ installLzo ++ t
     },
-    dockerAlias := dockerAlias.value.withTag(Some(version.value + "-lzo")),
-    dockerUpdateLatest := false
+    Docker / packageName := "snowplow-s3-loader",
+    dockerAlias := dockerAlias.value.withTag(Some(version.value + "-lzo"))
   )
 
   // Makes our SBT app settings available from within the app
@@ -132,15 +110,15 @@ object BuildSettings {
 
   lazy val commonSettings = basicSettings ++ scalifySettings ++ sbtAssemblySettings ++ addExampleConfToTestCp
 
-  lazy val mainSettings = commonSettings ++ dockerSettingsFocal ++ Seq(
+  lazy val mainSettings = commonSettings ++ Seq(
     name := "snowplow-s3-loader"
   )
 
-  lazy val distrolessSettings = commonSettings ++ dockerSettingsDistroless ++ Seq(
+  lazy val distrolessSettings = commonSettings ++ Seq(
     name := "snowplow-s3-loader"
   )
 
-  lazy val lzoSettings = commonSettings ++ lzoDockerSettingsFocal ++ Seq(
+  lazy val lzoSettings = commonSettings ++ lzoDockerSettings ++ Seq(
     name := "snowplow-s3-loader-lzo",
     Compile / discoveredMainClasses := Seq(),
     Compile / mainClass := Some("com.snowplowanalytics.s3.loader.lzo.Main")
