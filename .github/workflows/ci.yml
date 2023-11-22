@@ -1,0 +1,123 @@
+name: CI
+
+on:
+  push:
+    tags:
+      - '*'
+    branches:
+      - master
+      - develop
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
+        with:
+          java-version: 11
+          distribution: adopt
+
+      - name: Install LZO
+        run: sudo apt-get install -y lzop liblzo2-dev
+
+      - name: Run tests
+        run: |
+          sbt "project main" test
+          sbt "project lzo" test
+
+      - name: Check formatting
+        run: sbt scalafmtCheck
+
+  publish_docker:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app:
+          - main
+          - lzo
+          - distroless
+        include:
+          - suffix: ""
+          - app: lzo
+            run_snyk: ${{ !contains(github.ref, 'rc') }}
+          - app: distroless
+            run_snyk: ${{ !contains(github.ref, 'rc') }}
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
+        with:
+          java-version: 11
+          distribution: adopt
+
+      - name: Install LZO
+        run: sudo apt-get install -y lzop liblzo2-dev
+
+      - name: Login to Docker Hub
+        run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Publish to Docker Hub
+        run: sbt "project ${{ matrix.app }}" docker:publish
+
+      - name: Build local image, which is needed to run Snyk
+        if: matrix.run_snyk
+        run: sbt "project ${{ matrix.app }}" docker:publishLocal
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/docker@master
+        if: matrix.run_snyk
+        with:
+          image: "snowplow/snowplow-s3-loader:${{ github.ref_name }}-${{ matrix.app }}"
+          args: "--app-vulns --org=data-processing-new"
+          command: monitor
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+  create_release:
+    needs: test
+    if: ${{ startsWith(github.ref, 'refs/tags/') && !contains(github.ref, 'rc') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
+        with:
+          java-version: 11
+          distribution: adopt
+
+      - name: Install LZO
+        run: sudo apt-get install -y lzop liblzo2-dev
+
+      - name: Build artifacts
+        run: |
+          sbt assembly
+      - name: Get current version
+        id: ver
+        run: |
+          export PROJECT_VERSION=$(sbt version -Dsbt.log.noformat=true | perl -ne 'print "$1\n" if /info.*(\d+\.\d+\.\d+[^\r\n]*)/' | tail -n 1 | tr -d '\n')
+          echo "::set-output name=project_version::$PROJECT_VERSION"
+      - name: Create GitHub release and attach artifacts
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          prerelease: true
+          name: Version ${{ steps.ver.outputs.project_version }}
+          tag_name: ${{ steps.ver.outputs.project_version }}
+          files: |
+            modules/main/target/scala-2.13/snowplow-s3-loader-${{ steps.ver.outputs.project_version }}.jar
+            modules/lzo/target/scala-2.13/snowplow-s3-loader-lzo-${{ steps.ver.outputs.project_version }}.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
