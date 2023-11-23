@@ -46,9 +46,9 @@ jobs:
         include:
           - suffix: ""
           - app: lzo
-            run_snyk: ${{ !contains(github.ref, 'rc') }}
+            run_snyk: ${{ contains(github.ref, 'rc') }}
           - app: distroless
-            run_snyk: ${{ !contains(github.ref, 'rc') }}
+            run_snyk: ${{ contains(github.ref, 'rc') }}
 
     steps:
       - uses: actions/checkout@v2
@@ -86,7 +86,7 @@ jobs:
 
   create_release:
     needs: test
-    if: ${{ startsWith(github.ref, 'refs/tags/') && !contains(github.ref, 'rc') }}
+    if: ${{ startsWith(github.ref, 'refs/tags/') && contains(github.ref, 'rc') }}
     runs-on: ubuntu-latest
 
     steps:
