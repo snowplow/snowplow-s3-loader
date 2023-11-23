@@ -1,4 +1,4 @@
-Version 2.2.8 (2023-11-24)
+Version 2.2.8-rc4 (2023-11-24)
 --------------------------
 Scan Docker images in Snyk Github action (#285)
 Bump pureconfig to 0.15.0 (#286)
