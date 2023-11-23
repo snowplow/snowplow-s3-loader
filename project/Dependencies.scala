@@ -35,6 +35,7 @@ object Dependencies {
     val jaxbApi          = "2.3.1"
     val protobuf         = "3.21.12"
     val reload4j         = "1.2.22" // Address vulnerability
+    val snappyJava       = "1.1.10.4" // Address vulnerability
     // Thrift (test only)
     val collectorPayload = "0.0.0"
     val thrift           = "0.15.0" // Address vulnerabilities
@@ -63,6 +64,7 @@ object Dependencies {
     val hadoop           = "org.apache.hadoop"                %  "hadoop-common"                % V.hadoop
     val protobuf         = "com.google.protobuf"              % "protobuf-java"                 % V.protobuf
     val reload4j         = "ch.qos.reload4j"                  % "reload4j"                      % V.reload4j
+    val snappyJava       = "org.xerial.snappy"                % "snappy-java"                   % V.snappyJava
 
     val collections      = "commons-collections"              % "commons-collections"                % V.collections
     val jaxbApi          = "javax.xml.bind"                   % "jaxb-api"                           % V.jaxbApi       % Runtime
@@ -96,6 +98,7 @@ object Dependencies {
       Libraries.jaxbApi,
       Libraries.protobuf,
       Libraries.reload4j,
+      Libraries.snappyJava,
       // Scala
       Libraries.decline,
       Libraries.circe,
