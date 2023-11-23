@@ -1,3 +1,10 @@
+Version 2.2.8 (2023-11-24)
+--------------------------
+Scan Docker images in Snyk Github action (#285)
+Bump pureconfig to 0.15.0 (#286)
+Bump reload4j to 1.2.22 (#286)
+Bump snappy-java to 1.1.10.4 (#286)
+
 Version 2.2.7 (2023-04-14)
 --------------------------
 Bump sbt-snowplow-release to 0.3.1 (#282)
