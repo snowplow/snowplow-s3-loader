@@ -34,6 +34,7 @@ object Dependencies {
     val collections      = "3.2.2" // Address vulnerability
     val jaxbApi          = "2.3.1"
     val protobuf         = "3.21.12"
+    val reload4j         = "1.2.22" // Address vulnerability
     // Thrift (test only)
     val collectorPayload = "0.0.0"
     val thrift           = "0.15.0" // Address vulnerabilities
@@ -61,6 +62,7 @@ object Dependencies {
     val hadoopMapReduce  = "org.apache.hadoop"                %  "hadoop-mapreduce-client-core" % V.hadoop
     val hadoop           = "org.apache.hadoop"                %  "hadoop-common"                % V.hadoop
     val protobuf         = "com.google.protobuf"              % "protobuf-java"                 % V.protobuf
+    val reload4j         = "ch.qos.reload4j"                  % "reload4j"                      % V.reload4j
 
     val collections      = "commons-collections"              % "commons-collections"                % V.collections
     val jaxbApi          = "javax.xml.bind"                   % "jaxb-api"                           % V.jaxbApi       % Runtime
@@ -93,6 +95,7 @@ object Dependencies {
       Libraries.sentry,
       Libraries.jaxbApi,
       Libraries.protobuf,
+      Libraries.reload4j,
       // Scala
       Libraries.decline,
       Libraries.circe,
