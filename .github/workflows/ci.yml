@@ -46,9 +46,9 @@ jobs:
         include:
           - suffix: ""
           - app: lzo
-            run_snyk: ${{ !contains(github.ref, 'rc') }}
+            run_snyk: ${{ contains(github.ref, 'rc') }}
           - app: distroless
-            run_snyk: ${{ !contains(github.ref, 'rc') }}
+            run_snyk: ${{ contains(github.ref, 'rc') }}
 
     steps:
       - uses: actions/checkout@v2
