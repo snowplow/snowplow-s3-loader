@@ -70,7 +70,7 @@ class CommonSpec extends Specification {
 
   "getTimestamp" should {
     "parse timestamp in proper format" in {
-      val input = List.fill(4)("2020-11-26 00:01:05").mkString("\t")
+      val input = List.fill(4)("2020-11-26 00:01:05").toArray
       val expected = Instant.parse("2020-11-26T00:01:05Z")
       Common.getTstamp(input) must beRight(expected)
     }
@@ -79,13 +79,13 @@ class CommonSpec extends Specification {
   "partition" should {
     "add metadata for enriched if statsd is enabled" in {
       val input = List("".getBytes.asRight)
-      val result = Common.partition(Config.Purpose.Enriched, true, input)
+      val result = Common.partition(Config.Purpose.Enriched, false, true, input)
       result.meta should beEqualTo(Batch.Meta(None, 1))
     }
 
     "not add metadata for enriched if statsd is disabled" in {
       val input = List("".getBytes.asRight)
-      val result = Common.partition(Config.Purpose.Enriched, false, input)
+      val result = Common.partition(Config.Purpose.Enriched, false, false, input)
       result.meta should beEqualTo(Batch.EmptyMeta)
     }
 
@@ -94,7 +94,7 @@ class CommonSpec extends Specification {
 
       val input = List(dataType11.asRight, dataType21.asRight)
       val result =
-        Common.partition(Config.Purpose.SelfDescribingJson, false, input)
+        Common.partition(Config.Purpose.SelfDescribingJson, false, false, input)
       result should beEqualTo(
         Batch(
           Batch.EmptyMeta,

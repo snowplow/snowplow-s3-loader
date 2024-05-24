@@ -31,4 +31,9 @@ package object loader {
    * Final result of S3 Loader processing
    */
   type Result = Either[GenericError, RawRecord]
+
+  /**
+   * The result of S3 Loader processing with a potentially parsed record
+   */
+  type ParsedResult = Either[GenericError, (RawRecord, Option[Array[String]])]
 }

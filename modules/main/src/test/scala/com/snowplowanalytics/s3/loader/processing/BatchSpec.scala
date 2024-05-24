@@ -14,16 +14,12 @@ package com.snowplowanalytics.s3.loader.processing
 
 import java.time.Instant
 import java.util.UUID
-
 import cats.data.NonEmptyList
 import cats.syntax.either._
-
 import com.snowplowanalytics.snowplow.badrows.BadRow.GenericError
 import com.snowplowanalytics.snowplow.badrows.Failure.GenericFailure
 import com.snowplowanalytics.snowplow.badrows.Payload.RawPayload
-
-import com.snowplowanalytics.s3.loader.{Result, S3Loader}
-
+import com.snowplowanalytics.s3.loader.{ParsedResult, Result, S3Loader}
 import org.specs2.mutable.Specification
 
 class BatchSpec extends Specification {
@@ -37,11 +33,11 @@ class BatchSpec extends Specification {
 
   "fromEnriched" should {
     "extract the earliest timestamp" in {
-      val input: List[Result] = List(
+      val input: List[ParsedResult] = List(
         BatchSpec.getEvent("2020-11-26 00:02:05"),
         BatchSpec.getEvent("2020-11-26 00:01:05"),
         BatchSpec.getEvent("2020-11-26 00:03:05")
-      ).map(_.getBytes.asRight)
+      ).map(_.getBytes.asRight).map(Common.toParsedRecord(_, actuallyParse = true))
 
       val expected = Batch.Meta(Some(Instant.parse("2020-11-26T00:01:05Z")), 3)
 
@@ -49,8 +45,10 @@ class BatchSpec extends Specification {
     }
 
     "ignore invalid TSVs for timestamps, but preserve for count" in {
-      val input: List[Result] =
-        List("invalid event", "rubbish").map(_.getBytes.asRight)
+      val input: List[ParsedResult] =
+        List("invalid event", "rubbish")
+          .map(_.getBytes.asRight)
+          .map(Common.toParsedRecord(_, actuallyParse = true))
 
       val expected = Batch(Batch.Meta(None, 2), input)
 

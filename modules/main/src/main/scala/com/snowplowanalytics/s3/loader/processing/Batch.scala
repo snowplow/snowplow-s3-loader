@@ -13,9 +13,7 @@
 package com.snowplowanalytics.s3.loader.processing
 
 import java.time.Instant
-import java.nio.charset.StandardCharsets.UTF_8
-
-import com.snowplowanalytics.s3.loader.Result
+import com.snowplowanalytics.s3.loader.{ParsedResult, Result}
 import com.snowplowanalytics.s3.loader.processing.Batch.Meta
 
 /** Content of a KCL buffer with metadata attached */
@@ -34,13 +32,12 @@ object Batch {
 
   val EmptyMeta: Meta = Meta(None, 0)
 
-  def fromEnriched(inputs: List[Result]): Batch[List[Result]] = {
+  def fromEnriched(inputs: List[ParsedResult]): Batch[List[ParsedResult]] = {
     val meta = inputs.foldLeft(EmptyMeta) {
       case (Meta(tstamp, count), Left(_)) =>
         Meta(tstamp, count + 1)
-      case (Meta(tstamp, count), Right(raw)) =>
-        val strRecord = new String(raw, UTF_8)
-        val extracted = Common.getTstamp(strRecord).toOption
+      case (Meta(tstamp, count), Right((_, array))) =>
+        val extracted = array.flatMap(Common.getTstamp(_).toOption)
         val min = Common.compareTstamps(tstamp, extracted)
         Meta(min, count + 1)
     }
@@ -48,6 +45,6 @@ object Batch {
     Batch(meta, inputs)
   }
 
-  def from(inputs: List[Result]): Batch[List[Result]] =
+  def from[R](inputs: List[R]): Batch[List[R]] =
     Batch(EmptyMeta, inputs)
 }

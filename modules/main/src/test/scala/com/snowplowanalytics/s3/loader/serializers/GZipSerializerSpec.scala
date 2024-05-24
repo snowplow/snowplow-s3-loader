@@ -42,8 +42,8 @@ class GZipSerializerSpec extends Specification {
       cleanup()
 
       val binaryInputs = List(
-        (List("A", "B", 1000, "a", "b"):List[Any]).mkString("\t").getBytes.asRight,
-        (List("X", "Y", 2000, "x", "y"):List[Any]).mkString("\t").getBytes.asRight
+        (List("A", "B", 1000, "a", "b"): List[Any]).mkString("\t").getBytes.asRight,
+        (List("X", "Y", 2000, "x", "y"): List[Any]).mkString("\t").getBytes.asRight
       )
 
       val serializationResult =

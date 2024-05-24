@@ -52,6 +52,8 @@ class KinesisS3Emitter(client: AmazonS3,
                        serializer: ISerializer)
     extends IEmitter[Result] {
 
+  private val partitionTsvByApp = output.s3.partitionForPurpose(purpose).exists(_.contains("{app}"))
+
   /**
    * Reads items from a buffer and saves them to s3.
    *
@@ -67,9 +69,9 @@ class KinesisS3Emitter(client: AmazonS3,
 
     val records = buffer.getRecords.asScala.toList
     val partitionedBatch =
-      Common.partition(purpose, monitoring.isStatsDEnabled, records)
+      Common.partition(purpose, partitionTsvByApp, monitoring.isStatsDEnabled, records)
 
-    val getBase: Option[RowType.SelfDescribing] => String =
+    val getBase: Option[RowType] => String =
       getBaseFilename(output.s3, purpose, buffer.getFirstSequenceNumber, buffer.getLastSequenceNumber, LocalDateTime.now)
     val afterEmit: () => Unit =
       () => monitoring.report(partitionedBatch.meta)
@@ -78,7 +80,7 @@ class KinesisS3Emitter(client: AmazonS3,
       case (RowType.Unpartitioned, partitionRecords) if partitionRecords.nonEmpty =>
         emitRecords(partitionRecords, afterEmit, getBase(None))
           .map(_.asLeft)
-      case (data: RowType.SelfDescribing, partitionRecords) if partitionRecords.nonEmpty =>
+      case (data @ (_: RowType.SelfDescribing | _: RowType.Tsv), partitionRecords) if partitionRecords.nonEmpty =>
         emitRecords(partitionRecords, afterEmit, getBase(Some(data))).map(_.asLeft)
       case _ =>
         records // ReadingError or empty partition - should be handled later by serializer
@@ -238,14 +240,17 @@ object KinesisS3Emitter {
     lastSeq: String,
     now: LocalDateTime
   )(
-    sdj: Option[RowType.SelfDescribing]
+    row: Option[RowType]
   ): String = {
+    val sdj = row.collect { case s: RowType.SelfDescribing => s }
+    val app = row.collect { case a: RowType.Tsv => a }
     val partitionPath = s3Config.partitionForPurpose(purpose).map {
       _.template("vendor", sdj.fold("unknown")(_.vendor))
         .template("name", sdj.fold("unknown")(_.name))
         .template("schema", sdj.fold("unknown")(_.name)) // allowed synonym
         .template("format", sdj.fold("unknown")(_.format))
         .template("model", sdj.fold(-1)(_.model).toString)
+        .template("app", app.fold("unknown")(_.appId))
         .template("yy+", now.format(DateTimeFormatter.ofPattern("yyyy")))
         .template("mm", now.format(DateTimeFormatter.ofPattern("MM")))
         .template("dd", now.format(DateTimeFormatter.ofPattern("dd")))
