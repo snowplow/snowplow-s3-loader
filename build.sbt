@@ -39,7 +39,7 @@ lazy val lzo = project.in(file("modules/lzo"))
     libraryDependencies ++= Dependencies.lzoDependencies,
     excludeDependencies ++= Dependencies.hadoopExclusions
   )
-  .dependsOn(main % "compile->compile; test->test")
+  .dependsOn(main % "compile->compile; test->test; runtime->runtime")
   .enablePlugins(JavaAppPackaging, SnowplowDockerPlugin)
 
 shellPrompt := { _ => "s3-loader> " }
