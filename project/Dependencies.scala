@@ -24,7 +24,7 @@ object Dependencies {
     val slf4j            = "1.7.30"
     val log4j            = "2.14.0"
     val awsSdk           = "1.12.279"
-    val kinesisClient    = "1.14.8"
+    val kinesisClient    = "1.15.1"
     val kinesisConnector = "1.3.0"
     val hadoop           = "3.3.3"
     val elephantbird     = "4.17"
