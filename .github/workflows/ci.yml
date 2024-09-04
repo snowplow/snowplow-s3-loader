@@ -39,16 +39,20 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        app:
+        sbtProject:
           - main
           - lzo
           - distroless
         include:
-          - suffix: ""
-          - app: lzo
-            run_snyk: ${{ !contains(github.ref, 'rc') }}
-          - app: distroless
-            run_snyk: ${{ !contains(github.ref, 'rc') }}
+          - sbtProject: main
+            runSnyk: false
+            dockerTagSuffix: ""
+          - sbtProject: lzo
+            runSnyk: true
+            dockerTagSuffix: "-lzo"
+          - sbtProject: distroless
+            runSnyk: true
+            dockerTagSuffix: "-distroless"
 
     steps:
       - uses: actions/checkout@v2
@@ -58,28 +62,44 @@ jobs:
         with:
           java-version: 11
           distribution: adopt
-
-      - name: Install LZO
-        run: sudo apt-get install -y lzop liblzo2-dev
-
       - name: Login to Docker Hub
         run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Publish to Docker Hub
-        run: sbt "project ${{ matrix.app }}" docker:publish
-
+      - name: Stage the Docker build
+        run: sbt "project ${{ matrix.sbtProject}}" docker:stage
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: snowplow/snowplow-s3-loader
+          tags: |
+            type=raw,value=latest${{ matrix.dockerTagSuffix }},enable=${{ !contains(github.ref_name, 'rc') }}
+            type=raw,value=${{ github.ref_name }}${{ matrix.dockerTagSuffix }}
+          flavor: |
+            latest=false
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Push image
+        uses: docker/build-push-action@v2
+        with:
+          context: modules/${{ matrix.sbtProject }}/target/docker/stage
+          file: modules/${{ matrix.sbtProject }}/target/docker/stage/Dockerfile
+          platforms: linux/amd64,linux/arm64/v8
+          tags: ${{ steps.meta.outputs.tags }}
+          push: true
       - name: Build local image, which is needed to run Snyk
-        if: matrix.run_snyk
-        run: sbt "project ${{ matrix.app }}" docker:publishLocal
+        if: ${{ !contains(github.ref_name, 'rc') && fromJSON(matrix.runSnyk) }}
+        run: sbt "project ${{ matrix.sbtProject }}" docker:publishLocal
       - name: Run Snyk to check for vulnerabilities
         uses: snyk/actions/docker@master
-        if: matrix.run_snyk
+        if: ${{ !contains(github.ref_name, 'rc') && fromJSON(matrix.runSnyk) }}
         with:
-          image: "snowplow/snowplow-s3-loader:${{ github.ref_name }}-${{ matrix.app }}"
-          args: "--app-vulns --org=data-processing-new"
+          image: "snowplow/snowplow-s3-loader:${{ github.ref_name }}${{ matrix.dockerTagSuffix }}"
+          args: "--app-vulns --org=99605b41-ca0f-42c9-a9ff-45c201a10a26"
           command: monitor
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
