@@ -99,7 +99,7 @@ jobs:
         if: ${{ !contains(github.ref_name, 'rc') && fromJSON(matrix.runSnyk) }}
         with:
           image: "snowplow/snowplow-s3-loader:${{ github.ref_name }}${{ matrix.dockerTagSuffix }}"
-          args: "--app-vulns --org=99605b41-ca0f-42c9-a9ff-45c201a10a26"
+          args: "--app-vulns --org=99605b41-ca0f-42c9-a9ff-45c201a10a26 --project-name=snowplow-s3-loader-${{ matrix.sbtProject }}"
           command: monitor
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
