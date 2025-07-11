@@ -66,10 +66,6 @@ object Dependencies {
 
     val collections      = "commons-collections"              % "commons-collections"                % V.collections
     val jaxbApi          = "javax.xml.bind"                   % "jaxb-api"                           % V.jaxbApi       % Runtime
-    val elephantbird     = ("com.twitter.elephantbird"        %  "elephant-bird-core"                % V.elephantbird)
-      .exclude("com.hadoop.gplcompression", "hadoop-lzo")
-    val hadoopLZO        = ("com.hadoop.gplcompression"       %  "hadoop-lzo"                        % V.hadoopLZO)
-      .excludeAll(ExclusionRule(organization = "org.apache.hadoop"))
     val sentry           = "io.sentry"                        % "sentry"                             % V.sentry
 
     val decline          = "com.monovore"                     %% "decline"                           % V.decline
@@ -114,8 +110,6 @@ object Dependencies {
   val lzoDependencies = Seq(
       Libraries.hadoop,
       Libraries.hadoopMapReduce,
-      Libraries.elephantbird,
-      Libraries.hadoopLZO,
       Libraries.thrift,
       Libraries.collections,
       Libraries.jacksonCbor,

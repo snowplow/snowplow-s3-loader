@@ -9,7 +9,6 @@
  * OF THE SOFTWARE, YOU AGREE TO THE TERMS OF SUCH LICENSE AGREEMENT.
  */
 
-
 package com.snowplowanalytics.s3.loader
 
 import java.nio.ByteBuffer
