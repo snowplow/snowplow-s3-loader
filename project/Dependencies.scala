@@ -31,9 +31,14 @@ object Dependencies {
     val sentry           = "1.7.30"
     val collections      = "3.2.2" // Address vulnerability
     val jaxbApi          = "2.3.1"
-    val protobuf         = "3.21.12"
+    val protobuf         = "3.25.5"
     val reload4j         = "1.2.22" // Address vulnerability
     val snappyJava       = "1.1.10.4" // Address vulnerability
+    val commonsLang      = "3.18.0" // Address vulnerability
+    val commonsBeanUtils = "1.11.0" // Address vulnerability
+    val dnsJava          = "3.6.0" // Address vulnerability
+    val commonsCompress  = "1.26.0" // Address vulnerability
+    val commonsConf      = "2.10.1" // Address vulnerability
     // Thrift (test only)
     val collectorPayload = "0.0.0"
     val thrift           = "0.15.0" // Address vulnerabilities
@@ -63,6 +68,11 @@ object Dependencies {
     val protobuf         = "com.google.protobuf"              % "protobuf-java"                 % V.protobuf
     val reload4j         = "ch.qos.reload4j"                  % "reload4j"                      % V.reload4j
     val snappyJava       = "org.xerial.snappy"                % "snappy-java"                   % V.snappyJava
+    val commonsLang      = "org.apache.commons"               % "commons-lang3"                 % V.commonsLang
+    val commonsBeanUtils = "commons-beanutils"                % "commons-beanutils"             % V.commonsBeanUtils
+    val dnsJava          = "dnsjava"                          % "dnsjava"                       % V.dnsJava
+    val commonsCompress  = "org.apache.commons"               % "commons-compress"              % V.commonsCompress
+    val commonsConf      = "org.apache.commons"               % "commons-configuration2"        % V.commonsConf
 
     val collections      = "commons-collections"              % "commons-collections"                % V.collections
     val jaxbApi          = "javax.xml.bind"                   % "jaxb-api"                           % V.jaxbApi       % Runtime
@@ -93,6 +103,7 @@ object Dependencies {
       Libraries.protobuf,
       Libraries.reload4j,
       Libraries.snappyJava,
+      Libraries.commonsLang,
       // Scala
       Libraries.decline,
       Libraries.circe,
@@ -113,6 +124,10 @@ object Dependencies {
       Libraries.thrift,
       Libraries.collections,
       Libraries.jacksonCbor,
+      Libraries.commonsBeanUtils,
+      Libraries.dnsJava,
+      Libraries.commonsCompress,
+      Libraries.commonsConf,
   )
 
   val mainExclusions = Seq(
