@@ -88,7 +88,8 @@ class ConfigSpec extends Specification {
             None,
             None
           )
-        )
+        ),
+        None
       )
 
       val result = ConfigSource.fromConfig(config).load[Config]
@@ -131,7 +132,8 @@ class ConfigSpec extends Specification {
               )
             )
           )
-        )
+        ),
+        Some(Config.License(true))
       )
 
       Config.load(configPath) must beRight(expected)

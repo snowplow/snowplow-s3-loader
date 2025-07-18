@@ -33,7 +33,12 @@ trait MainPlatform {
       case Right(c) =>
         Config.load(c) match {
           case Right(config) =>
-            f(config)
+            if (config.license.exists(_.accept))
+              f(config)
+            else
+              System.err.println(
+                "Please accept the terms of the Snowplow Limited Use License Agreement to proceed. See https://docs.snowplow.io/docs/api-reference/loaders-storage-targets/s3-loader/configuration-reference/#license for more information on the license and how to configure this.")
+            System.exit(1)
           case Left(e) =>
             System.err.println(s"Configuration error: $e")
             System.exit(1)

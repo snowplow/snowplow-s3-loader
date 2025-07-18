@@ -32,7 +32,13 @@ import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionIn
 
 import com.snowplowanalytics.s3.loader.Config._
 
-case class Config(region: Option[String], purpose: Purpose, input: Input, output: Output, buffer: Buffer, monitoring: Option[Monitoring])
+case class Config(region: Option[String],
+                  purpose: Purpose,
+                  input: Input,
+                  output: Output,
+                  buffer: Buffer,
+                  monitoring: Option[Monitoring],
+                  license: Option[License])
 
 object Config {
 
@@ -193,6 +199,8 @@ object Config {
    */
   case class Monitoring(snowplow: Option[SnowplowMonitoring], sentry: Option[Sentry], metrics: Option[Metrics])
 
+  case class License(accept: Boolean)
+
   implicit def inputConfigDecoder: Decoder[Input] =
     deriveDecoder[Input]
 
@@ -245,4 +253,11 @@ object Config {
         case Right(value) => Right(value)
       }
     }
+
+  implicit val licenseDecoder: Decoder[License] = {
+    val truthy = Set("true", "yes", "on", "1")
+    Decoder
+      .forProduct1("accept")((s: String) => License(truthy(s.toLowerCase())))
+      .or(Decoder.forProduct1("accept")((b: Boolean) => License(b)))
+  }
 }
