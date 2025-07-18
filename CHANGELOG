@@ -1,3 +1,15 @@
+Version 2.3.0 (2025-07-18)
+--------------------------
+Update license to SLULA 1.1
+Add lzo jars to be used as unmanaged dependencies (#3)
+Add sbt install step (#3)
+Publish ARM docker images in Github action (#1)
+Remove create-release CI action (#1)
+Upgrade dependencies to fix some vulnerabilities
+Java 21 for docker images (#5)
+Add sync-public-main GH action script (#6)
+Add mandatory SLULA license acceptance flag (#8)
+
 Version 2.2.9 (2024-07-16)
 --------------------------
 Bump amazon-kinesis-client to 1.15.1
