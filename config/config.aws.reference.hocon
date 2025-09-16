@@ -1,0 +1,165 @@
+{
+  # -- Full license text available in LICENSE.md
+  "license" {
+    "accept": true
+  }
+
+  "input": {
+    # -- Kinesis stream for the source of events
+    "streamName": "snowplow-sdjs"
+
+    # -- Name to use for the KCL DynamoDB table
+    "appName": "snowplow-s3-loader"
+
+    # -- From where the loader should start consuming if this is the first time it is run
+    # -- On subsequent runs, it will always resume from where it last checkpointed
+    "initialPosition": {
+      # -- Options are `TRIM_HORIZON` for the oldest available events, `LATEST` for latest events,
+      # -- or `AT_TIMESTAMP` to start consuming from events written at a particular time
+      "type": "TRIM_HORIZON"
+
+      # -- Only required if `initialPosition.type` is AT_TIMESTAMP
+      # "timestamp": "2023-01-01T00:00:00Z"
+    }
+
+    # -- How the underlying Kinesis client should fetch events from the stream
+    "retrievalMode": {
+      # -- Options are "Polling" for the client to poll Kinesis for more events when needed
+      # -- or "FanOut" to enabled Kinesis's Enhanced Fan Out feature using HTTP/2
+      "type": "Polling"
+
+      # -- Only used if retrieval mode is type Polling. How many events the client may fetch in a single poll
+      "maxRecords": 1000
+    }
+
+    # -- Name of this KCL worker used in the DynamoDB lease table
+    "workerIdentifier": ${HOSTNAME}
+
+    # -- Duration of shard leases. KCL workers must periodically refresh leases in the DynamoDB table before this duration expires
+    "leaseDuration": "10 seconds"
+
+    # -- Controls how to pick the max number of leases to steal at one time
+    # -- E.g. If there are 4 available processors, and maxLeasesToStealAtOneTimeFactor = 2.0, then allow the KCL to steal up to 8 leases.
+    # -- Allows bigger instances to more quickly acquire the shard-leases they need to combat latency
+    "maxLeasesToStealAtOneTimeFactor": 2.0
+
+    # -- How to backoff and retry in case of DynamoDB provisioned throughput limits
+    "checkpointThrottledBackoffPolicy": {
+      "minBackoff": "100 millis"
+      "maxBackoff": "1 second"
+    }
+
+    # -- How frequently to checkpoint our progress to the DynamoDB table. By increasing this value,
+    # -- we can decrease the write-throughput requirements of the DynamoDB table
+    debounceCheckpoints: "10 seconds"
+  }
+
+  "output": {
+
+    "good": {
+      # -- S3 path for the writing of events
+      "path": "s3://snowplow-events/"
+
+      # -- Partitioning format for subpaths inside the destination
+      # Valid substitutions are:
+      # - {vendor}, {schema}, {name}, {format}, {model} for self-describing jsons
+      # - {yyy}, {yy}, {mm}, {dd}, {hh} for year, month, day, hour
+      "partitionFormat": "{vendor}.{schema}/model={model}/date={yy}-{mm}-{dd}"
+
+      # -- Prefix for all filenames
+      "filenamePrefix": "pre-"
+
+      # -- Compression type. Only GZIP is supported
+      "compressionType": "GZIP"
+    }
+
+    "bad": {
+      # -- Output kinesis stream for bad rows (JSON)
+      "streamName": "snowplow-bad"
+
+      # -- How to retry sending bad rows if we exceed the kinesis write throughput limits
+      "throttledBackoffPolicy": {
+        "minBackoff": "100 milliseconds"
+        "maxBackoff": "1 second"
+      }
+
+      # -- Maximum allowed to records we are allowed to send to Kinesis in 1 PutRecords request
+      "recordLimit": 500
+
+      # -- Maximum allowed to bytes we are allowed to send to Kinesis in 1 PutRecords request
+      "byteLimit": 5242880
+    }
+  }
+
+  # -- Type of events processed by the loader
+  # Possible values:
+  # - ENRICHED_EVENTS for enriched events
+  # - SELF_DESCRIBING for self-describing jsons
+  "purpose": "SELF_DESCRIBING"
+
+  # -- Controls when we stop writing to the current file(s)
+  # We stop when the first condition has been met.
+  "batching": {
+    # -- After this amount of compressed bytes have been written ("soft" limit)
+    "maxBytes": 67108864
+
+    # -- After this delay has elapsed
+    "maxDelay": "1 minute"
+  }
+
+  # -- Controls how the app splits the workload into concurrent batches which can be run in parallel
+  # -- E.g. If there are 4 available processors, and cpuParallelismFactor = 0.75, then we process 3 batches concurrently.
+  # -- Adjusting this value can cause the app to use more or less of the available CPU.
+  "cpuParallelismFactor": 1
+
+  # -- Controls number of upload jobs that can be run in parallel
+  # -- E.g. If there are 4 available processors, and sinkParallelismFraction = 2, then we run 8 upload job concurrently.
+  # -- Adjusting this value can cause the app to use more or less of the available CPU.
+  "uploadParallelismFactor": 2
+
+  # -- Overrides the initial size of the byte buffer that holds the compressed events in-memory before they get written to a file.
+  # -- If not set, the initial size is picked dynamically based on other configuration options. The default is known to work well.
+  # -- Increasing this value is a way to reduce in-memory copying, but comes at the cost of increased memory usage
+  "initialBufferSize": 70000000
+
+  "monitoring": {
+
+    "metrics": {
+      # -- Send runtime metrics to a statsd server
+      "statsd": {
+        "hostname": "127.0.0.1"
+        "port": 8125
+
+        # -- Map of key/value pairs to be send along with the metric
+        "tags": {
+          "env": "prod"
+        }
+
+        # -- How often to report metrics
+        "period": "1 minute"
+
+        # -- Prefix used for the metric name when sending to statsd
+        "prefix": "snowplow.blob.loader.aws"
+      }
+    }
+
+    # -- Report unexpected runtime exceptions to Sentry
+    "sentry": {
+      "dsn": "https://public@sentry.example.com/1"
+
+      # -- Map of key/value pairs to be included as tags
+      "tags": {
+        "myTag": "xyz"
+      }
+    }
+
+    # -- Open a HTTP server that returns OK only if the app is healthy
+    "healthProbe": {
+      "port": 8000
+
+      # -- Health probe becomes unhealthy if any received event is still not fully processed before
+      # -- this cutoff time
+      "unhealthyLatency": "2 minutes"
+    }
+  }
+}

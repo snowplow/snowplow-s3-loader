@@ -9,33 +9,32 @@
  * OF THE SOFTWARE, YOU AGREE TO THE TERMS OF SUCH LICENSE AGREEMENT.
  */
 
-lazy val root = project.in(file("."))
-  .aggregate(main, distroless, lzo)
-
-lazy val main = project.in(file("modules/main"))
-  .settings(BuildSettings.mainSettings)
-  .settings(
-    libraryDependencies ++= Dependencies.mainDependencies,
-    excludeDependencies ++= Dependencies.mainExclusions
+lazy val root = project
+  .in(file("."))
+  .aggregate(
+    core,
+    aws,
+    awsDistroless
   )
-  .enablePlugins(JavaAppPackaging, SnowplowDockerPlugin)
 
-lazy val distroless = project.in(file("modules/distroless"))
-  .settings(BuildSettings.distrolessSettings)
-  .settings(sourceDirectory := (main / sourceDirectory).value)
-  .settings(
-    libraryDependencies ++= Dependencies.mainDependencies,
-    excludeDependencies ++= Dependencies.mainExclusions
-  )
-  .enablePlugins(JavaAppPackaging, SnowplowDistrolessDockerPlugin)
+lazy val core: Project = project
+  .in(file("modules/core"))
+  .settings(BuildSettings.commonSettings)
+  .settings(libraryDependencies ++= Dependencies.coreDependencies)
 
-lazy val lzo = project.in(file("modules/lzo"))
-  .settings(BuildSettings.lzoSettings)
-  .settings(
-    libraryDependencies ++= Dependencies.lzoDependencies,
-    excludeDependencies ++= Dependencies.hadoopExclusions
-  )
-  .dependsOn(main % "compile->compile; test->test; runtime->runtime")
-  .enablePlugins(JavaAppPackaging, SnowplowDockerPlugin)
+lazy val aws: Project = project
+  .in(file("modules/aws"))
+  .settings(BuildSettings.awsSettings)
+  .settings(libraryDependencies ++= Dependencies.awsDependencies)
+  .dependsOn(core)
+  .enablePlugins(BuildInfoPlugin, JavaAppPackaging, SnowplowDockerPlugin)
 
-shellPrompt := { _ => "s3-loader> " }
+lazy val awsDistroless: Project = project
+  .in(file("modules/distroless/aws"))
+  .settings(BuildSettings.awsSettings)
+  .settings(libraryDependencies ++= Dependencies.awsDependencies)
+  .settings(sourceDirectory := (aws / sourceDirectory).value)
+  .dependsOn(core)
+  .enablePlugins(BuildInfoPlugin, JavaAppPackaging, SnowplowDistrolessDockerPlugin)
+
+ThisBuild / fork := true

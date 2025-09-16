@@ -4,9 +4,6 @@ on:
   push:
     tags:
       - '*'
-    branches:
-      - master
-      - develop
   pull_request:
 
 jobs:
@@ -17,6 +14,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: coursier/cache-action@v6
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -26,16 +25,17 @@ jobs:
       - name: Install sbt
         uses: sbt/setup-sbt@v1
 
-      - name: Install LZO
-        run: sudo apt-get install -y lzop liblzo2-dev
+      - name: Run tests for core/
+        run: sbt "project core; test"
 
-      - name: Run tests
-        run: |
-          sbt "project main" test
-          sbt "project lzo" test
+      - name: Run tests for aws/
+        run: sbt "project aws; test"
 
-      - name: Check formatting
-        run: sbt scalafmtCheck
+      - name: Check code formatting
+        run: sbt scalafmtCheckAll
+
+      - name: Check sbt formatting
+        run: sbt scalafmtSbtCheck
 
   publish_docker:
     needs: test
@@ -43,23 +43,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        sbtProject:
-          - main
-          - lzo
-          - distroless
-        include:
-          - sbtProject: main
-            runSnyk: false
-            dockerTagSuffix: ""
-          - sbtProject: lzo
-            runSnyk: false
-            dockerTagSuffix: "-lzo"
-          - sbtProject: distroless
-            runSnyk: true
-            dockerTagSuffix: "-distroless"
+        app:
+          - aws
 
     steps:
       - uses: actions/checkout@v4
+
+      - uses: coursier/cache-action@v6
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -75,38 +65,68 @@ jobs:
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
       - name: Stage the Docker build
-        run: sbt "project ${{ matrix.sbtProject}}" docker:stage
+        run: sbt "project ${{ matrix.app}}" docker:stage
+
+      - name: Stage the distroless Docker build
+        run: sbt "project ${{ matrix.app}}Distroless" docker:stage
+
       - name: Docker metadata
         id: meta
         uses: docker/metadata-action@v3
         with:
           images: snowplow/snowplow-s3-loader
           tags: |
-            type=raw,value=latest${{ matrix.dockerTagSuffix }},enable=${{ !contains(github.ref_name, 'rc') }}
-            type=raw,value=${{ github.ref_name }}${{ matrix.dockerTagSuffix }}
+            type=raw,value=latest,enable=${{ !contains(github.ref_name, 'rc') }}
+            type=raw,value=${{ github.ref_name }}
           flavor: |
             latest=false
+
+      - name: Docker metadata distroless
+        id: metaDistroless
+        uses: docker/metadata-action@v3
+        with:
+          images: snowplow/snowplow-s3-loader
+          tags: |
+            type=raw,value=latest-distroless,enable=${{ !contains(github.ref_name, 'rc') }}
+            type=raw,value=${{ github.ref_name }}-distroless
+          flavor: |
+            latest=false
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
+
       - name: Push image
         uses: docker/build-push-action@v2
         with:
-          context: modules/${{ matrix.sbtProject }}/target/docker/stage
-          file: modules/${{ matrix.sbtProject }}/target/docker/stage/Dockerfile
+          context: modules/${{ matrix.app }}/target/docker/stage
+          file: modules/${{ matrix.app }}/target/docker/stage/Dockerfile
           platforms: linux/amd64,linux/arm64/v8
           tags: ${{ steps.meta.outputs.tags }}
           push: true
-      - name: Build local image, which is needed to run Snyk
-        if: ${{ !contains(github.ref_name, 'rc') && fromJSON(matrix.runSnyk) }}
-        run: sbt "project ${{ matrix.sbtProject }}" docker:publishLocal
-      - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/docker@master
-        if: ${{ !contains(github.ref_name, 'rc') && fromJSON(matrix.runSnyk) }}
+
+      - name: Push distroless image
+        uses: docker/build-push-action@v2
         with:
-          image: "snowplow/snowplow-s3-loader:${{ github.ref_name }}${{ matrix.dockerTagSuffix }}"
+          context: modules/distroless/${{ matrix.app }}/target/docker/stage
+          file: modules/distroless/${{ matrix.app }}/target/docker/stage/Dockerfile
+          platforms: linux/amd64,linux/arm64/v8
+          tags: ${{ steps.metaDistroless.outputs.tags }}
+          push: true
+
+      - name: Build local distroless image needed for Snyk
+        if: ${{ !contains(github.ref_name, 'rc') }}
+        run: sbt "project ${{ matrix.app }}Distroless" docker:publishLocal
+
+      - name: Snyk monitor
+        uses: snyk/actions/docker@master
+        if: ${{ !contains(github.ref_name, 'rc') }}
+        with:
+          image: "snowplow/snowplow-s3-loader:${{ github.ref_name }}-distroless"
           args: "--app-vulns --org=99605b41-ca0f-42c9-a9ff-45c201a10a26"
           command: monitor
         env:

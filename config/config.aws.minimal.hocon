@@ -1,0 +1,21 @@
+{
+  "license": {
+    "accept": true
+  }
+
+  "input": {
+    "streamName": "snowplow-enriched"
+  }
+
+  "output": {
+    "good": {
+      "path": "s3://snowplow-enriched/"
+    }
+
+    "bad": {
+      "streamName": "snowplow-bad"
+    }
+  }
+
+  "purpose": "ENRICHED_EVENTS"
+}

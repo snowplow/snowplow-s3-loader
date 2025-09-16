@@ -5,21 +5,11 @@
 
 ## Overview
 
-The Snowplow S3 Loader consumes records from an [Amazon Kinesis][kinesis] stream and writes them to S3.
+Snowplow S3 Loader consumes records from an [Amazon Kinesis][kinesis] stream and writes them to S3.
 
-There are 2 file formats supported:
- * LZO
- * GZip
-
-### LZO
-
-The records are treated as raw byte arrays. [Elephant Bird's][elephant-bird] `BinaryBlockWriter` class is used to serialize them as a [Protocol Buffers][protobufs] array (so it is clear where one record ends and the next begins) before compressing them.
-
-The compression process generates both compressed .lzo files and small .lzo.index files ([splittable LZO][hadoop-lzo]). Each index file contain the byte offsets of the LZO blocks in the corresponding compressed file, meaning that the blocks can be processed in parallel.
-
-### GZip
-
-The records are treated as byte arrays containing UTF-8 encoded strings (whether CSV, JSON or TSV). New lines are used to separate records written to a file. This format can be used with the Snowplow Kinesis Enriched stream, among other streams.
+Files are compressed with `gzip`.
+Records are treated as byte arrays containing UTF-8 encoded strings.
+New lines are used to separate records written to a file.
 
 ## Find out more
 
@@ -41,11 +31,7 @@ Licensed under the [Snowplow Limited Use License Agreement][license]. _(If you a
 [faq]: https://docs.snowplow.io/docs/contributing/limited-use-license-faq/
 
 [kinesis]: http://aws.amazon.com/kinesis/
-[snowplow]: http://snowplowanalytics.com
-[hadoop-lzo]: https://github.com/twitter/hadoop-lzo
-[protobufs]: https://github.com/google/protobuf/
-[elephant-bird]: https://github.com/twitter/elephant-bird/
+[snowplow]: http://snowplow.io
 
-[setup]: https://docs.snowplow.io/docs/pipeline-components-and-applications/loaders-storage-targets/s3-loader/configuration-reference/
-[techdocs]: https://docs.snowplow.io/docs/pipeline-components-and-applications/loaders-storage-targets/s3-loader/
-
+[setup]: https://docs.snowplow.io/docs/api-reference/loaders-storage-targets/s3-loader/configuration-reference/
+[techdocs]: https://docs.snowplow.io/docs/api-reference/loaders-storage-targets/s3-loader/

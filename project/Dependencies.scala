@@ -11,144 +11,85 @@
 import sbt._
 
 object Dependencies {
-  val resolvers = Seq(
-    ("Snowplow Analytics Maven releases repo" at "http://maven.snplow.com/releases/").withAllowInsecureProtocol(true),
-    "Snowplow Bintray Maven repo"            at "https://snowplow.bintray.com/snowplow-maven",
-    "Twitter" at "https://maven.twttr.com/"
-  )
 
   object V {
     // Java
-    val slf4j            = "1.7.30"
-    val log4j            = "2.14.0"
-    val awsSdk           = "1.12.279"
-    val kinesisClient    = "1.15.1"
-    val kinesisConnector = "1.3.0"
-    val hadoop           = "3.3.3"
-    val elephantbird     = "4.17"
-    val hadoopLZO        = "0.4.20"
-    val jackson          = "2.14.1"
-    val sentry           = "1.7.30"
-    val collections      = "3.2.2" // Address vulnerability
-    val jaxbApi          = "2.3.1"
-    val protobuf         = "3.25.5"
-    val reload4j         = "1.2.22" // Address vulnerability
-    val snappyJava       = "1.1.10.4" // Address vulnerability
-    val commonsLang      = "3.18.0" // Address vulnerability
-    val commonsBeanUtils = "1.11.0" // Address vulnerability
-    val dnsJava          = "3.6.0" // Address vulnerability
-    val commonsCompress  = "1.26.0" // Address vulnerability
-    val commonsConf      = "2.10.1" // Address vulnerability
-    // Thrift (test only)
-    val collectorPayload = "0.0.0"
-    val thrift           = "0.15.0" // Address vulnerabilities
+    val commonsLang = "3.19.0"
+    val jackson     = "2.19.0"
+    val sentry      = "8.16.0"
+    val slf4j       = "2.0.17"
+    val awsSdk      = "2.33.11"
+
     // Scala
-    val decline         = "2.0.0"
-    val circe           = "0.13.0"
-    val snowplowTracker = "0.7.0"
-    val snowplowBadrows = "2.1.0"
-    val pureconfig      = "0.15.0"
-    val igluCore        = "1.0.0"
-    // Scala (test only)
-    val specs2          = "4.10.5"
+    val betterMonadicFor = "0.3.1"
+    val circe            = "0.14.4"
+    val decline          = "2.5.0"
+    val http4s           = "0.23.31"
+
+    // Snowplow
+    val commonStreams = "0.14.1"
+    val badRows       = "2.3.0"
+
+    // Tests
+    val analyticsSdk = "3.2.2"
+    val catsEffect   = "3.6.1"
+    val specs2       = "4.21.0"
+    val specs2CE     = "1.6.0"
   }
 
-  object Libraries {
+  // Java
+  val commonsLang = "org.apache.commons"         % "commons-lang3" % V.commonsLang
+  val jackson     = "com.fasterxml.jackson.core" % "jackson-core"  % V.jackson
+  val sentry      = "io.sentry"                  % "sentry"        % V.sentry
+  val s3          = "software.amazon.awssdk"     % "s3"            % V.awsSdk
+  val sts         = "software.amazon.awssdk"     % "sts"           % V.awsSdk % Runtime
+  val slf4j       = "org.slf4j"                  % "slf4j-simple"  % V.slf4j
+
+  // Scala
+  val betterMonadicFor   = "com.olegpy"   %% "better-monadic-for"   % V.betterMonadicFor
+  val circeGenericExtras = "io.circe"     %% "circe-generic-extras" % V.circe
+  val decline            = "com.monovore" %% "decline-effect"       % V.decline
+  val emberServer        = "org.http4s"   %% "http4s-ember-server"  % V.http4s
+
+  // Snowplow
+  val badRows         = "com.snowplowanalytics" %% "snowplow-badrows" % V.badRows
+  val kinesisSnowplow = "com.snowplowanalytics" %% "kinesis"          % V.commonStreams
+  val runtime         = "com.snowplowanalytics" %% "runtime-common"   % V.commonStreams
+  val streams         = "com.snowplowanalytics" %% "streams-core"     % V.commonStreams
+
+  // Tests
+  val analyticsSdk      = "com.snowplowanalytics" %% "snowplow-scala-analytics-sdk" % V.analyticsSdk % Test
+  val catsEffectTestkit = "org.typelevel"         %% "cats-effect-testkit"          % V.catsEffect   % Test
+  val specs2            = "org.specs2"            %% "specs2-core"                  % V.specs2       % Test
+  val specs2CE          = "org.typelevel"         %% "cats-effect-testing-specs2"   % V.specs2CE     % Test
+
+  val coreDependencies = Seq(
     // Java
-    val slf4j            = "org.slf4j"                        %  "slf4j-simple"                 % V.slf4j
-    val jclOverSlf4j     = "org.slf4j"                        %  "jcl-over-slf4j"               % V.slf4j
-    val kinesisClient    = "com.amazonaws"                    %  "amazon-kinesis-client"        % V.kinesisClient
-    val kinesisConnector = "com.amazonaws"                    %  "amazon-kinesis-connectors"    % V.kinesisConnector
-    val sts              = "com.amazonaws"                    %  "aws-java-sdk-sts"             % V.awsSdk           % Runtime
-    val jacksonCbor      = "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor"       % V.jackson
-    val jackson          = "com.fasterxml.jackson.core"       % "jackson-databind"              % V.jackson
-    val thrift           = "org.apache.thrift"                % "libthrift"                     % V.thrift
-    val hadoopMapReduce  = "org.apache.hadoop"                %  "hadoop-mapreduce-client-core" % V.hadoop
-    val hadoop           = "org.apache.hadoop"                %  "hadoop-common"                % V.hadoop
-    val protobuf         = "com.google.protobuf"              % "protobuf-java"                 % V.protobuf
-    val reload4j         = "ch.qos.reload4j"                  % "reload4j"                      % V.reload4j
-    val snappyJava       = "org.xerial.snappy"                % "snappy-java"                   % V.snappyJava
-    val commonsLang      = "org.apache.commons"               % "commons-lang3"                 % V.commonsLang
-    val commonsBeanUtils = "commons-beanutils"                % "commons-beanutils"             % V.commonsBeanUtils
-    val dnsJava          = "dnsjava"                          % "dnsjava"                       % V.dnsJava
-    val commonsCompress  = "org.apache.commons"               % "commons-compress"              % V.commonsCompress
-    val commonsConf      = "org.apache.commons"               % "commons-configuration2"        % V.commonsConf
-
-    val collections      = "commons-collections"              % "commons-collections"                % V.collections
-    val jaxbApi          = "javax.xml.bind"                   % "jaxb-api"                           % V.jaxbApi       % Runtime
-    val sentry           = "io.sentry"                        % "sentry"                             % V.sentry
-
-    val decline          = "com.monovore"                     %% "decline"                           % V.decline
-    val circe            = "io.circe"                         %% "circe-generic"                     % V.circe
-    val snowplowTracker  = "com.snowplowanalytics"            %% "snowplow-scala-tracker-emitter-id" % V.snowplowTracker
-    val snowplowBadrows  = "com.snowplowanalytics"            %% "snowplow-badrows"                  % V.snowplowBadrows
-    val pureconfig       = "com.github.pureconfig"            %% "pureconfig"                        % V.pureconfig
-    val pureconfigCirce  = "com.github.pureconfig"            %% "pureconfig-circe"                  % V.pureconfig
-
-    val specs2           = "org.specs2"                       %% "specs2-core"                       % V.specs2           % Test
-    val collectorPayload = "com.snowplowanalytics"            %  "collector-payload-1"               % V.collectorPayload % Test
-  }
-
-  val mainDependencies = Seq(
-      // Java
-      Libraries.kinesisClient,
-      Libraries.kinesisConnector,
-      Libraries.sts,
-      Libraries.jacksonCbor,
-      Libraries.slf4j,
-      Libraries.jclOverSlf4j,
-      Libraries.jackson,
-      Libraries.sentry,
-      Libraries.jaxbApi,
-      Libraries.protobuf,
-      Libraries.reload4j,
-      Libraries.snappyJava,
-      Libraries.commonsLang,
-      // Scala
-      Libraries.decline,
-      Libraries.circe,
-      Libraries.snowplowTracker,
-      Libraries.snowplowBadrows,
-      Libraries.pureconfig,
-      Libraries.pureconfigCirce,
-      // Scala (test only)
-      Libraries.specs2,
-      // Thrift (test only)
-      Libraries.collectorPayload,
-      Libraries.thrift % Test
+    commonsLang, // for security vulnerabilities
+    jackson, // for security vulnerabilities
+    sentry,
+    slf4j,
+    // Scala
+    circeGenericExtras,
+    decline,
+    emberServer, // for security vulnerabilities
+    // Snowplow
+    badRows,
+    runtime,
+    streams,
+    // Tests
+    analyticsSdk,
+    catsEffectTestkit,
+    specs2,
+    specs2CE
   )
 
-  val lzoDependencies = Seq(
-      Libraries.hadoop,
-      Libraries.hadoopMapReduce,
-      Libraries.thrift,
-      Libraries.collections,
-      Libraries.jacksonCbor,
-      Libraries.commonsBeanUtils,
-      Libraries.dnsJava,
-      Libraries.commonsCompress,
-      Libraries.commonsConf,
+  val awsDependencies = Seq(
+    kinesisSnowplow,
+    s3,
+    sts,
+    // Tests
+    specs2,
+    specs2CE
   )
-
-  val mainExclusions = Seq(
-    ExclusionRule(organization = "commons-logging", name = "commons-logging"),
-  )
-
-  val hadoopExclusions = mainExclusions ++ Seq(
-    ExclusionRule(organization = "org.apache.avro",   name = "avro"),
-    ExclusionRule(organization = "org.apache.hadoop", name = "hadoop-hdfs-client"),
-    ExclusionRule(organization = "org.apache.hadoop", name = "hadoop-yarn-client"),
-    ExclusionRule(organization = "org.apache.hadoop", name = "hadoop-yarn-api"),
-    ExclusionRule(organization = "org.apache.hadoop", name = "hadoop-auth"),
-    ExclusionRule(organization = "org.slf4j",         name = "slf4j-reload4j"),
-    ExclusionRule(organization = "org.apache.hadoop.thirdparty", name = "hadoop-shaded-protobuf_3_7"),
-    ExclusionRule(organization = "com.sun.jersey"),
-    ExclusionRule(organization = "com.sun.jersey.contribs"),
-    ExclusionRule(organization = "com.fasterxml.jackson.jaxrs"),
-    ExclusionRule(organization = "org.eclipse.jetty"),
-    ExclusionRule(organization = "org.apache.zookeeper"),
-    ExclusionRule(organization = "jakarta.activation"),
-    ExclusionRule(organization = "jakarta.xml.bind"),
-  )
-
 }

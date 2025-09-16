@@ -1,0 +1,20 @@
+{
+  "license": {
+    "accept": true
+  }
+
+  "input": { }
+
+  "output": {
+    "good": {
+      "path": "blob://path/"
+      "partitionFormat": "{vendor}.{schema}/model={model}/date={yy}-{mm}-{dd}"
+    }
+
+    "bad": {
+      "maxRecordSize": 42
+    }
+  }
+
+  "purpose": "ENRICHED_EVENTS"
+}

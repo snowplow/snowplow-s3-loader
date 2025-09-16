@@ -1,0 +1,19 @@
+{
+  "license": {
+    "accept": true
+  }
+
+  "input": { }
+
+  "output": {
+    "good": {
+      "path": "blob://path/"
+    }
+
+    "bad": {
+      "maxRecordSize": 42
+    }
+  }
+
+  "purpose": "SELF_DESCRIBING"
+}
