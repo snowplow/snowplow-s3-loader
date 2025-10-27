@@ -1,3 +1,7 @@
+Version 3.0.0 (2025-10-27)
+--------------------------
+Rewrite the app with common-streams (#10 #11 #12 #13 #14 #15 #16)
+
 Version 2.3.0 (2025-07-18)
 --------------------------
 Update license to SLULA 1.1
