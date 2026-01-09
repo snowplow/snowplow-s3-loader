@@ -63,8 +63,8 @@
       # -- Partitioning format for subpaths inside the destination
       # Valid substitutions are:
       # - {vendor}, {schema}, {name}, {format}, {model} for self-describing jsons
-      # - {yyy}, {yy}, {mm}, {dd}, {hh} for year, month, day, hour
-      "partitionFormat": "{vendor}.{schema}/model={model}/date={yy}-{mm}-{dd}"
+      # - {yyyy}, {MM}, {dd}, {HH}, {mm}, {ss} for year, month, day, hour, minute, second
+      "partitionFormat": "{vendor}.{schema}/model={model}/date={yyyy}-{MM}-{dd}/time={HH}{mm}{ss}"
 
       # -- Prefix for all filenames
       "filenamePrefix": "pre-"

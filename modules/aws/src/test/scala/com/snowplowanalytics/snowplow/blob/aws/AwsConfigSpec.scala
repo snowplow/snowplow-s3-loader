@@ -137,7 +137,7 @@ object AwsConfigSpec {
     output = Config.Output(
       good = Config.BlobSink(
         path            = URI.create("s3://snowplow-events/"),
-        partitionFormat = Some("{vendor}.{schema}/model={model}/date={yy}-{mm}-{dd}"),
+        partitionFormat = Some("{vendor}.{schema}/model={model}/date={yyyy}-{MM}-{dd}/time={HH}{mm}{ss}"),
         filenamePrefix  = Some("pre-"),
         compressionType = Config.CompressionType.Gzip
       ),
