@@ -27,7 +27,7 @@ object Dependencies {
     val http4s           = "0.23.31"
 
     // Snowplow
-    val commonStreams = "0.14.1"
+    val commonStreams = "0.20.0"
     val badRows       = "2.3.0"
 
     // Tests

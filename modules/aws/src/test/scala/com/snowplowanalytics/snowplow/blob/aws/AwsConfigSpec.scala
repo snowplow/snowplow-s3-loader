@@ -28,7 +28,13 @@ import com.comcast.ip4s.Port
 import com.snowplowanalytics.snowplow.runtime.Metrics.StatsdConfig
 import com.snowplowanalytics.snowplow.runtime.{AcceptedLicense, ConfigParser}
 
-import com.snowplowanalytics.snowplow.streams.kinesis.{BackoffPolicy, KinesisSinkConfig, KinesisSinkConfigM, KinesisSourceConfig}
+import com.snowplowanalytics.snowplow.streams.kinesis.{
+  BackoffPolicy,
+  KinesisHttpSourceConfig,
+  KinesisSinkConfig,
+  KinesisSinkConfigM,
+  KinesisSourceConfig
+}
 
 import com.snowplowanalytics.snowplow.blob.core.Config
 
@@ -58,31 +64,36 @@ class AwsConfigSpec extends Specification with CatsEffect {
 
   private def assert(
     resource: String,
-    expectedResult: Either[ExitCode, Config[EmptyConfig, KinesisSourceConfig, KinesisSinkConfig]]
+    expectedResult: Either[ExitCode, Config[EmptyConfig, KinesisHttpSourceConfig, KinesisSinkConfig]]
   ) = {
     val path = Paths.get(getClass.getResource(resource).toURI)
-    ConfigParser.configFromFile[IO, Config[EmptyConfig, KinesisSourceConfig, KinesisSinkConfig]](path).value.map { result =>
+    ConfigParser.configFromFile[IO, Config[EmptyConfig, KinesisHttpSourceConfig, KinesisSinkConfig]](path).value.map { result =>
       result must beEqualTo(expectedResult)
     }
   }
 }
 
 object AwsConfigSpec {
-  private val minimalConfig = Config[EmptyConfig, KinesisSourceConfig, KinesisSinkConfig](
+  private val minimalConfig = Config[EmptyConfig, KinesisHttpSourceConfig, KinesisSinkConfig](
     license = AcceptedLicense(),
-    input = KinesisSourceConfig(
-      appName                          = "snowplow-s3-loader",
-      streamName                       = "snowplow-enriched",
-      workerIdentifier                 = "testWorkerId",
-      initialPosition                  = KinesisSourceConfig.InitialPosition.Latest,
-      retrievalMode                    = KinesisSourceConfig.Retrieval.Polling(1000),
-      customEndpoint                   = None,
-      dynamodbCustomEndpoint           = None,
-      cloudwatchCustomEndpoint         = None,
-      leaseDuration                    = 10.seconds,
-      maxLeasesToStealAtOneTimeFactor  = BigDecimal(2),
-      checkpointThrottledBackoffPolicy = BackoffPolicy(minBackoff = 100.millis, maxBackoff = 1.second),
-      debounceCheckpoints              = 10.seconds
+    input = KinesisHttpSourceConfig(
+      kinesis = KinesisSourceConfig(
+        appName                          = "snowplow-s3-loader",
+        streamName                       = "snowplow-enriched",
+        workerIdentifier                 = "testWorkerId",
+        initialPosition                  = KinesisSourceConfig.InitialPosition.Latest,
+        retrievalMode                    = KinesisSourceConfig.Retrieval.Polling(750, 1500.millis),
+        customEndpoint                   = None,
+        dynamodbCustomEndpoint           = None,
+        cloudwatchCustomEndpoint         = None,
+        leaseDuration                    = 10.seconds,
+        maxLeasesToStealAtOneTimeFactor  = BigDecimal(2),
+        checkpointThrottledBackoffPolicy = BackoffPolicy(minBackoff = 100.millis, maxBackoff = 1.second),
+        debounceCheckpoints              = 10.seconds,
+        maxRetries                       = 10,
+        apiCallAttemptTimeout            = 15.seconds
+      ),
+      http = None
     ),
     output = Config.Output(
       good = Config.BlobSink(
@@ -97,7 +108,8 @@ object AwsConfigSpec {
           throttledBackoffPolicy = BackoffPolicy(minBackoff = 100.millis, maxBackoff = 1.second),
           recordLimit            = 500,
           byteLimit              = 5242880,
-          customEndpoint         = None
+          customEndpoint         = None,
+          maxRetries             = 10
         ),
         maxRecordSize = 1000000
       )
@@ -118,21 +130,26 @@ object AwsConfigSpec {
     )
   )
 
-  private val referenceConfig = Config[EmptyConfig, KinesisSourceConfig, KinesisSinkConfig](
+  private val referenceConfig = Config[EmptyConfig, KinesisHttpSourceConfig, KinesisSinkConfig](
     license = AcceptedLicense(),
-    input = KinesisSourceConfig(
-      appName                          = "snowplow-s3-loader",
-      streamName                       = "snowplow-sdjs",
-      workerIdentifier                 = "testWorkerId",
-      initialPosition                  = KinesisSourceConfig.InitialPosition.TrimHorizon,
-      retrievalMode                    = KinesisSourceConfig.Retrieval.Polling(1000),
-      customEndpoint                   = None,
-      dynamodbCustomEndpoint           = None,
-      cloudwatchCustomEndpoint         = None,
-      leaseDuration                    = 10.seconds,
-      maxLeasesToStealAtOneTimeFactor  = BigDecimal(2),
-      checkpointThrottledBackoffPolicy = BackoffPolicy(minBackoff = 100.millis, maxBackoff = 1.second),
-      debounceCheckpoints              = 10.seconds
+    input = KinesisHttpSourceConfig(
+      kinesis = KinesisSourceConfig(
+        appName                          = "snowplow-s3-loader",
+        streamName                       = "snowplow-sdjs",
+        workerIdentifier                 = "testWorkerId",
+        initialPosition                  = KinesisSourceConfig.InitialPosition.TrimHorizon,
+        retrievalMode                    = KinesisSourceConfig.Retrieval.Polling(750, 1500.millis),
+        customEndpoint                   = None,
+        dynamodbCustomEndpoint           = None,
+        cloudwatchCustomEndpoint         = None,
+        leaseDuration                    = 10.seconds,
+        maxLeasesToStealAtOneTimeFactor  = BigDecimal(2),
+        checkpointThrottledBackoffPolicy = BackoffPolicy(minBackoff = 100.millis, maxBackoff = 1.second),
+        debounceCheckpoints              = 10.seconds,
+        maxRetries                       = 10,
+        apiCallAttemptTimeout            = 15.seconds
+      ),
+      http = None
     ),
     output = Config.Output(
       good = Config.BlobSink(
@@ -147,7 +164,8 @@ object AwsConfigSpec {
           throttledBackoffPolicy = BackoffPolicy(minBackoff = 100.millis, maxBackoff = 1.second),
           recordLimit            = 500,
           byteLimit              = 5242880,
-          customEndpoint         = None
+          customEndpoint         = None,
+          maxRetries             = 10
         ),
         maxRecordSize = 1000000
       )

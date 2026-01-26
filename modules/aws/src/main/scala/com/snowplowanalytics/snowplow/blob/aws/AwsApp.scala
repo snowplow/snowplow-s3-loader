@@ -12,11 +12,11 @@ package com.snowplowanalytics.snowplow.blob.aws
 
 import cats.effect.IO
 
-import com.snowplowanalytics.snowplow.streams.kinesis.{KinesisFactory, KinesisSinkConfig, KinesisSourceConfig}
+import com.snowplowanalytics.snowplow.streams.kinesis.{KinesisFactory, KinesisHttpSourceConfig, KinesisSinkConfig}
 
 import com.snowplowanalytics.snowplow.blob.core.LoaderApp
 
-object AwsApp extends LoaderApp[EmptyConfig, KinesisSourceConfig, KinesisSinkConfig](BuildInfo) {
+object AwsApp extends LoaderApp[EmptyConfig, KinesisHttpSourceConfig, KinesisSinkConfig](BuildInfo) {
 
   override def toFactory: FactoryProvider = _ => KinesisFactory.resource[IO]
 

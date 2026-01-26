@@ -29,7 +29,10 @@
       "type": "Polling"
 
       # -- Only used if retrieval mode is type Polling. How many events the client may fetch in a single poll
-      "maxRecords": 1000
+      "maxRecords": 750
+
+      # -- Only used if retrieval mode is type Polling. Idle time between GetRecords requests.
+      "idleTimeBetweenReads": "1500 millis"
     }
 
     # -- Name of this KCL worker used in the DynamoDB lease table
@@ -52,6 +55,12 @@
     # -- How frequently to checkpoint our progress to the DynamoDB table. By increasing this value,
     # -- we can decrease the write-throughput requirements of the DynamoDB table
     debounceCheckpoints: "10 seconds"
+
+    # -- Maximum number of retries by Kinesis Client.
+    "maxRetries": 10
+
+    # -- Maximum time of a single attempt of an AWS API operation
+    "apiCallAttemptTimeout": "15 seconds"
   }
 
   "output": {
@@ -88,6 +97,9 @@
 
       # -- Maximum allowed to bytes we are allowed to send to Kinesis in 1 PutRecords request
       "byteLimit": 5242880
+
+      # -- Maximum number of retries by Kinesis Client. 
+      "maxRetries": 10
     }
   }
 
