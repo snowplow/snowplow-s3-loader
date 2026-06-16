@@ -25,26 +25,10 @@ class CompressedStream(size: Int) extends ByteArrayOutputStream(size) {
   }
 
   def write(lines: List[String]): Unit = {
-    if (count == CompressedStream.GZIP_HEADER_LENGTH) {
-      lines match {
-        case head :: tail =>
-          compressed.write(head.getBytes(StandardCharsets.UTF_8))
-          addLines(tail)
-        case Nil => ()
-      }
-    } else
-      addLines(lines)
-
+    lines.foreach { line =>
+      compressed.write(line.getBytes(StandardCharsets.UTF_8))
+      compressed.write("\n".getBytes(StandardCharsets.UTF_8))
+    }
     compressed.flush
   }
-
-  private def addLines(lines: List[String]): Unit =
-    lines.foreach { line =>
-      compressed.write("\n".getBytes(StandardCharsets.UTF_8))
-      compressed.write(line.getBytes(StandardCharsets.UTF_8))
-    }
-}
-
-object CompressedStream {
-  val GZIP_HEADER_LENGTH = 10
 }

@@ -119,6 +119,18 @@
     "maxDelay": "1 minute"
   }
 
+  # -- Decompression settings for compressed Kinesis messages (zstd / gzip)
+  # -- Messages are detected automatically by their magic bytes; uncompressed messages are unaffected.
+  "decompression": {
+    # -- Maximum total decompressed bytes per batch before emitting it downstream.
+    # -- Protects memory when a single compressed message expands into many large records.
+    "maxBytesInBatch": 5242880
+
+    # -- Maximum size of a single decompressed record in bytes.
+    # -- Records exceeding this limit are dropped and emitted as bad rows.
+    "maxBytesSinglePayload": 10000000
+  }
+
   # -- Controls how the app splits the workload into concurrent batches which can be run in parallel
   # -- E.g. If there are 4 available processors, and cpuParallelismFactor = 0.75, then we process 3 batches concurrently.
   # -- Adjusting this value can cause the app to use more or less of the available CPU.

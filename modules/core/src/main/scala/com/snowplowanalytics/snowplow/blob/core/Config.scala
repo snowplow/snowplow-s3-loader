@@ -16,15 +16,14 @@ import scala.concurrent.duration.FiniteDuration
 
 import com.comcast.ip4s.Port
 
-import cats.Id
-
 import io.circe.Decoder
 import io.circe.generic.extras.semiauto._
 import io.circe.generic.extras.Configuration
 import io.circe.config.syntax._
 
-import com.snowplowanalytics.snowplow.runtime.{AcceptedLicense, Metrics => CommonMetrics}
+import com.snowplowanalytics.snowplow.runtime.{AcceptedLicense, Metrics => CommonMetrics, Sentry}
 import com.snowplowanalytics.snowplow.runtime.HealthProbe.decoders._
+import com.snowplowanalytics.snowplow.streams.compression.DecompressionConfig
 
 case class Config[+Factory, +Source, +BadSink](
   license: AcceptedLicense,
@@ -36,6 +35,7 @@ case class Config[+Factory, +Source, +BadSink](
   cpuParallelismFactor: BigDecimal,
   uploadParallelismFactor: BigDecimal,
   initialBufferSize: Option[Int],
+  decompression: DecompressionConfig,
   monitoring: Config.Monitoring
 )
 
@@ -80,20 +80,14 @@ object Config {
 
   case class Monitoring(
     metrics: Metrics,
-    sentry: Option[Sentry],
+    sentry: Option[Sentry.Config],
     healthProbe: HealthProbe
   )
 
   case class Metrics(
-    statsd: Option[CommonMetrics.StatsdConfig]
+    statsd: Option[CommonMetrics.StatsdConfig],
+    prometheus: CommonMetrics.PrometheusConfig
   )
-
-  case class SentryM[M[_]](
-    dsn: M[String],
-    tags: Map[String, String]
-  )
-
-  type Sentry = SentryM[Id]
 
   case class HealthProbe(port: Port, unhealthyLatency: FiniteDuration)
 
@@ -118,14 +112,8 @@ object Config {
         case purpose if purpose.toLowerCase == "self_describing" => Right(Purpose.SDJ)
         case _ => Left(s"Purpose not supported. Possible values: ENRICHED_EVENTS, SELF_DESCRIBING")
       }
-    implicit val batchingDecoder = deriveConfiguredDecoder[Batching]
-    implicit val sentryDecoder = deriveConfiguredDecoder[SentryM[Option]]
-      .map[Option[Sentry]] {
-        case SentryM(Some(dsn), tags) =>
-          Some(SentryM[Id](dsn, tags))
-        case SentryM(None, _) =>
-          None
-      }
+    implicit val batchingDecoder    = deriveConfiguredDecoder[Batching]
+    implicit val sentryDecoder      = Sentry.ConfigM.sentryDecoder
     implicit val metricsDecoder     = deriveConfiguredDecoder[Metrics]
     implicit val healthProbeDecoder = deriveConfiguredDecoder[HealthProbe]
     implicit val monitoringDecoder  = deriveConfiguredDecoder[Monitoring]

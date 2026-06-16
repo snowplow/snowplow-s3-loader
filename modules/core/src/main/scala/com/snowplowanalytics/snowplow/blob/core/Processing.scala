@@ -30,37 +30,45 @@ import fs2.{Chunk, Pipe, Pull, Stream}
 
 import com.snowplowanalytics.snowplow.badrows.{BadRow, Failure, Payload, Processor}
 
+import com.snowplowanalytics.snowplow.analytics.scalasdk.ParsingError
+
 import com.snowplowanalytics.iglu.core.SchemaKey
 import com.snowplowanalytics.iglu.core.circe.implicits._
 
 import com.snowplowanalytics.snowplow.runtime.AppHealth
-import com.snowplowanalytics.snowplow.streams.{EventProcessingConfig, EventProcessor, ListOfList, Sink, TokenedEvents}
+import com.snowplowanalytics.snowplow.streams.{EventProcessingConfig, ListOfList, Sink}
+import com.snowplowanalytics.snowplow.streams.compression.Decompression._
 
 object Processing {
 
   def stream[F[_]: Async](env: Environment[F]): Stream[F, Nothing] =
-    env.source
-      .stream(EventProcessingConfig(EventProcessingConfig.NoWindowing, env.metrics.setLatency), eventProcessor(env))
+    env.source.decompressedStream(
+      EventProcessingConfig(EventProcessingConfig.NoWindowing, env.metrics.setLatency),
+      env.decompressionConfig,
+      eventProcessor(env),
+      env.badRowProcessor,
+      decompressionBadRow(env.badRowProcessor)
+    )
 
   case class ParseResult(
     events: Map[SchemaKey, List[String]],
     parseFailures: List[BadRow],
-    count: Int,
-    token: Unique.Token,
+    count: Long,
+    token: Option[Unique.Token],
     earliestCollectorTstamp: Option[Instant]
   )
 
   case class BatchedAndCompressed(
     events: Map[SchemaKey, CompressedStream],
     parseFailures: ListOfList[BadRow],
-    count: Int,
+    count: Long,
     tokens: Vector[Unique.Token],
     earliestCollectorTstamp: Option[Instant]
   )
 
   private def eventProcessor[F[_]: Async](
     env: Environment[F]
-  ): EventProcessor[F] =
+  ): DecompressedEventProcessor[F] =
     _.through(parseBytes[F](env.cpuParallelism, env.purpose, env.badRowProcessor))
       .through(batchUpAndCompress(env.batching.maxBytes, env.batching.maxDelay, env.initialBufferSize))
       .through(writeToStorage(env.blobSink, env.appHealth, env.uploadParallelism, env.blobStorageConfig))
@@ -72,7 +80,7 @@ object Processing {
     parallelism: Int,
     purpose: Config.Purpose,
     processor: Processor
-  ): Pipe[F, TokenedEvents, ParseResult] = {
+  ): Pipe[F, DecompressedTokenedEvents, ParseResult] = {
     val fold: (ParseResult, ByteBuffer) => F[ParseResult] = purpose match {
       case Config.Purpose.Enriched =>
         foldEnriched[F]
@@ -81,10 +89,12 @@ object Processing {
     }
 
     in =>
-      in.parEvalMap(parallelism) { case TokenedEvents(events, ack) =>
-        Foldable[Chunk].foldM(events, ParseResult(Map.empty, List.empty, 0, ack, None)) { case (acc, byteBuffer) =>
-          fold(acc, byteBuffer)
-        }
+      in.parEvalMap(parallelism) { result =>
+        Foldable[List]
+          .foldM(result.payloads, ParseResult(Map.empty, List.empty, 0, result.ack, None)) { case (acc, byteBuffer) =>
+            fold(acc, byteBuffer)
+          }
+          .map(pr => pr.copy(parseFailures = pr.parseFailures ::: result.bad))
       }
   }
 
@@ -94,7 +104,7 @@ object Processing {
 
     ParseResult(
       Map(AtomicSchema -> List(str)) |+| acc.events, // The order is important, we want to prepend the 1-item list
-      Nil,
+      acc.parseFailures,
       acc.count + 1,
       acc.token,
       chooseEarliestTstamp(acc.earliestCollectorTstamp, timestamp)
@@ -142,6 +152,17 @@ object Processing {
       Either.catchNonFatal(Instant.parse(tstamp)).toOption
     }
   }
+
+  private def decompressionBadRow(processor: Processor)(err: DecompressionError): BadRow =
+    BadRow.LoaderParsingError(
+      processor,
+      ParsingError.RowDecodingError(
+        NonEmptyList.of(
+          ParsingError.RowDecodingErrorInfo.UnhandledRowDecodingError(err.message)
+        )
+      ),
+      Payload.RawPayload(err.payload)
+    )
 
   private def chooseEarliestTstamp(o1: Option[Instant], o2: Option[Instant]): Option[Instant] =
     (o1, o2)
@@ -252,7 +273,7 @@ object Processing {
           events,
           pending.parseFailures.prepend(parseResult.parseFailures),
           pending.count + parseResult.count,
-          pending.tokens :+ parseResult.token,
+          pending.tokens :++ parseResult.token,
           chooseEarliestTstamp(pending.earliestCollectorTstamp, parseResult.earliestCollectorTstamp)
         )
       }

@@ -15,8 +15,8 @@ object Dependencies {
   object V {
     // Java
     val commonsLang = "3.19.0"
-    val jackson     = "2.19.0"
-    val sentry      = "8.16.0"
+    val jackson     = "2.21.3"
+    val netty       = "4.1.133.Final"
     val slf4j       = "2.0.17"
     val awsSdk      = "2.33.11"
 
@@ -27,7 +27,7 @@ object Dependencies {
     val http4s           = "0.23.31"
 
     // Snowplow
-    val commonStreams = "0.20.0"
+    val commonStreams = "0.24.1"
     val badRows       = "2.3.0"
 
     // Tests
@@ -38,12 +38,13 @@ object Dependencies {
   }
 
   // Java
-  val commonsLang = "org.apache.commons"         % "commons-lang3" % V.commonsLang
-  val jackson     = "com.fasterxml.jackson.core" % "jackson-core"  % V.jackson
-  val sentry      = "io.sentry"                  % "sentry"        % V.sentry
-  val s3          = "software.amazon.awssdk"     % "s3"            % V.awsSdk
-  val sts         = "software.amazon.awssdk"     % "sts"           % V.awsSdk % Runtime
-  val slf4j       = "org.slf4j"                  % "slf4j-simple"  % V.slf4j
+  val commonsLang     = "org.apache.commons"         % "commons-lang3"     % V.commonsLang
+  val jackson         = "com.fasterxml.jackson.core" % "jackson-core"      % V.jackson
+  val nettyCodecHttp  = "io.netty"                   % "netty-codec-http"  % V.netty
+  val nettyCodecHttp2 = "io.netty"                   % "netty-codec-http2" % V.netty
+  val s3              = "software.amazon.awssdk"     % "s3"                % V.awsSdk
+  val sts             = "software.amazon.awssdk"     % "sts"               % V.awsSdk % Runtime
+  val slf4j           = "org.slf4j"                  % "slf4j-simple"      % V.slf4j
 
   // Scala
   val betterMonadicFor   = "com.olegpy"   %% "better-monadic-for"   % V.betterMonadicFor
@@ -67,7 +68,6 @@ object Dependencies {
     // Java
     commonsLang, // for security vulnerabilities
     jackson, // for security vulnerabilities
-    sentry,
     slf4j,
     // Scala
     circeGenericExtras,
@@ -86,6 +86,8 @@ object Dependencies {
 
   val awsDependencies = Seq(
     kinesisSnowplow,
+    nettyCodecHttp, // for security vulnerabilities
+    nettyCodecHttp2, // for security vulnerabilities
     s3,
     sts,
     // Tests

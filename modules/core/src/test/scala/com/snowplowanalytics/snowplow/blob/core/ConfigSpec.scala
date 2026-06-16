@@ -28,6 +28,8 @@ import io.circe.generic.extras.Configuration
 import io.circe.Decoder
 
 import com.snowplowanalytics.snowplow.runtime.{AcceptedLicense, ConfigParser}
+import com.snowplowanalytics.snowplow.runtime.Metrics.PrometheusConfig
+import com.snowplowanalytics.snowplow.streams.compression.DecompressionConfig
 
 class ConfigSpec extends Specification with CatsEffect {
 
@@ -70,8 +72,9 @@ class ConfigSpec extends Specification with CatsEffect {
       cpuParallelismFactor    = BigDecimal(1),
       uploadParallelismFactor = BigDecimal(2),
       initialBufferSize       = None,
+      decompression           = DecompressionConfig(maxBytesInBatch = 5242880, maxBytesSinglePayload = 10000000),
       monitoring = Config.Monitoring(
-        metrics     = Config.Metrics(None),
+        metrics     = Config.Metrics(statsd = None, prometheus = PrometheusConfig(tags = Map.empty)),
         sentry      = None,
         healthProbe = Config.HealthProbe(port = Port.fromInt(8000).get, unhealthyLatency = 2.minutes)
       )

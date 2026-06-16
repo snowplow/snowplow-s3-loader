@@ -41,6 +41,7 @@ import com.snowplowanalytics.snowplow.streams.{
   SourceAndAck,
   TokenedEvents
 }
+import com.snowplowanalytics.snowplow.streams.compression.DecompressionConfig
 
 case class MockEnvironment(state: Ref[IO, Vector[MockEnvironment.Action]], environment: Environment[IO])
 
@@ -53,7 +54,7 @@ object MockEnvironment {
     case class WroteFile(path: String, uncompressed: String) extends Action
     case class SentToBad(bad: List[BadRow]) extends Action
     /* Metrics */
-    case class AddedCountMetric(count: Int) extends Action
+    case class AddedCountMetric(count: Long) extends Action
     case class SetLatencyMetric(latency: FiniteDuration) extends Action
     case class SetE2ELatencyMetric(e2eLatency: FiniteDuration) extends Action
   }
@@ -80,11 +81,12 @@ object MockEnvironment {
                 maxBytes = maxBytes,
                 maxDelay = maxDelay
               ),
-              blobStorageConfig = blobStorageConfig,
-              cpuParallelism    = 2,
-              uploadParallelism = 1,
-              badSinkMaxSize    = Int.MaxValue,
-              initialBufferSize = 8 * 1024 * 1024
+              blobStorageConfig   = blobStorageConfig,
+              cpuParallelism      = 2,
+              uploadParallelism   = 1,
+              badSinkMaxSize      = Int.MaxValue,
+              initialBufferSize   = 8 * 1024 * 1024,
+              decompressionConfig = DecompressionConfig(maxBytesInBatch = 5242880, maxBytesSinglePayload = 10000000)
             )
     } yield MockEnvironment(state, env)
 
@@ -154,7 +156,7 @@ object MockEnvironment {
 
   private def testMetrics(ref: Ref[IO, Vector[Action]]): Metrics[IO] =
     new Metrics[IO] {
-      def addCount(count: Int): IO[Unit] =
+      def addCount(count: Long): IO[Unit] =
         ref.update(_ :+ AddedCountMetric(count))
 
       def setLatency(latency: FiniteDuration): IO[Unit] =
@@ -162,6 +164,8 @@ object MockEnvironment {
 
       def setE2ELatency(e2eLatency: FiniteDuration): IO[Unit] =
         ref.update(_ :+ SetE2ELatencyMetric(e2eLatency))
+
+      def scrape: IO[String] = IO.pure("")
 
       def report: Stream[IO, Nothing] = Stream.never[IO]
     }

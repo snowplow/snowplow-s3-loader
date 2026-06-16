@@ -1,3 +1,11 @@
+Version 3.2.0 (2026-05-08)
+--------------------------
+Fix missing trailing newline at end of each output file (#26)
+Add Claude Code GitHub Action workflow (#27)
+Bump common-streams to 0.24.0 (#28)
+Bump common-streams to 0.24.1 (#31)
+Bump dependencies to fix CVEs (#29)
+
 Version 3.1.0 (2026-01-26)
 --------------------------
 Bump common-streams to 0.20.0 (#23)

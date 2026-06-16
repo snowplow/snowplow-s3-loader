@@ -12,15 +12,14 @@ package com.snowplowanalytics.snowplow.blob.core
 
 import cats.implicits._
 
-import cats.effect.kernel.{Async, Resource, Sync}
-
-import io.sentry.Sentry
+import cats.effect.kernel.{Async, Resource}
 
 import com.snowplowanalytics.snowplow.badrows.{Processor => BadRowProcessor}
 
-import com.snowplowanalytics.snowplow.runtime.{AppHealth, AppInfo, HealthProbe}
+import com.snowplowanalytics.snowplow.runtime.{AppHealth, AppInfo, HealthProbe, Sentry}
 
 import com.snowplowanalytics.snowplow.streams.{Factory, Sink, SourceAndAck}
+import com.snowplowanalytics.snowplow.streams.compression.DecompressionConfig
 
 /**
  * Resources and runtime-derived configuration needed for processing events
@@ -51,7 +50,8 @@ case class Environment[F[_]](
   cpuParallelism: Int,
   uploadParallelism: Int,
   badSinkMaxSize: Int,
-  initialBufferSize: Int
+  initialBufferSize: Int,
+  decompressionConfig: DecompressionConfig
 ) {
   def badRowProcessor = BadRowProcessor(appInfo.name, appInfo.version)
 }
@@ -65,57 +65,37 @@ object Environment {
     toBlobSink: Config.BlobSink => Resource[F, BlobSink[F]]
   ): Resource[F, Environment[F]] =
     for {
-      _ <- enableSentry[F](appInfo, config.monitoring.sentry)
+      _ <- Sentry.enable[F](appInfo, config.monitoring.sentry)
       factory <- toFactory(config.streams)
       sourceAndAck <- factory.source(config.input)
       sourceReporter = sourceAndAck.isHealthy(config.monitoring.healthProbe.unhealthyLatency).map(_.showIfUnhealthy)
       appHealth <- Resource.eval(AppHealth.init[F, String, RuntimeService](List(sourceReporter)))
-      _ <- HealthProbe.resource(config.monitoring.healthProbe.port, appHealth)
+      metrics <- Metrics.build(config.monitoring.metrics, sourceAndAck)
+      _ <- HealthProbe.resource(config.monitoring.healthProbe.port, appHealth, metrics.scrape)
       blobSink <- toBlobSink(config.output.good)
       badSink <- factory.sink(config.output.bad.sink).onError { case _ =>
                    Resource.eval(appHealth.beUnhealthyForRuntimeService(RuntimeService.BadSink))
                  }
-      metrics <- Resource.eval(Metrics.build(config.monitoring.metrics))
       cpuParallelism    = chooseCpuParallelism(config)
       uploadParallelism = chooseUploadParallelism(config)
       initialBufferSize = chooseInitialBufferSize(config.purpose, config.initialBufferSize, config.batching.maxBytes)
       _ <- Resource.eval(appHealth.beHealthyForSetup)
     } yield Environment(
-      appInfo           = appInfo,
-      source            = sourceAndAck,
-      appHealth         = appHealth,
-      blobSink          = blobSink,
-      badSink           = badSink,
-      metrics           = metrics,
-      purpose           = config.purpose,
-      batching          = config.batching,
-      blobStorageConfig = config.output.good,
-      cpuParallelism    = cpuParallelism,
-      uploadParallelism = uploadParallelism,
-      badSinkMaxSize    = config.output.bad.maxRecordSize,
-      initialBufferSize = initialBufferSize
+      appInfo             = appInfo,
+      source              = sourceAndAck,
+      appHealth           = appHealth,
+      blobSink            = blobSink,
+      badSink             = badSink,
+      metrics             = metrics,
+      purpose             = config.purpose,
+      batching            = config.batching,
+      blobStorageConfig   = config.output.good,
+      cpuParallelism      = cpuParallelism,
+      uploadParallelism   = uploadParallelism,
+      badSinkMaxSize      = config.output.bad.maxRecordSize,
+      initialBufferSize   = initialBufferSize,
+      decompressionConfig = config.decompression
     )
-
-  private def enableSentry[F[_]: Sync](appInfo: AppInfo, config: Option[Config.Sentry]): Resource[F, Unit] =
-    config match {
-      case Some(c) =>
-        val acquire = Sync[F].delay {
-          Sentry.init { options =>
-            options.setDsn(c.dsn)
-            options.setRelease(appInfo.version)
-            c.tags.foreach { case (k, v) =>
-              options.setTag(k, v)
-            }
-          }
-        }
-
-        Resource.makeCase(acquire) {
-          case (_, Resource.ExitCase.Errored(e)) => Sync[F].delay(Sentry.captureException(e)).void
-          case _                                 => Sync[F].unit
-        }
-      case None =>
-        Resource.unit[F]
-    }
 
   /**
    * See the description of `cpuParallelism` on the [[Environment]] class

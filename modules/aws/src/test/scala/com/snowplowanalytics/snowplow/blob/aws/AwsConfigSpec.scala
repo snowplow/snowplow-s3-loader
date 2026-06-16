@@ -25,8 +25,9 @@ import cats.effect.testing.specs2.CatsEffect
 
 import com.comcast.ip4s.Port
 
-import com.snowplowanalytics.snowplow.runtime.Metrics.StatsdConfig
-import com.snowplowanalytics.snowplow.runtime.{AcceptedLicense, ConfigParser}
+import com.snowplowanalytics.snowplow.runtime.Metrics.{PrometheusConfig, StatsdConfig}
+import com.snowplowanalytics.snowplow.runtime.{AcceptedLicense, ConfigParser, Sentry}
+import com.snowplowanalytics.snowplow.streams.compression.DecompressionConfig
 
 import com.snowplowanalytics.snowplow.streams.kinesis.{
   BackoffPolicy,
@@ -123,8 +124,9 @@ object AwsConfigSpec {
     cpuParallelismFactor    = BigDecimal(1),
     uploadParallelismFactor = BigDecimal(2),
     initialBufferSize       = None,
+    decompression           = DecompressionConfig(maxBytesInBatch = 5242880, maxBytesSinglePayload = 10000000),
     monitoring = Config.Monitoring(
-      metrics     = Config.Metrics(None),
+      metrics     = Config.Metrics(statsd = None, prometheus = PrometheusConfig(tags = Map.empty)),
       sentry      = None,
       healthProbe = Config.HealthProbe(port = Port.fromInt(8000).get, unhealthyLatency = 2.minutes)
     )
@@ -179,6 +181,7 @@ object AwsConfigSpec {
     cpuParallelismFactor    = BigDecimal(1),
     uploadParallelismFactor = BigDecimal(2),
     initialBufferSize       = Some(70000000),
+    decompression           = DecompressionConfig(maxBytesInBatch = 5242880, maxBytesSinglePayload = 10000000),
     monitoring = Config.Monitoring(
       metrics = Config.Metrics(
         statsd = Some(
@@ -189,9 +192,10 @@ object AwsConfigSpec {
             period   = 1.minute,
             prefix   = "snowplow.blob.loader.aws"
           )
-        )
+        ),
+        prometheus = PrometheusConfig(tags = Map.empty)
       ),
-      sentry = Some(Config.SentryM[Id](dsn = "https://public@sentry.example.com/1", tags = Map("myTag" -> "xyz"))),
+      sentry = Some(Sentry.ConfigM[Id](dsn = "https://public@sentry.example.com/1", environment = None, tags = Map("myTag" -> "xyz"))),
       healthProbe = Config.HealthProbe(
         port             = Port.fromInt(8000).get,
         unhealthyLatency = 2.minutes

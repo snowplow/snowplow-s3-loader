@@ -33,7 +33,10 @@ import cats.effect.testing.specs2.CatsEffect
 
 import com.snowplowanalytics.snowplow.analytics.scalasdk.Event
 
+import com.github.luben.zstd.ZstdOutputStream
+
 import com.snowplowanalytics.snowplow.streams.TokenedEvents
+import com.snowplowanalytics.snowplow.streams.compression.{Compressor, GzipCompressor, ZstdCompressor}
 
 import com.snowplowanalytics.snowplow.badrows.{BadRow, Failure, Payload, Processor}
 
@@ -48,6 +51,10 @@ class ProcessingSpec extends Specification with CatsEffect {
     write SDJs grouped by schema to blob storage and emit bad rows $e2
     batch events up to maxBytes limit                              $e3
     emit batches after maxDelay timeout                            $e4
+    decompress and write zstd-compressed enriched events           $e5
+    emit bad row for corrupt zstd-compressed input                 $e6
+    decompress and write gzip-compressed enriched events           $e7
+    decompress and write mixed plain + zstd + gzip events          $e8
   """
 
   // Write enriched events to blob storage
@@ -61,7 +68,7 @@ class ProcessingSpec extends Specification with CatsEffect {
       state <- control.state.get
     } yield state should beEqualTo(
       Vector(
-        Action.WroteFile(enrichedPath, List.fill(2)(enriched.toTsv).mkString("\n")),
+        Action.WroteFile(enrichedPath, s"${enriched.toTsv}\n${enriched.toTsv}\n"),
         Action.AddedCountMetric(2),
         Action.SetE2ELatencyMetric(0.microseconds),
         Action.Checkpointed(List(token))
@@ -88,13 +95,13 @@ class ProcessingSpec extends Specification with CatsEffect {
             Action.Checkpointed(List(Token))
           ) =>
         List(w1, w2) must containTheSameElementsAs(
-          List(Action.WroteFile(sdj1Path, List(sdj1, sdj1).mkString("\n")), Action.WroteFile(sdj2Path, List(sdj2, sdj2).mkString("\n")))
+          List(Action.WroteFile(sdj1Path, s"$sdj1\n$sdj1\n"), Action.WroteFile(sdj2Path, s"$sdj2\n$sdj2\n"))
         )
     }
   }
 
   // Batch events up to maxBytes limit
-  // After writing 8 records to the compressed stream its size is 116 compressed bytes
+  // After writing 8 records to the compressed stream its size exceeds 114 compressed bytes
   def e3 = TestControl.executeEmbed {
     val (token1, token2, token3) = (new Unique.Token, new Unique.Token, new Unique.Token)
     val input = Stream.emits(
@@ -111,11 +118,11 @@ class ProcessingSpec extends Specification with CatsEffect {
       state <- control.state.get
     } yield state should beEqualTo(
       Vector(
-        Action.WroteFile(enrichedPath, List.fill(8)(enriched.toTsv).mkString("\n")),
+        Action.WroteFile(enrichedPath, s"${enriched.toTsv}\n" * 8),
         Action.AddedCountMetric(8),
         Action.SetE2ELatencyMetric(0.microseconds),
         Action.Checkpointed(List(token1, token2)),
-        Action.WroteFile(enrichedPath, List.fill(4)(enriched.toTsv).mkString("\n")),
+        Action.WroteFile(enrichedPath, s"${enriched.toTsv}\n" * 4),
         Action.AddedCountMetric(4),
         Action.SetE2ELatencyMetric(0.microseconds),
         Action.Checkpointed(List(token3))
@@ -142,20 +149,140 @@ class ProcessingSpec extends Specification with CatsEffect {
       state <- control.state.get
     } yield state should beEqualTo(
       Vector(
-        Action.WroteFile("blob://path/1970-01-01-000002-xxxx.gz", List.fill(2)(enriched.toTsv).mkString("\n")),
+        Action.WroteFile("blob://path/1970-01-01-000002-xxxx.gz", s"${enriched.toTsv}\n${enriched.toTsv}\n"),
         Action.AddedCountMetric(2),
         Action.SetE2ELatencyMetric(2.seconds),
         Action.Checkpointed(List(token1)),
-        Action.WroteFile("blob://path/1970-01-01-000005-xxxx.gz", List.fill(2)(enriched.toTsv).mkString("\n")),
+        Action.WroteFile("blob://path/1970-01-01-000005-xxxx.gz", s"${enriched.toTsv}\n${enriched.toTsv}\n"),
         Action.AddedCountMetric(2),
         Action.SetE2ELatencyMetric(5.seconds),
         Action.Checkpointed(List(token2))
       )
     )
   }
+  // Decompress and write zstd-compressed enriched events
+  def e5 = TestControl.executeEmbed {
+    val (token1, token2) = (new Unique.Token, new Unique.Token)
+    val input = Stream.emits(
+      List(
+        TokenedEvents(Chunk(compress(zstdFactory, List(enriched.toTsv, enriched.toTsv))), token1),
+        TokenedEvents(Chunk(compress(zstdFactory, List(enriched.toTsv, enriched.toTsv))), token2)
+      )
+    )
+
+    for {
+      control <- MockEnvironment.build(input, blobStorageConfig, Config.Purpose.Enriched)
+      _ <- Processing.stream[IO](control.environment).compile.drain
+      state <- control.state.get
+    } yield state should beEqualTo(
+      Vector(
+        Action.WroteFile(enrichedPath, s"${enriched.toTsv}\n" * 4),
+        Action.AddedCountMetric(4),
+        Action.SetE2ELatencyMetric(0.microseconds),
+        Action.Checkpointed(List(token1, token2))
+      )
+    )
+  }
+
+  // Emit bad row for corrupt zstd-compressed input
+  def e6 = TestControl.executeEmbed {
+    val token = new Unique.Token
+    val input = Stream.emit(TokenedEvents(Chunk(corruptZstdCompressed), token))
+
+    for {
+      control <- MockEnvironment.build(input, blobStorageConfig, Config.Purpose.Enriched)
+      _ <- Processing.stream[IO](control.environment).compile.drain
+      state <- control.state.get
+    } yield state should beLike {
+      case Vector(
+            Action.AddedCountMetric(0),
+            Action.SentToBad(List(_: BadRow.LoaderParsingError)),
+            Action.Checkpointed(List(_))
+          ) =>
+        ok
+    }
+  }
+
+  // Decompress and write gzip-compressed enriched events
+  def e7 = TestControl.executeEmbed {
+    val (token1, token2) = (new Unique.Token, new Unique.Token)
+    val input = Stream.emits(
+      List(
+        TokenedEvents(Chunk(compress(gzipFactory, List(enriched.toTsv, enriched.toTsv))), token1),
+        TokenedEvents(Chunk(compress(gzipFactory, List(enriched.toTsv, enriched.toTsv))), token2)
+      )
+    )
+
+    for {
+      control <- MockEnvironment.build(input, blobStorageConfig, Config.Purpose.Enriched)
+      _ <- Processing.stream[IO](control.environment).compile.drain
+      state <- control.state.get
+    } yield state should beEqualTo(
+      Vector(
+        Action.WroteFile(enrichedPath, s"${enriched.toTsv}\n" * 4),
+        Action.AddedCountMetric(4),
+        Action.SetE2ELatencyMetric(0.microseconds),
+        Action.Checkpointed(List(token1, token2))
+      )
+    )
+  }
+
+  // Decompress and write mixed plain + zstd + gzip events in one TokenedEvents
+  def e8 = TestControl.executeEmbed {
+    val token = new Unique.Token
+    val input = Stream.emit(
+      TokenedEvents(
+        Chunk(
+          ByteBuffer.wrap(enriched.toTsv.getBytes(StandardCharsets.UTF_8)),
+          compress(zstdFactory, List(enriched.toTsv)),
+          compress(gzipFactory, List(enriched.toTsv))
+        ),
+        token
+      )
+    )
+
+    for {
+      control <- MockEnvironment.build(input, blobStorageConfig, Config.Purpose.Enriched)
+      _ <- Processing.stream[IO](control.environment).compile.drain
+      state <- control.state.get
+    } yield state should beEqualTo(
+      Vector(
+        Action.WroteFile(enrichedPath, s"${enriched.toTsv}\n" * 3),
+        Action.AddedCountMetric(3),
+        Action.SetE2ELatencyMetric(0.microseconds),
+        Action.Checkpointed(List(token))
+      )
+    )
+  }
 }
 
 object ProcessingSpec {
+
+  val zstdFactory = ZstdCompressor.factory(3)
+  val gzipFactory = GzipCompressor.factory(6)
+
+  def compress(factory: Compressor.Factory, events: List[String]): ByteBuffer = {
+    val compressor = factory.buildAndInitialize(1000000, 1)
+    events.foreach { e =>
+      val bytes = e.getBytes(StandardCharsets.UTF_8)
+      val _     = compressor.addRecord(bytes, 0, bytes.length)
+    }
+    compressor.result
+  }
+
+  def corruptZstdCompressed: ByteBuffer = {
+    val baos = new java.io.ByteArrayOutputStream()
+    val zstd = new ZstdOutputStream(baos)
+    zstd.write(1) // Snowplow header: compression format version
+    zstd.write(1) // Snowplow header: payload format version
+    val sizeBytes = ByteBuffer.allocate(4)
+    sizeBytes.order(java.nio.ByteOrder.BIG_ENDIAN)
+    sizeBytes.putInt(10) // record size = 10, but only 3 bytes follow
+    zstd.write(sizeBytes.array())
+    zstd.write(Array[Byte](1, 2, 3))
+    zstd.close()
+    ByteBuffer.wrap(baos.toByteArray)
+  }
 
   val blobStorageConfig = Config.BlobSink(
     URI.create("blob://path/"),
