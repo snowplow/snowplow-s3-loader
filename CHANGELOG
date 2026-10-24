@@ -1,3 +1,9 @@
+Version 3.2.1 (2026-10-24)
+--------------------------
+ITS-2185: chore(ci): remove Snyk steps (#35)
+Add Snowman QA hook to the release pipeline (#33)
+add .publishignore (#32)
+
 Version 3.2.0 (2026-05-08)
 --------------------------
 Fix missing trailing newline at end of each output file (#26)
