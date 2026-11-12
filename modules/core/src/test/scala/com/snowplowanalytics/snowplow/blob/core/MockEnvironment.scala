@@ -57,6 +57,9 @@ object MockEnvironment {
     case class AddedCountMetric(count: Long) extends Action
     case class SetLatencyMetric(latency: FiniteDuration) extends Action
     case class SetE2ELatencyMetric(e2eLatency: FiniteDuration) extends Action
+    /* Health */
+    case class BecameUnhealthy(service: RuntimeService) extends Action
+    case class BecameHealthy(service: RuntimeService) extends Action
   }
   import Action._
 
@@ -65,16 +68,17 @@ object MockEnvironment {
     blobStorageConfig: Config.BlobSink,
     purpose: Config.Purpose,
     maxBytes: Long           = 64 * 1024 * 1024,
-    maxDelay: FiniteDuration = 2.minutes
+    maxDelay: FiniteDuration = 2.minutes,
+    mocks: Mocks             = Mocks.default
   ): IO[MockEnvironment] =
     for {
       state <- Ref[IO].of(Vector.empty[Action])
       env = Environment(
               appInfo   = appInfo,
               source    = testSourceAndAck(input, state),
-              appHealth = testAppHealth,
-              blobSink  = testBlobSink(state),
-              badSink   = testBadSink(state),
+              appHealth = testAppHealth(state),
+              blobSink  = testBlobSink(mocks.blobSinkResponse, state),
+              badSink   = testBadSink(mocks.badSinkResponse, state),
               metrics   = testMetrics(state),
               purpose   = purpose,
               batching = Config.Batching(
@@ -89,6 +93,24 @@ object MockEnvironment {
               decompressionConfig = DecompressionConfig(maxBytesInBatch = 5242880, maxBytesSinglePayload = 10000000)
             )
     } yield MockEnvironment(state, env)
+
+  final case class Mocks(
+    blobSinkResponse: Response[Unit],
+    badSinkResponse: Response[Unit]
+  )
+
+  object Mocks {
+    val default: Mocks = Mocks(
+      blobSinkResponse = Response.Success(()),
+      badSinkResponse  = Response.Success(())
+    )
+  }
+
+  sealed trait Response[+A]
+  object Response {
+    final case class Success[A](value: A) extends Response[A]
+    final case class ExceptionThrown(value: Throwable) extends Response[Nothing]
+  }
 
   val appInfo = new AppInfo {
     def name        = "blob-loader"
@@ -115,28 +137,40 @@ object MockEnvironment {
         IO.pure(None)
     }
 
-  private def testAppHealth: AppHealth.Interface[IO, String, RuntimeService] =
+  private def testAppHealth(ref: Ref[IO, Vector[Action]]): AppHealth.Interface[IO, String, RuntimeService] =
     new AppHealth.Interface[IO, String, RuntimeService] {
-      def beHealthyForSetup: IO[Unit]                                     = IO.unit
-      def beUnhealthyForSetup(alert: String): IO[Unit]                    = IO.unit
-      def beHealthyForRuntimeService(service: RuntimeService): IO[Unit]   = IO.unit
-      def beUnhealthyForRuntimeService(service: RuntimeService): IO[Unit] = IO.unit
+      def beHealthyForSetup: IO[Unit]                  = IO.unit
+      def beUnhealthyForSetup(alert: String): IO[Unit] = IO.unit
+      def beHealthyForRuntimeService(service: RuntimeService): IO[Unit] =
+        ref.update(_ :+ BecameHealthy(service))
+      def beUnhealthyForRuntimeService(service: RuntimeService): IO[Unit] =
+        ref.update(_ :+ BecameUnhealthy(service))
     }
 
-  private def testBlobSink(ref: Ref[IO, Vector[Action]]) =
+  private def testBlobSink(mockedResponse: Response[Unit], ref: Ref[IO, Vector[Action]]) =
     new BlobSink[IO] {
       val uuidRegex = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
       override def write(uri: URI, events: ByteBuffer): IO[Unit] =
-        ref.update(_ :+ WroteFile(uri.toString.replaceAll(uuidRegex, "xxxx"), decompress(events.slice)))
+        mockedResponse match {
+          case Response.Success(_) =>
+            ref.update(_ :+ WroteFile(uri.toString.replaceAll(uuidRegex, "xxxx"), decompress(events.slice)))
+          case Response.ExceptionThrown(value) =>
+            IO.raiseError(value)
+        }
     }
 
-  private def testBadSink(ref: Ref[IO, Vector[Action]]): Sink[IO] =
+  private def testBadSink(mockedResponse: Response[Unit], ref: Ref[IO, Vector[Action]]): Sink[IO] =
     new Sink[IO] {
       override def sink(batch: ListOfList[Sinkable]): IO[Unit] =
-        for {
-          parsed <- batch.asIterable.toList.traverse(parseBad)
-          _ <- ref.update(_ :+ SentToBad(parsed))
-        } yield ()
+        mockedResponse match {
+          case Response.Success(_) =>
+            for {
+              parsed <- batch.asIterable.toList.traverse(parseBad)
+              _ <- ref.update(_ :+ SentToBad(parsed))
+            } yield ()
+          case Response.ExceptionThrown(value) =>
+            IO.raiseError(value)
+        }
 
       override def isHealthy: IO[Boolean] = IO.pure(true)
     }

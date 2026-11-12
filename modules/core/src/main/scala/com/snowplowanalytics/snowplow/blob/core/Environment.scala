@@ -70,7 +70,7 @@ object Environment {
       sourceAndAck <- factory.source(config.input)
       sourceReporter = sourceAndAck.isHealthy(config.monitoring.healthProbe.unhealthyLatency).map(_.showIfUnhealthy)
       appHealth <- Resource.eval(AppHealth.init[F, String, RuntimeService](List(sourceReporter)))
-      metrics <- Metrics.build(config.monitoring.metrics, sourceAndAck)
+      metrics <- Metrics.build(config.monitoring.metrics, config.batching.maxDelay, sourceAndAck)
       _ <- HealthProbe.resource(config.monitoring.healthProbe.port, appHealth, metrics.scrape)
       blobSink <- toBlobSink(config.output.good)
       badSink <- factory.sink(config.output.bad.sink).onError { case _ =>

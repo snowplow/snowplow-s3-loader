@@ -15,10 +15,11 @@ object Dependencies {
   object V {
     // Java
     val commonsLang = "3.19.0"
+    val guava       = "33.7.2-jre"
     val jackson     = "2.21.3"
     val netty       = "4.1.133.Final"
     val slf4j       = "2.0.17"
-    val awsSdk      = "2.33.11"
+    val awsSdk      = "2.54.18"
 
     // Scala
     val betterMonadicFor = "0.3.1"
@@ -27,7 +28,7 @@ object Dependencies {
     val http4s           = "0.23.31"
 
     // Snowplow
-    val commonStreams = "0.24.1"
+    val commonStreams = "0.28.0"
     val badRows       = "2.3.0"
 
     // Tests
@@ -39,6 +40,7 @@ object Dependencies {
 
   // Java
   val commonsLang     = "org.apache.commons"         % "commons-lang3"     % V.commonsLang
+  val guava           = "com.google.guava"           % "guava"             % V.guava
   val jackson         = "com.fasterxml.jackson.core" % "jackson-core"      % V.jackson
   val nettyCodecHttp  = "io.netty"                   % "netty-codec-http"  % V.netty
   val nettyCodecHttp2 = "io.netty"                   % "netty-codec-http2" % V.netty
@@ -85,6 +87,7 @@ object Dependencies {
   )
 
   val awsDependencies = Seq(
+    guava, // for security vulnerabilities
     kinesisSnowplow,
     nettyCodecHttp, // for security vulnerabilities
     nettyCodecHttp2, // for security vulnerabilities

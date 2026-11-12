@@ -36,7 +36,7 @@ import com.snowplowanalytics.snowplow.analytics.scalasdk.Event
 import com.github.luben.zstd.ZstdOutputStream
 
 import com.snowplowanalytics.snowplow.streams.TokenedEvents
-import com.snowplowanalytics.snowplow.streams.compression.{Compressor, GzipCompressor, ZstdCompressor}
+import com.snowplowanalytics.snowplow.streams.compression.CompressorFactory
 
 import com.snowplowanalytics.snowplow.badrows.{BadRow, Failure, Payload, Processor}
 
@@ -55,6 +55,8 @@ class ProcessingSpec extends Specification with CatsEffect {
     emit bad row for corrupt zstd-compressed input                 $e6
     decompress and write gzip-compressed enriched events           $e7
     decompress and write mixed plain + zstd + gzip events          $e8
+    mark app as unhealthy when writing to blob storage fails       $e9
+    mark app as unhealthy when sinking bad rows fails              $e10
   """
 
   // Write enriched events to blob storage
@@ -163,14 +165,16 @@ class ProcessingSpec extends Specification with CatsEffect {
   // Decompress and write zstd-compressed enriched events
   def e5 = TestControl.executeEmbed {
     val (token1, token2) = (new Unique.Token, new Unique.Token)
-    val input = Stream.emits(
-      List(
-        TokenedEvents(Chunk(compress(zstdFactory, List(enriched.toTsv, enriched.toTsv))), token1),
-        TokenedEvents(Chunk(compress(zstdFactory, List(enriched.toTsv, enriched.toTsv))), token2)
-      )
-    )
 
     for {
+      compressed1 <- compress(zstdFactory, List(enriched.toTsv, enriched.toTsv))
+      compressed2 <- compress(zstdFactory, List(enriched.toTsv, enriched.toTsv))
+      input = Stream.emits(
+                List(
+                  TokenedEvents(Chunk(compressed1), token1),
+                  TokenedEvents(Chunk(compressed2), token2)
+                )
+              )
       control <- MockEnvironment.build(input, blobStorageConfig, Config.Purpose.Enriched)
       _ <- Processing.stream[IO](control.environment).compile.drain
       state <- control.state.get
@@ -206,14 +210,16 @@ class ProcessingSpec extends Specification with CatsEffect {
   // Decompress and write gzip-compressed enriched events
   def e7 = TestControl.executeEmbed {
     val (token1, token2) = (new Unique.Token, new Unique.Token)
-    val input = Stream.emits(
-      List(
-        TokenedEvents(Chunk(compress(gzipFactory, List(enriched.toTsv, enriched.toTsv))), token1),
-        TokenedEvents(Chunk(compress(gzipFactory, List(enriched.toTsv, enriched.toTsv))), token2)
-      )
-    )
 
     for {
+      compressed1 <- compress(gzipFactory, List(enriched.toTsv, enriched.toTsv))
+      compressed2 <- compress(gzipFactory, List(enriched.toTsv, enriched.toTsv))
+      input = Stream.emits(
+                List(
+                  TokenedEvents(Chunk(compressed1), token1),
+                  TokenedEvents(Chunk(compressed2), token2)
+                )
+              )
       control <- MockEnvironment.build(input, blobStorageConfig, Config.Purpose.Enriched)
       _ <- Processing.stream[IO](control.environment).compile.drain
       state <- control.state.get
@@ -230,18 +236,16 @@ class ProcessingSpec extends Specification with CatsEffect {
   // Decompress and write mixed plain + zstd + gzip events in one TokenedEvents
   def e8 = TestControl.executeEmbed {
     val token = new Unique.Token
-    val input = Stream.emit(
-      TokenedEvents(
-        Chunk(
-          ByteBuffer.wrap(enriched.toTsv.getBytes(StandardCharsets.UTF_8)),
-          compress(zstdFactory, List(enriched.toTsv)),
-          compress(gzipFactory, List(enriched.toTsv))
-        ),
-        token
-      )
-    )
 
     for {
+      zstdCompressed <- compress(zstdFactory, List(enriched.toTsv))
+      gzipCompressed <- compress(gzipFactory, List(enriched.toTsv))
+      input = Stream.emit(
+                TokenedEvents(
+                  Chunk(ByteBuffer.wrap(enriched.toTsv.getBytes(StandardCharsets.UTF_8)), zstdCompressed, gzipCompressed),
+                  token
+                )
+              )
       control <- MockEnvironment.build(input, blobStorageConfig, Config.Purpose.Enriched)
       _ <- Processing.stream[IO](control.environment).compile.drain
       state <- control.state.get
@@ -254,21 +258,63 @@ class ProcessingSpec extends Specification with CatsEffect {
       )
     )
   }
+
+  // Mark app as unhealthy when writing to blob storage fails
+  def e9 = TestControl.executeEmbed {
+    val token = new Unique.Token
+    val input = Stream.emit(TokenedEvents(Chunk.from(List.fill(2)(enriched.toTsv.toByteBuffer)), token))
+    val mocks = Mocks.default.copy(
+      blobSinkResponse = Response.ExceptionThrown(new RuntimeException("Some error when writing to blob storage"))
+    )
+
+    for {
+      control <- MockEnvironment.build(input, blobStorageConfig, Config.Purpose.Enriched, mocks = mocks)
+      _ <- Processing.stream[IO](control.environment).compile.drain.voidError
+      state <- control.state.get
+    } yield state should beEqualTo(
+      Vector(
+        Action.BecameUnhealthy(RuntimeService.BlobSink)
+      )
+    )
+  }
+
+  // Mark app as unhealthy when sinking bad rows fails
+  def e10 = TestControl.executeEmbed {
+    val token = new Unique.Token
+    val input = Stream.emit(TokenedEvents(Chunk.from(List.fill(2)(invalidSdj.toByteBuffer)), token))
+    val mocks = Mocks.default.copy(
+      badSinkResponse = Response.ExceptionThrown(new RuntimeException("Some error when sinking bad data"))
+    )
+
+    for {
+      control <- MockEnvironment.build(input, blobStorageConfig, Config.Purpose.SDJ, mocks = mocks)
+      _ <- Processing.stream[IO](control.environment).compile.drain.voidError
+      state <- control.state.get
+    } yield state should beEqualTo(
+      Vector(
+        Action.AddedCountMetric(0),
+        Action.BecameUnhealthy(RuntimeService.BadSink)
+      )
+    )
+  }
 }
 
 object ProcessingSpec {
 
-  val zstdFactory = ZstdCompressor.factory(3)
-  val gzipFactory = GzipCompressor.factory(6)
+  val zstdFactory = CompressorFactory.zstd(3)
+  val gzipFactory = CompressorFactory.gzip(6)
 
-  def compress(factory: Compressor.Factory, events: List[String]): ByteBuffer = {
-    val compressor = factory.buildAndInitialize(1000000, 1)
-    events.foreach { e =>
-      val bytes = e.getBytes(StandardCharsets.UTF_8)
-      val _     = compressor.addRecord(bytes, 0, bytes.length)
+  def compress(factory: CompressorFactory, events: List[String]): IO[ByteBuffer] =
+    factory.resource[IO].use { compressor =>
+      IO {
+        compressor.reset(payloadVersion = 1, targetSize = 1000000)
+        events.foreach { e =>
+          val bytes = e.getBytes(StandardCharsets.UTF_8)
+          val _     = compressor.addRecord(bytes, 0, bytes.length)
+        }
+        compressor.result
+      }
     }
-    compressor.result
-  }
 
   def corruptZstdCompressed: ByteBuffer = {
     val baos = new java.io.ByteArrayOutputStream()

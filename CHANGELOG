@@ -1,3 +1,16 @@
+Version 3.3.0 (2026-11-10)
+--------------------------
+Skip app-CI Snowman on rc and final tags when the factory runs it (PDP-2988)
+Persist checkout credentials so Claude mentions can fetch
+Tag Docker images as latest only for final releases (#47)
+fix(security): CVE-2026-102554 — bump guava to 33.7.2-jre
+Bump common-streams to 0.28.0 (#46)
+Test that processing marks the app unhealthy when a sink fails (#45)
+Set scalac -release:21 in commonSettings (#44)
+Fix example-config test classpath for awsDistroless (#43)
+Bump common-streams to 0.27.1 (#40)
+Harden claude.yml workflow against prompt injection
+
 Version 3.2.1 (2026-10-24)
 --------------------------
 ITS-2185: chore(ci): remove Snyk steps (#35)

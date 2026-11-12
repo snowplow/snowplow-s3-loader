@@ -26,7 +26,9 @@ object BuildSettings {
 
   lazy val commonSettings = Seq(
     organization := "com.snowplowanalytics",
-    scalaVersion := "2.13.16",
+    scalaVersion := "2.13.18",
+    // Target Java 21 bytecode and restrict API to Java 21
+    scalacOptions += "-release:21",
     scalafmtConfig := file(".scalafmt.conf"),
     scalafmtOnCompile := false,
     addCompilerPlugin(Dependencies.betterMonadicFor),
@@ -50,10 +52,7 @@ object BuildSettings {
           |""".stripMargin
       )
     ),
-    headerMappings := headerMappings.value + (HeaderFileType.conf -> HeaderCommentStyle.hashLineComment),
-    Test / unmanagedClasspath += {
-      baseDirectory.value / "../../config"
-    }
+    headerMappings := headerMappings.value + (HeaderFileType.conf -> HeaderCommentStyle.hashLineComment)
   )
 
   lazy val appSettings = commonSettings ++ Seq(
@@ -71,5 +70,19 @@ object BuildSettings {
     Test / envVars := Map(
       "HOSTNAME" -> "testWorkerId"
     )
+  ) ++ addExampleConfToTestCp
+
+  lazy val addExampleConfToTestCp = Seq(
+    Test / unmanagedClasspath += {
+      if (baseDirectory.value.getPath.contains("distroless")) {
+        // baseDirectory is like 'root/modules/distroless/module',
+        // we're at 'module' and need to get to 'root/config/'
+        baseDirectory.value.getParentFile.getParentFile.getParentFile / "config"
+      } else {
+        // baseDirectory is like 'root/modules/module',
+        // we're at 'module' and need to get to 'root/config/'
+        baseDirectory.value.getParentFile.getParentFile / "config"
+      }
+    }
   )
 }

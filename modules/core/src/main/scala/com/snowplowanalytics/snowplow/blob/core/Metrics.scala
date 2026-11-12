@@ -13,11 +13,12 @@ package com.snowplowanalytics.snowplow.blob.core
 import scala.concurrent.duration.FiniteDuration
 
 import cats.implicits._
-import cats.effect.kernel.{Async, Resource, Sync}
+import cats.effect.kernel.{Async, Resource}
 
 import fs2.Stream
 
 import com.snowplowanalytics.snowplow.runtime.{Metrics => CommonMetrics}
+import com.snowplowanalytics.snowplow.runtime.Metrics.Destination.PrometheusAndStatsd
 
 import com.snowplowanalytics.snowplow.streams.SourceAndAck
 
@@ -32,13 +33,24 @@ trait Metrics[F[_]] {
 
 object Metrics {
 
-  def build[F[_]: Async](config: Config.Metrics, sourceAndAck: SourceAndAck[F]): Resource[F, Metrics[F]] =
+  /**
+   * @param maxDelay
+   *   The configured batching max delay, used as the expected-latency hint for the e2e timer. It
+   *   measures from a batch's earliest collector timestamp to the end of the batch's upload, and a
+   *   batch is held open for up to this long, so the loader's e2e latency moves with this setting
+   *   rather than sitting at any fixed value.
+   */
+  def build[F[_]: Async](
+    config: Config.Metrics,
+    maxDelay: FiniteDuration,
+    sourceAndAck: SourceAndAck[F]
+  ): Resource[F, Metrics[F]] =
     CommonMetrics.build[F](config.statsd, config.prometheus).evalMap { entries =>
       for {
-        count <- entries.counter("count")
-        latency <- entries.timer("latency_millis", sourceAndAck.currentStreamLatency)
-        e2eLatency <- entries.timer("e2e_latency_millis", Sync[F].pure(None))
-        latencyCollectorToLoad <- entries.gauge("latency_collector_to_load") // Legacy metric
+        count <- entries.counter("count", PrometheusAndStatsd)
+        latency <- entries.lagGauge("latency", sourceAndAck.currentStreamLatency, PrometheusAndStatsd)
+        e2eLatency <- entries.timer("e2e_latency", maxDelay, PrometheusAndStatsd)
+        latencyCollectorToLoad <- entries.gauge("latency_collector_to_load", PrometheusAndStatsd) // Legacy metric
       } yield new Metrics[F] {
         def addCount(n: Long): F[Unit]                = count.add(n)
         def setLatency(l: FiniteDuration): F[Unit]    = latency.record(l)
